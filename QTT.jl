@@ -21,6 +21,8 @@ function main()
     vertex_map = Dict(vertices(g) .=> [i for i in 1:L])
 
     ψ12 = cos_itensornetwork(s, vertex_map; a)
+    ϕ12 = cos_itensornetwork(s, vertex_map; a)
+    ψ12 = ψ12+ϕ12
     #ψ12 = treetensornetwork(ψ12)
 
     x = 1.9
@@ -31,7 +33,7 @@ function main()
 
     #Note the answer here is exact because our binary representation of x is exact, (only need 2 bits)
     @show ITensors.contract(ψ12proj)[]
-    @show cos(x)
+    @show 2*cos(x)
 
 end
 
