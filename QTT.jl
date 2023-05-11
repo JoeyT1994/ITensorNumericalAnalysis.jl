@@ -7,7 +7,7 @@ using Graphs
 using ITensorNetworks: delta_network
 using NamedGraphs: add_edges
 
-include("itensornetworks_functions.jl")
+include("itensornetwork_functions.jl")
         
 
 function main()
