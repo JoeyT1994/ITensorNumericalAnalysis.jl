@@ -7,12 +7,13 @@ using Graphs
 using ITensorNetworks: delta_network
 using NamedGraphs: add_edges
 
-include("itensornetwork_functions.jl")
+include("QTT_utils.jl")
         
 
 function main()
     L = 8
-    g = NamedGraph(Graphs.random_regular_graph(L, 3))
+    #g = NamedGraph(Graphs.random_regular_graph(L, 3))
+    g = named_grid((L, 1))
     a = 2.0
     s = siteinds("S=1/2", g)
 
@@ -20,11 +21,10 @@ function main()
     vertex_map = Dict(vertices(g) .=> [i for i in 1:L])
 
     ψ12 = cos_itensornetwork(s, vertex_map; a)
+    #ψ12 = treetensornetwork(ψ12)
 
-
-    #A Binary representation of a*0.75 with 10 bits
-    xis = Dict(vertices(ψ12) .=> [i <= 2 ? 1 : 0 for i in 1:L])
-    x = sum([a*xis[v]/2^vertex_map[v] for v in vertices(ψ12)])
+    x = 1.9
+    xis = calculate_xis(x, vertex_map; a)
 
     ψ12proj = get_bitstring_network(ψ12, s, xis)
 
