@@ -11,27 +11,40 @@ include("QTT_utils.jl")
         
 
 function main()
-    L = 8
+    L = 10
     #g = NamedGraph(Graphs.random_regular_graph(L, 3))
     g = named_grid((L, 1))
-    a = 2.0
+    a = 1.0
+    k = 0.1
+    nterms = 115
     s = siteinds("S=1/2", g)
 
     #Define a map which determines a canonical ordering of the vertices of the network
     vertex_map = Dict(vertices(g) .=> [i for i in 1:L])
 
-    ψ12 = cos_itensornetwork(s, vertex_map; a)
-    #ψ12 = treetensornetwork(ψ12)
+    x = 0.25
+    xis = calculate_xis(x, vertex_map; a, print_x = true)
 
-    x = 1.9
-    xis = calculate_xis(x, vertex_map; a)
+    cutoff = 1e-3
+    suggesteddim = round(Int64, -log(cutoff)/(2*x*k))
+    @show suggesteddim, nterms
+    
+    maxdim = 5
+    for n = 1:nterms
+        ψ12 = tanh_itensornetwork(s, vertex_map, n; a, k)
+        ψ12 = TTN(ψ12)
+        if maxlinkdim(ψ12) > maxdim
+            ψ12 = truncate(ψ12; maxdim)
+        end
 
-    ψ12proj = get_bitstring_network(ψ12, s, xis)
-
-
-    #Note the answer here is exact because our binary representation of x is exact, (only need 2 bits)
-    @show ITensors.contract(ψ12proj)[]
-    @show cos(x)
+        @show maxlinkdim(ψ12)
+        ψ12proj = get_bitstring_network(ψ12, s, xis)
+        @show (n, ITensors.contract(ψ12proj)[])
+    end
+    @show tanh(k*x)
+    eval_point = calculate_x(xis,vertex_map;a)
+    expansion = 1+sum([2*(-1)^n*exp(-2*n*eval_point*k) for n=1:nterms])
+    @show expansion
 
 end
 

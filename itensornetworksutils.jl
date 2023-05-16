@@ -33,8 +33,10 @@ function add_itensornetworks(tn1::AbstractITensorNetwork, tn2::AbstractITensorNe
     return tn_1p2
 end
 
+Base.:+(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork) = add_itensornetworks(tn1, tn2)
+
 """Given a bitstring collapse the relevant tensors of ψ down to get the TN which represents ψ[bitstring]"""
-function get_bitstring_network(ψ::ITensorNetwork, s::IndsNetwork,  bitstring::Dict)
+function get_bitstring_network(ψ::AbstractITensorNetwork, s::IndsNetwork,  bitstring::Dict)
     ψ = copy(ψ)
     for v in keys(bitstring)
         proj = ITensor([i != bitstring[v] ? 0 : 1 for i in 0:(dim(s[v])-1)], s[v])
