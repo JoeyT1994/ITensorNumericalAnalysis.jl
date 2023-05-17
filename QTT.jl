@@ -25,6 +25,13 @@ function main()
     x = 0.25
     xis = calculate_xis(x, vertex_map; a, print_x = true)
 
+    ψ = x_itensornetwork(s, vertex_map; k)
+    @show maxlinkdim(ψ)
+    ψ = truncate(TTN(ψ); cutoff = 1e-15)
+    @show maxlinkdim(ψ)
+    ψproj = get_bitstring_network(ψ, s, xis)
+    @show ITensors.contract(ψproj)[]
+
     cutoff = 1e-3
     suggesteddim = round(Int64, -log(cutoff)/(2*x*k))
     @show suggesteddim, nterms
