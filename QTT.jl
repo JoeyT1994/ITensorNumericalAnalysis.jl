@@ -37,7 +37,7 @@ function main()
 
   maxdim = 5
   for n in 1:nterms
-    ψ12 = tanh_itensornetwork(s, vertex_map, n; a, k)
+    ψ12 = tanh_itn(s, vertex_map, n; a, k)
     ψ12 = TTN(ψ12)
     if maxlinkdim(ψ12) > maxdim
       ψ12 = truncate(ψ12; maxdim)

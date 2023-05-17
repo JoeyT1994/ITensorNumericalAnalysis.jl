@@ -122,3 +122,12 @@ function sin_itensornetwork(
 
   return add_itensornetworks(ψ1, ψ2)
 end
+
+const const_itn = const_itensornetwork
+const cosh_itn  = cosh_itensornetwork
+const sinh_itn  = sinh_itensornetwork
+const tanh_itn  = tanh_itensornetwork
+const exp_itn   = exp_itensornetwork
+const sin_itn   = sin_itensornetwork
+const cos_itn   = cos_itensornetwork
+const x_itn     = x_itensornetwork

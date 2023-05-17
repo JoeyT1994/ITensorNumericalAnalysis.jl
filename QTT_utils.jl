@@ -1,4 +1,4 @@
-include("itensornetworks_functions.jl")
+include("itensornetworks_elementary_functions.jl")
 
 function calculate_x(xis::Dict, vertex_map::Dict; a::Float64=1.0)
   @assert keys(vertex_map) == keys(xis)

@@ -10,11 +10,11 @@ using NamedGraphs: add_edges
 include("../QTT_utils.jl")
 
 funcs = [
-  ("cosh", cosh_itensornetwork, cosh),
-  ("sinh", sinh_itensornetwork, sinh),
-  ("exp", exp_itensornetwork, exp),
-  ("cos", cos_itensornetwork, cos),
-  ("sin", sin_itensornetwork, sin),
+  ("cosh", cosh_itn, cosh),
+  ("sinh", sinh_itn, sinh),
+  ("exp", exp_itn, exp),
+  ("cos", cos_itn, cos),
+  ("sin", sin_itn, sin),
 ]
 for (name, net_func, func) in funcs
   @testset "test $name" begin
@@ -57,7 +57,7 @@ end
   x = 0.25
   xis = calculate_xis(x, vertex_map; a, print_x=true)
 
-  ψ12 = const_itensornetwork(s; c=k)
+  ψ12 = const_itn(s; c=k)
   ψ12proj = get_bitstring_network(ψ12, s, xis)
 
   network_ans = ITensors.contract(ψ12proj)[]
@@ -86,7 +86,7 @@ end
 
   maxdim = 5
   n = nterms
-  ψ12 = tanh_itensornetwork(s, vertex_map, n; a, k)
+  ψ12 = tanh_itn(s, vertex_map, n; a, k)
   ψ12proj = get_bitstring_network(ψ12, s, xis)
 
   network_ans = ITensors.contract(ψ12proj)[]
