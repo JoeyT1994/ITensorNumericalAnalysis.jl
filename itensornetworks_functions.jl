@@ -11,6 +11,19 @@ function const_itensornetwork(s::IndsNetwork; c::Union{Float64,ComplexF64}=1.0)
   return ψ
 end
 
+"""Construct the representation of the function f(x) = kx"""
+function x_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, ComplexF64} = 1.0, cutoff = 1e-15)
+    ψ = const_itensornetwork(s; c = 0.0)
+    for v in vertices(s)
+        ψxi = const_itensornetwork(s)
+        ψxi[v] = ITensor([0.0, 1.0/2^vertex_map[v]], inds(ψxi[v]))
+        ψ = ψ + ψxi 
+    end
+    ψ[first(vertices(ψ))] *= k
+
+    return ψ
+end
+
 """Construct the product state representation of the exp(kx) function for x ∈ [0,a] as an ITensorNetwork, using an IndsNetwork which 
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function exp_itensornetwork(
