@@ -8,16 +8,53 @@ function const_itensornetwork(s::IndsNetwork; c::Union{Float64, ComplexF64} = 1.
     end
     ψ[first(vertices(ψ))] *= c
 
+    ψ = is_tree(underlying_graph(s)) ? TTN(ψ) : ψ
+
     return ψ
 end
 
 """Construct the representation of the function f(x) = kx"""
-function x_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, ComplexF64} = 1.0, cutoff = 1e-15)
+function x_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, ComplexF64} = 1.0, cutoff = 1e-16)
     ψ = const_itensornetwork(s; c = 0.0)
+    g = underlying_graph(s)
+
     for v in vertices(s)
         ψxi = const_itensornetwork(s)
         ψxi[v] = ITensor([0.0, 1.0/2^vertex_map[v]], inds(ψxi[v]))
         ψ = ψ + ψxi 
+
+        if isa(ψ, TreeTensorNetwork)
+            ψ = truncate(ψ; cutoff)
+        end
+            
+    end
+    ψ[first(vertices(ψ))] *= k
+
+    return ψ
+end
+
+
+"""Construct the representation of the function f(x) = kx*x"""
+function xsq_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, ComplexF64} = 1.0, cutoff = 1e-16)
+    ψ = const_itensornetwork(s; c = 0.0)
+
+    for v in vertices(s)
+        for vp in vertices(s)
+            ψxi = const_itensornetwork(s)
+            if v != vp
+                ψxi[v] = ITensor([0.0, 1.0/2^vertex_map[v]], inds(ψxi[v]))
+                ψxi[vp] = ITensor([0.0, 1.0/2^vertex_map[vp]], inds(ψxi[vp]))
+            else
+                ψxi[v] = ITensor([0.0, 1.0/(2^(2*vertex_map[v]))], inds(ψxi[v]))
+            end
+
+            ψ = ψ + ψxi
+
+            if isa(ψ, TreeTensorNetwork)
+                ψ = truncate(ψ; cutoff)
+            end
+        end
+            
     end
     ψ[first(vertices(ψ))] *= k
 
@@ -32,14 +69,16 @@ function exp_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, 
         ψ[v] = ITensor([1.0, exp(k*a/(2^vertex_map[v]))], inds(ψ[v]))
     end
 
+    ψ = is_tree(underlying_graph(s)) ? TTN(ψ) : ψ
+
     return ψ
 end
 
 """Construct the bond dim 2 representation of the cosh(kx) function for x ∈ [0,a] as an ITensorNetwork, using an IndsNetwork which 
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function cosh_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, ComplexF64} = Float64(1.0), a::Float64 = 1.0)
-    ψ1 =  exp_itensornetwork(s, vertex_map; a, k)
-    ψ2 =  exp_itensornetwork(s, vertex_map; a, k = -k)
+    ψ1 = exp_itensornetwork(s, vertex_map; a, k)
+    ψ2 = exp_itensornetwork(s, vertex_map; a, k = -k)
 
     ψ1[first(vertices(ψ1))] *= 0.5
     ψ2[first(vertices(ψ1))] *= 0.5
@@ -50,8 +89,8 @@ end
 """Construct the bond dim 2 representation of the sinh(kx) function for x ∈ [0,a] as an ITensorNetwork, using an IndsNetwork which 
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function sinh_itensornetwork(s::IndsNetwork, vertex_map::Dict; k::Union{Float64, ComplexF64} = Float64(1.0), a::Float64 = 1.0)
-    ψ1 =  exp_itensornetwork(s, vertex_map; a, k)
-    ψ2 =  exp_itensornetwork(s, vertex_map; a, k = -k)
+    ψ1 = exp_itensornetwork(s, vertex_map; a, k)
+    ψ2 = exp_itensornetwork(s, vertex_map; a, k = -k)
 
     ψ1[first(vertices(ψ1))] *= 0.5
     ψ2[first(vertices(ψ1))] *= -0.5
@@ -66,7 +105,7 @@ function tanh_itensornetwork(s::IndsNetwork, vertex_map::Dict, nterms::Int64; k:
     for n in 1:nterms
         ψt = exp_itensornetwork(s, vertex_map; a, k = -2*k*n)
         ψt[first(vertices(ψt))] *= 2*((-1)^n)
-        ψ = add_itensornetworks(ψ, ψt)
+        ψ = ψ + ψt
     end
 
     return ψ
