@@ -1,12 +1,12 @@
 include("itensornetworks_elementary_functions.jl")
 
-function calculate_x(xis::Dict, vertex_map::Dict; a::Float64=1.0)
+function calculate_x(xis::Dict, vertex_map::Dict)
   @assert keys(vertex_map) == keys(xis)
-  return sum([a * xis[v] / (2^vertex_map[v]) for v in keys(xis)])
+  return sum([xis[v] / (2^vertex_map[v]) for v in keys(xis)])
 end
 
-function calculate_xis(x::Float64, vertex_map::Dict; a::Float64=1.0, print_x=false)
-  x_rn = x / a
+function calculate_xis(x::Float64, vertex_map::Dict; print_x=false)
+  x_rn = copy(x)
   xis = Dict()
   sorted_vertex_map = sort(vertex_map; byvalue=true)
   for v in keys(sorted_vertex_map)
@@ -18,7 +18,7 @@ function calculate_xis(x::Float64, vertex_map::Dict; a::Float64=1.0, print_x=fal
     end
   end
 
-  x_bitstring = calculate_x(xis, vertex_map; a)
+  x_bitstring = calculate_x(xis, vertex_map)
   (print_x) && println("Actual value of x is $x but bitstring rep. is $x_bitstring")
   return xis
 end

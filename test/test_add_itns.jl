@@ -3,6 +3,7 @@ using ITensorNetworks
 using NamedGraphs
 using EllipsisNotation
 using Graphs
+using Test
 
 using ITensorNetworks: delta_network
 using NamedGraphs: add_edges
@@ -20,15 +21,15 @@ include("../src/QTT_utils.jl")
   vertex_map = Dict(vertices(g) .=> [i for i in 1:L])
 
   x = 0.32
-  xis = calculate_xis(x, vertex_map; a, print_x=true)
-  eval_point = calculate_x(xis, vertex_map; a)
+  xis = calculate_xis(x, vertex_map; print_x=true)
+  eval_point = calculate_x(xis, vertex_map)
 
   k = 0.3
   ψ12 = exp_itensornetwork(s, vertex_map; k=k, a=a)
-  exact = exp(k * eval_point)
+  exact = exp(k * eval_point + a)
   for (net_func, k, func) in
       [(exp_itensornetwork, -0.4, exp), (cosh_itensornetwork, 0.3, cosh)]
-    exact += func(k * eval_point)
+    exact += func(k * eval_point + a)
     ψ12 = ψ12 + net_func(s, vertex_map; k=k, a=a)
   end
   ψ12proj = get_bitstring_network(ψ12, s, xis)
