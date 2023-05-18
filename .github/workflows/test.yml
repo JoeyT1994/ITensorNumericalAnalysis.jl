@@ -12,9 +12,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        julia-version: ['1.0','1.8']
+        julia-version: ['1.8']
         julia-arch: [x64,]
-        os: [macOS-latest]
+        os: [macOS-latest, ubuntu-latest]
         exclude:
           - os: macOS-latest
             julia-arch: x86
@@ -25,6 +25,7 @@ jobs:
         with:
           version: ${{ matrix.julia-version }}
           arch: ${{ matrix.julia-arch }}
+      - uses: julia-actions/cache@v1
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         # with:
