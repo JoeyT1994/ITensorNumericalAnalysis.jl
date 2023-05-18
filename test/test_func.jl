@@ -7,7 +7,7 @@ using Graphs
 using ITensorNetworks: delta_network
 using NamedGraphs: add_edges
 
-include("../QTT_utils.jl")
+include("../src/QTT_utils.jl")
 
 funcs = [
   ("cosh", cosh_itn, cosh),
