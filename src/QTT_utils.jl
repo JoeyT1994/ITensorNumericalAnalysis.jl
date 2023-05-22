@@ -22,3 +22,17 @@ function calculate_xis(x::Float64, vertex_map::Dict; print_x=false)
   (print_x) && println("Actual value of x is $x but bitstring rep. is $x_bitstring")
   return xis
 end
+
+"""Build the order L tensor corresponding to fx(x): x ∈ [0,1]."""
+function build_full_rank_tensor(L::Int64, fx::Function)
+  inds = [Index(2, "$i") for i in 1:L]
+  dims = Tuple([2 for i in 1:L])
+  array = zeros(dims)
+  for i in 0:(2^(L) - 1)
+    xis = digits(i; base=2, pad=L)
+    x = sum([xis[i] / (2^i) for i in 1:L])
+    array[Tuple(xis + ones(Int64, (L)))...] = fx(x)
+  end
+
+  return ITensor(array, inds)
+end
