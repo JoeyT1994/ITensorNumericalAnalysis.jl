@@ -62,6 +62,44 @@ function xsq_itensornetwork(
   return ψ
 end
 
+"""Construct the representation of the polynomial f(x) = ∑ᵢⁿ cᵢ xⁿ """
+function polynomial_itensornetwork(s::IndsNetwork, vertex_map::Dict, coeffs::Vector)
+  # currently only working for MPS like tree
+  tree = is_tree(underlying_graph(s))
+  max_degree = Δ(underlying_graph(s))
+  if !(tree) || (tree && max_degree != 2)
+    error("Graph passed to polynomial_itensornetwork is not a MPS: $s")
+  end
+  n = length(coeffs) - 1
+  L = length(vertex_map)
+  ψ = delta_network(s; link_space=n + 1)
+  for v in vertices(ψ)
+    ψ[v] = ITensor(0.0, inds(ψ[v]))
+    xi = 1.0 / 2^vertex_map[v]
+    if (vertex_map[v] in [1]) # left edge
+      # left boundary has onehot(left_link => 1)
+      # so identity on 1, 1/2^i on 2
+      ψ[v][1, 1] = 1
+      ψ[v][2, :] = [xi^(i - 1) for i in 1:(n + 1)]
+    elseif vertex_map[v] in [L] # right edge
+      # right boundary multiplies in the coefficients
+      dummy = Index(n + 1, "dummy")
+      temp_right = ITensor(Float64, inds(ψ[v]), dummy)
+      temp_right[1, :, :] = Matrix{Float64}(I, n + 1, n + 1)
+      temp_right[2, :, :] = [
+        (α ≤ β) ? binomial(β - 1, α - 1) * xi^(β - α) : 0 for α in 1:(n + 1), β in 1:(n + 1)
+      ]
+      ψ[v] = temp_right * ITensor(coeffs, dummy)
+    else # bulk
+      ψ[v][1, :, :] = Matrix{Float64}(I, n + 1, n + 1)
+      ψ[v][2, :, :] = [
+        (α ≤ β) ? binomial(β - 1, α - 1) * xi^(β - α) : 0 for α in 1:(n + 1), β in 1:(n + 1)
+      ]
+    end
+  end
+  return TTN(ψ)
+end
+
 """Construct the product state representation of the exp(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function exp_itensornetwork(
@@ -169,4 +207,5 @@ const tanh_itn = tanh_itensornetwork
 const exp_itn = exp_itensornetwork
 const sin_itn = sin_itensornetwork
 const cos_itn = cos_itensornetwork
+const poly_itn = polynomial_itensornetwork
 const x_itn = x_itensornetwork
