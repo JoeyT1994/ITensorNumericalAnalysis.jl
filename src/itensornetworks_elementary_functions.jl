@@ -164,83 +164,92 @@ function sin_itensornetwork(
   return ψ1 + ψ2
 end
 
+#FUNCTIONS NEEDED TO IMPLEMENT POLYNOMIALS
+
+"""Exponent on x_i for the tensor Q(x_i) on the tree"""
 function f_alpha_beta(α::Vector{Int64}, beta::Int64)
-  if !isempty(α)
-    return max(0, beta - 1 - sum(α) + length(α))
-  else
-    return max(0, beta - 1)
-  end
+  return !isempty(α) ? max(0, beta - 1 - sum(α) + length(α)) : max(0, beta - 1)
 end
 
+"""Coefficient on x_i for the tensor Q(x_i) on the tree"""
 function _coeff(N::Int64, α::Vector{Int64}, beta)
   @assert length(α) == N - 1
-  if f_alpha_beta(α, beta) >= 0
-    if N == 1
-      return 1
-    else
-      coeffs = [binomial(f_alpha_beta(α[1:N-1-i], beta), α[N-i] - 1) for i in 1:N-1]
-      return prod(coeffs)
-    end
+  return if N == 1
+    1
   else
-    return 0
+    prod([binomial(f_alpha_beta(α[1:(N - 1 - i)], beta), α[N - i] - 1) for i in 1:(N - 1)])
   end
 end
 
-function Q_N_tensor(N::Int64, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector{Float64})
+"""Constructor for the tensor that sits on a vertex of degree N"""
+function Q_N_tensor(
+  N::Int64, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector{Float64}
+)
   @assert length(αind) == N - 1
   @assert length(xivals) == dim(siteind)
   n = dim(betaind) - 1
-  @assert all(x -> x== n +1, dim.(αind))
+  @assert all(x -> x == n + 1, dim.(αind))
 
-  link_dims = [n+1 for i in 1:N] 
+  link_dims = [n + 1 for i in 1:N]
   dims = vcat([dim(siteind)], link_dims)
   Q_N_array = zeros(Tuple(dims))
   for (i, xi) in enumerate(xivals)
-    for j = 0:(n+1)^(N) - 1
-      is = digits(j, base = n+1, pad = N) + ones(Int64, (N))
-      f = f_alpha_beta(is[1:(N-1)], last(is))
-      Q_N_array[(i, Tuple(is)...)...] = _coeff(N, is[1:(N-1)], last(is))*(xi^f)
+    for j in 0:((n + 1)^(N) - 1)
+      is = digits(j; base=n + 1, pad=N) + ones(Int64, (N))
+      f = f_alpha_beta(is[1:(N - 1)], last(is))
+      Q_N_array[(i, Tuple(is)...)...] = _coeff(N, is[1:(N - 1)], last(is)) * (xi^f)
     end
   end
-    
-  Q_N = ITensor(Q_N_array, siteind, αind, betaind)
+
+  return ITensor(Q_N_array, siteind, αind, betaind)
 end
 
+"""Given a tree find the edge coming from the vertex v which is directed towards `root_vertex`"""
 function get_edge_toward_root(g::AbstractGraph, v, root_vertex)
-
   @assert is_tree(g)
   @assert v != root_vertex
 
   for vn in neighbors(g, v)
-      if length(a_star(g, vn, root_vertex)) < length(a_star(g, v, root_vertex))
-          return NamedEdge(v=>vn)
-      end
+    if length(a_star(g, vn, root_vertex)) < length(a_star(g, v, root_vertex))
+      return NamedEdge(v => vn)
+    end
   end
 end
 
-function polynomial_itensornetwork(s::IndsNetwork, vertex_map::Dict, coeffs::Vector{Float64})
+"""Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i} on the graph structure specified
+by indsnetwork"""
+function polynomial_itensornetwork(
+  s::IndsNetwork, vertex_map::Dict, coeffs::Vector{Float64}
+)
   n = length(coeffs) - 1
+
+  #First treeify the index network (ignore edges that form loops)
   g = underlying_graph(s)
-  g_d_tree = random_bfs_tree(g, first(vertices(g)))
-  g_tree = NamedGraph(vertices(g_d_tree))
-  g_tree = add_edges(g_tree, edges(g_d_tree))
+  g_tree = undirected_graph(random_bfs_tree(g, first(vertices(g))))
   s_tree = add_edges(rem_edges(s, edges(g)), edges(g_tree))
+
+  #Pick a root
   root_vertex = first(leaf_vertices(s_tree))
-  ψ = delta_network(s_tree; link_space = n + 1)
+  ψ = delta_network(s_tree; link_space=n + 1)
+  #Place the Q_n tensors, making sure we get the right index pointing towards the root
   for v in vertices(ψ)
     siteindex = s_tree[v][]
-    if v!= root_vertex
+    if v != root_vertex
       e = get_edge_toward_root(g_tree, v, root_vertex)
       betaindex = first(commoninds(ψ, e))
       alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
-      N = length(neighbors(g_tree, v))
-      ψ[v] = Q_N_tensor(N, siteindex, alphas, betaindex, [0.0, (1.0/(2^vertex_map[v]))])
+      ψ[v] = Q_N_tensor(
+        length(neighbors(g_tree, v)),
+        siteindex,
+        alphas,
+        betaindex,
+        [0.0, (1.0 / (2^vertex_map[v]))],
+      )
     else
-      betaindex = Index(n+1, "DummyInd")
+      betaindex = Index(n + 1, "DummyInd")
       alphas = setdiff(inds(ψ[v]), Index[siteindex])
-      ψv = Q_N_tensor(2, siteindex, alphas, betaindex, [0.0, (1.0/(2^vertex_map[v]))])
-      C_tensor = ITensor(reverse(coeffs), betaindex)
-      ψ[v] = ψv * C_tensor
+      ψv = Q_N_tensor(2, siteindex, alphas, betaindex, [0.0, (1.0 / (2^vertex_map[v]))])
+      ψ[v] = ψv * ITensor(reverse(coeffs), betaindex)
     end
   end
 
