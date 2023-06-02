@@ -1,3 +1,5 @@
+using NamedGraphs: random_bfs_tree, rem_edges
+
 include("itensornetworksutils.jl")
 
 """Construct the product state representation of the function f(x) = const."""
@@ -162,7 +164,100 @@ function sin_itensornetwork(
   return ψ1 + ψ2
 end
 
+#FUNCTIONS NEEDED TO IMPLEMENT POLYNOMIALS
+
+"""Exponent on x_i for the tensor Q(x_i) on the tree"""
+function f_alpha_beta(α::Vector{Int64}, beta::Int64)
+  return !isempty(α) ? max(0, beta - 1 - sum(α) + length(α)) : max(0, beta - 1)
+end
+
+"""Coefficient on x_i for the tensor Q(x_i) on the tree"""
+function _coeff(N::Int64, α::Vector{Int64}, beta)
+  @assert length(α) == N - 1
+  return if N == 1
+    1
+  else
+    prod([binomial(f_alpha_beta(α[1:(N - 1 - i)], beta), α[N - i] - 1) for i in 1:(N - 1)])
+  end
+end
+
+"""Constructor for the tensor that sits on a vertex of degree N"""
+function Q_N_tensor(
+  N::Int64, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector{Float64}
+)
+  @assert length(αind) == N - 1
+  @assert length(xivals) == dim(siteind)
+  n = dim(betaind) - 1
+  @assert all(x -> x == n + 1, dim.(αind))
+
+  link_dims = [n + 1 for i in 1:N]
+  dims = vcat([dim(siteind)], link_dims)
+  Q_N_array = zeros(Tuple(dims))
+  for (i, xi) in enumerate(xivals)
+    for j in 0:((n + 1)^(N) - 1)
+      is = digits(j; base=n + 1, pad=N) + ones(Int64, (N))
+      f = f_alpha_beta(is[1:(N - 1)], last(is))
+      Q_N_array[(i, Tuple(is)...)...] = _coeff(N, is[1:(N - 1)], last(is)) * (xi^f)
+    end
+  end
+
+  return ITensor(Q_N_array, siteind, αind, betaind)
+end
+
+"""Given a tree find the edge coming from the vertex v which is directed towards `root_vertex`"""
+function get_edge_toward_root(g::AbstractGraph, v, root_vertex)
+  @assert is_tree(g)
+  @assert v != root_vertex
+
+  for vn in neighbors(g, v)
+    if length(a_star(g, vn, root_vertex)) < length(a_star(g, v, root_vertex))
+      return NamedEdge(v => vn)
+    end
+  end
+end
+
+"""Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i} on the graph structure specified
+by indsnetwork"""
+function polynomial_itensornetwork(
+  s::IndsNetwork, vertex_map::Dict, coeffs::Vector{Float64}
+)
+  n = length(coeffs) - 1
+
+  #First treeify the index network (ignore edges that form loops)
+  g = underlying_graph(s)
+  g_tree = undirected_graph(random_bfs_tree(g, first(vertices(g))))
+  s_tree = add_edges(rem_edges(s, edges(g)), edges(g_tree))
+
+  #Pick a root
+  root_vertex = first(leaf_vertices(s_tree))
+  ψ = delta_network(s_tree; link_space=n + 1)
+  #Place the Q_n tensors, making sure we get the right index pointing towards the root
+  for v in vertices(ψ)
+    siteindex = s_tree[v][]
+    if v != root_vertex
+      e = get_edge_toward_root(g_tree, v, root_vertex)
+      betaindex = first(commoninds(ψ, e))
+      alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
+      ψ[v] = Q_N_tensor(
+        length(neighbors(g_tree, v)),
+        siteindex,
+        alphas,
+        betaindex,
+        [0.0, (1.0 / (2^vertex_map[v]))],
+      )
+    else
+      betaindex = Index(n + 1, "DummyInd")
+      alphas = setdiff(inds(ψ[v]), Index[siteindex])
+      ψv = Q_N_tensor(2, siteindex, alphas, betaindex, [0.0, (1.0 / (2^vertex_map[v]))])
+      ψ[v] = ψv * ITensor(reverse(coeffs), betaindex)
+    end
+  end
+
+  return ψ
+end
+
 const const_itn = const_itensornetwork
+const poly_itn = polynomial_itensornetwork
 const cosh_itn = cosh_itensornetwork
 const sinh_itn = sinh_itensornetwork
 const tanh_itn = tanh_itensornetwork
