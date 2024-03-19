@@ -1,39 +1,21 @@
+#Imports
+using ITensors
+using Graphs
+using NamedGraphs
 using ITensorNetworks
+using EllipsisNotation
+using Dictionaries
+using DataGraphs
 
-include("itensorutils.jl")
+using ITensorNetworks: delta_network, data_graph, data_graph_type
+using NamedGraphs: add_edges, random_bfs_tree, rem_edges
 
-"""Add two itensornetworks together by growing the bond dimension. The network structures need to be identical (same edges, vertex names) and the local
-tensors must have the same site indices but can have different link indices"""
-function add_itensornetworks(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
-  @assert issetequal(vertices(tn1), vertices(tn2))
+using SplitApplyCombine
 
-  tn_1p2 = copy(tn1)
-  for v in vertices(tn1)
-    @assert issetequal(siteinds(tn1, v), siteinds(tn2, v))
-    tn1_linds = setdiff(inds(tn1[v]), siteinds(tn1, v))
-    tn2_linds = setdiff(inds(tn2[v]), siteinds(tn2, v))
+using Random
+using Distributions
 
-    @assert length(tn1_linds) == length(tn2_linds)
-
-    tn_1p2[v] = add_itensors(tn1[v], tn2[v])
-  end
-
-  tn_1p2 = add_edges(tn_1p2, edges(tn1))
-
-  for e in edges(tn_1p2)
-    tsrc, tdst = tn_1p2[src(e)], tn_1p2[dst(e)]
-    tsrc_link_index = inds(tsrc)[findall(i -> tags(i) ∈ tags.(inds(tdst)), inds(tsrc))]
-    tdst_link_index = inds(tdst)[findall(i -> tags(i) ∈ tags.(inds(tsrc)), inds(tdst))]
-
-    replaceinds!(tn_1p2[dst(e)], tdst_link_index, tsrc_link_index)
-  end
-
-  return tn_1p2
-end
-
-function Base.:+(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
-  return add_itensornetworks(tn1, tn2)
-end
+include("itensornetworks_elementary_functions.jl")
 
 """Given a bitstring collapse the relevant tensors of ψ down to get the TN which represents ψ[bitstring]"""
 function get_bitstring_network(ψ::AbstractITensorNetwork, s::IndsNetwork, bitstring::Dict)
@@ -44,4 +26,18 @@ function get_bitstring_network(ψ::AbstractITensorNetwork, s::IndsNetwork, bitst
   end
 
   return ψ
+end
+
+"""Build the order L tensor corresponding to fx(x): x ∈ [0,1]."""
+function build_full_rank_tensor(L::Int64, fx::Function)
+  inds = [Index(2, "$i") for i in 1:L]
+  dims = Tuple([2 for i in 1:L])
+  array = zeros(dims)
+  for i in 0:(2^(L) - 1)
+    xis = digits(i; base=2, pad=L)
+    x = sum([xis[i] / (2^i) for i in 1:L])
+    array[Tuple(xis + ones(Int64, (L)))...] = fx(x)
+  end
+
+  return ITensor(array, inds)
 end
