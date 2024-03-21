@@ -55,10 +55,10 @@ function cosh_itensornetwork(
   return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
 end
 
-function cosh_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
-  return cosh_itensornetwork(s::IndsNetwork, bit_map, 1; kwargs...)
-end
-
+#function cosh_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
+#  return cosh_itensornetwork(s::IndsNetwork, bit_map, 1; kwargs...)
+#end
+#
 """Construct the bond dim 2 representation of the sinh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function sinh_itensornetwork(

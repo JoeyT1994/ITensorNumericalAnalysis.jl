@@ -1,6 +1,11 @@
 using Test
+using TensorNetworkFunctionals
+using ITensors
+using ITensorNetworks
+using SplitApplyCombine
+using Dictionaries
 
-include("../src/itensornetworksutils.jl")
+#include("../src/itensornetworksutils.jl")
 
 @testset "test single dimensional bit map" begin
   L = 4
