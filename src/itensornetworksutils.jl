@@ -17,17 +17,6 @@ using Distributions
 
 include("itensornetworks_elementary_functions.jl")
 
-"""Given a bitstring collapse the relevant tensors of ψ down to get the TN which represents ψ[bitstring]"""
-function get_bitstring_network(ψ::AbstractITensorNetwork, s::IndsNetwork, bitstring::Dict)
-  ψ = copy(ψ)
-  for v in keys(bitstring)
-    proj = ITensor([i != bitstring[v] ? 0 : 1 for i in 0:(dim(s[v]) - 1)], s[v])
-    ψ[v] = ψ[v] * proj
-  end
-
-  return ψ
-end
-
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1]."""
 function build_full_rank_tensor(L::Int64, fx::Function)
   inds = [Index(2, "$i") for i in 1:L]
@@ -40,4 +29,29 @@ function build_full_rank_tensor(L::Int64, fx::Function)
   end
 
   return ITensor(array, inds)
+end
+
+function c_tensor(phys_ind::Index, virt_inds::Vector)
+  inds = vcat(phys_ind, virt_inds)
+  @assert allequal(ITensors.dim.(virt_inds))
+  #Build tensor to be delta on inds and independent of phys_ind
+  T = ITensor(0.0, inds...)
+  for i in 1:ITensors.dim(phys_ind)
+    for j in 1:ITensors.dim(first(virt_inds))
+      ind_array = [v => j for v in virt_inds]
+      T[phys_ind => i, ind_array...] = 1.0
+    end
+  end
+
+  return T
+end
+
+function copy_tensor_network(s::IndsNetwork, linkdim::Int64)
+  tn = randomITensorNetwork(s; link_space = linkdim)
+  for v in vertices(tn)
+    virt_inds = setdiff(inds(tn[v]), Index[only(s[v])])
+    tn[v] = c_tensor(only(s[v]), virt_inds)
+  end
+
+  return tn
 end

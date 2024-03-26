@@ -18,7 +18,7 @@ include("../src/itensornetworksutils.jl")
   @test calculate_x(bit_map, vertex_to_bit_value_map) == x
 end
 
-@testset "test muli dimensional bit map" begin
+@testset "test multi dimensional bit map" begin
   L = 50
   g = named_grid((L, L))
   vertex_to_dimension_map = Dictionary(vertices(g), [v[1] for v in vertices(g)])

@@ -10,10 +10,10 @@ default_dimension() = 1
 function const_itensornetwork(
   s::IndsNetwork, bit_map; c::Union{Float64,ComplexF64}=default_c_value()
 )
-  ψ = delta_network(s; link_space=1)
+  ψ = copy_tensor_network(s, 1)
   inv_L = Float64(1.0 / nv(s))
   for v in vertices(ψ)
-    ψ[v] = ITensor([c^inv_L, c^inv_L], inds(ψ[v]))
+    ψ[v] *= c^inv_L
   end
 
   return ITensorNetworkFunction(ψ, bit_map)
@@ -53,10 +53,6 @@ function cosh_itensornetwork(
   ψ2[first(vertices(ψ1))] *= 0.5
 
   return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
-end
-
-function cosh_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
-  return cosh_itensornetwork(s::IndsNetwork, bit_map, 1; kwargs...)
 end
 
 """Construct the bond dim 2 representation of the sinh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -201,8 +197,10 @@ function polynomial_itensornetwork(
   #Pick a root
 
   #Need the root vertex to be in the dimension vertices at the moment, should be a way around
-  root_vertex = first(filter(v -> v ∈ dimension_vertices, leaf_vertices(s_tree)))
-  ψ = delta_network(s_tree; link_space=n + 1)
+  root_vertices_dim = filter(v -> v ∈ dimension_vertices, leaf_vertices(s_tree))
+  @assert !isempty(root_vertices_dim)
+  root_vertex = first(root_vertices_dim)
+  ψ = copy_tensor_network(s_tree, n + 1)
   #Place the Q_n tensors, making sure we get the right index pointing towards the root
   for v in vertices(ψ)
     siteindex = s_tree[v][]
