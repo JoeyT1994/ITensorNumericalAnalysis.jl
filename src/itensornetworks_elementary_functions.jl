@@ -1,5 +1,3 @@
-include("itensornetworkfunction.jl")
-
 default_c_value() = 1.0
 default_a_value() = 0.0
 default_k_value() = 1.0
@@ -28,13 +26,13 @@ function exp_itensornetwork(
   a::Union{Float64,ComplexF64}=default_a_value(),
   dimension::Int64=default_dimension(),
 )
-  ψ = copy(itensornetwork(const_itensornetwork(s, bit_map)))
+  ψ = const_itensornetwork(s, bit_map)
   Lx = length(vertices(bit_map, dimension))
   for v in vertices(bit_map, dimension)
     ψ[v] = ITensor([exp(a / Lx), exp(a / Lx) * exp(k / (2^bit(bit_map, v)))], inds(ψ[v]))
   end
 
-  return ITensorNetworkFunction(ψ, bit_map)
+  return ψ
 end
 
 """Construct the bond dim 2 representation of the cosh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -52,7 +50,7 @@ function cosh_itensornetwork(
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= 0.5
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 """Construct the bond dim 2 representation of the sinh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -70,7 +68,7 @@ function sinh_itensornetwork(
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= -0.5
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 """Construct the bond dim n representation of the tanh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -90,7 +88,7 @@ function tanh_itensornetwork(
     ψ = ψ + ψt
   end
 
-  return ITensorNetworkFunction(ψ, bit_map)
+  return ψ
 end
 
 """Construct the bond dim 2 representation of the cos(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -108,7 +106,7 @@ function cos_itensornetwork(
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= 0.5
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 """Construct the bond dim 2 representation of the sin(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -126,7 +124,7 @@ function sin_itensornetwork(
   ψ1[first(vertices(ψ1))] *= -0.5 * im
   ψ2[first(vertices(ψ1))] *= 0.5 * im
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 # #FUNCTIONS NEEDED TO IMPLEMENT POLYNOMIALS

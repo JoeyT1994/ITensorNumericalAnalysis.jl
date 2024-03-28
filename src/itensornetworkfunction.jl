@@ -1,5 +1,3 @@
-include("bitmaps.jl")
-
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},BM<:BitMap} <:
        AbstractITensorNetwork{V}
   itensornetwork::TN
