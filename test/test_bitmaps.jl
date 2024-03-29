@@ -1,11 +1,9 @@
 using Test
 using TensorNetworkFunctionals
-using ITensors
-using ITensorNetworks
-using SplitApplyCombine
-using Dictionaries
 
-#include("../src/itensornetworksutils.jl")
+using NamedGraphs: named_grid, vertices
+using ITensors: siteinds
+using Dictionaries: Dictionary
 
 @testset "test single dimensional bit map" begin
   L = 4

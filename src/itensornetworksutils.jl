@@ -36,16 +36,3 @@ function copy_tensor_network(s::IndsNetwork, linkdim::Int64)
 
   return tn
 end
-
-function operate(
-  operator::AbstractITensorNetwork,
-  ψ::ITensorNetworkFunction;
-  truncate_kwargs=(;),
-  kwargs...,
-)
-  ψ_tn = TTN(itensornetwork(ψ))
-  ψO_tn = noprime(ITensors.contract(operator, ψ_tn; init=prime(copy(ψ_tn)), kwargs...))
-  ψO_tn = truncate(ψO_tn; truncate_kwargs...)
-
-  return ITensorNetworkFunction(ITensorNetwork(ψO_tn), bit_map(ψ))
-end

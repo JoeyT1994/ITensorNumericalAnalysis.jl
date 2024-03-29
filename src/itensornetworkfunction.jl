@@ -64,6 +64,10 @@ function calculate_fxyz(
   return ITensors.contract(fitn_xyz)[]
 end
 
+function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector{Float64})
+  return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)])
+end
+
 function calculate_fx(fitn::ITensorNetworkFunction, x::Float64)
   @assert dimension(fitn) == 1
   return calculate_fxyz(fitn, [x], [1])

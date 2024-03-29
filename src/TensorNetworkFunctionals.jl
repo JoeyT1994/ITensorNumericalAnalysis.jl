@@ -11,11 +11,11 @@ using SplitApplyCombine: group
 using ITensorNetworks: delta_network
 using NamedGraphs: add_edges, random_bfs_tree, rem_edges
 
+include("itensornetworksutils.jl")
 include("bitmaps.jl")
 include("itensornetworkfunction.jl")
 include("itensornetworks_elementary_functions.jl")
 include("itensornetworks_elementary_operators.jl")
-include("itensornetworksutils.jl")
 
 export ITensorNetworkFunction
 export BitMap,
@@ -29,10 +29,10 @@ export const_itensornetwork,
   sin_itensornetwork,
   get_edge_toward_root,
   polynomial_itensornetwork,
-  Laplacian_operator,
+  laplacian_operator,
   derivative_operator
 export const_itn, poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn
 export calculate_fx, calculate_fxyz
-export operate
+export operate, apply_gx_operator, multiply
 
 end

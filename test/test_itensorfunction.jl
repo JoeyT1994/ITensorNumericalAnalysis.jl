@@ -1,11 +1,14 @@
 using Test
 using TensorNetworkFunctionals
-using ITensorNetworks
-using Random
-using Distributions
-using Graphs
 
-#include("../src/itensornetworksutils.jl")
+using Graphs: SimpleGraph, uniform_tree
+using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
+using ITensors: siteinds
+using ITensorNetworks: randomITensorNetwork
+using Dictionaries: Dictionary
+using SplitApplyCombine: group
+using Random: seed!
+using Distributions: Uniform
 
 @testset "test constructor from ITensorNetwork" begin
   L = 10
@@ -90,8 +93,8 @@ end
 
     ###Generate a series of random polynomials on random graphs. Evaluate them at random x values"""
     for deg in degrees
-      Random.seed!(1234 * deg)
-      g = ITensorNetworks.NamedGraph(Graphs.SimpleGraph(uniform_tree(L)))
+      seed!(1234 * deg)
+      g = NamedGraph(SimpleGraph(uniform_tree(L)))
       g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
       s = siteinds("S=1/2", g)
 
