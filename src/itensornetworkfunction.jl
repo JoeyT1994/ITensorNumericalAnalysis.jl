@@ -40,6 +40,7 @@ for f in [
   :calculate_bit_values,
   :calculate_x,
   :calculate_xyz,
+  :base,
 ]
   @eval begin
     function $f(fitn::ITensorNetworkFunction, args...; kwargs...)

@@ -1,6 +1,13 @@
 using Graphs: nv, vertices, edges, neighbors
 using NamedGraphs:
-  random_bfs_tree, rem_edges, add_edges, undirected_graph, NamedEdge, AbstractGraph, leaf_vertices, a_star
+  random_bfs_tree,
+  rem_edges,
+  add_edges,
+  undirected_graph,
+  NamedEdge,
+  AbstractGraph,
+  leaf_vertices,
+  a_star
 using ITensors: dim, commoninds
 using ITensorNetworks: IndsNetwork, underlying_graph
 
@@ -35,7 +42,12 @@ function exp_itensornetwork(
   ψ = const_itensornetwork(s, bit_map)
   Lx = length(vertices(bit_map, dimension))
   for v in vertices(bit_map, dimension)
-    ψ[v] = ITensor([exp(a / Lx), exp(a / Lx) * exp(k / (2^bit(bit_map, v)))], inds(ψ[v]))
+    ψ[v] = ITensor(
+      [
+        exp(a / Lx) * exp(k * bit_value_to_scalar(bit_map, v, i)) for i in 0:(dim(s[v]) - 1)
+      ],
+      inds(ψ[v]),
+    )
   end
 
   return ψ
@@ -217,12 +229,18 @@ function polynomial_itensornetwork(
         siteindex,
         alphas,
         betaindex,
-        [0.0, (1.0 / (2^bit(bit_map, v)))],
+        [bit_value_to_scalar(bit_map, v, i) for i in 0:(dim(siteindex) - 1)],
       )
     elseif v == root_vertex
       betaindex = Index(n + 1, "DummyInd")
       alphas = setdiff(inds(ψ[v]), Index[siteindex])
-      ψv = Q_N_tensor(2, siteindex, alphas, betaindex, [0.0, (1.0 / (2^bit(bit_map, v)))])
+      ψv = Q_N_tensor(
+        2,
+        siteindex,
+        alphas,
+        betaindex,
+        [bit_value_to_scalar(bit_map, v, i) for i in 0:(dim(siteindex) - 1)],
+      )
       ψ[v] = ψv * ITensor(reverse(coeffs), betaindex)
     end
   end

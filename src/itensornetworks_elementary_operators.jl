@@ -74,7 +74,7 @@ function stencil(
   stencil_op = truncate(stencil_op; truncate_kwargs...)
 
   for v in vertices(bit_map, dimension)
-    stencil_op[v] = (2^delta_power) * stencil_op[v]
+    stencil_op[v] = (base(bit_map)^delta_power) * stencil_op[v]
   end
 
   return truncate(stencil_op; truncate_kwargs...)

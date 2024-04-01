@@ -22,6 +22,7 @@ using Distributions: Uniform
 
   @test vertices(fψ, 1) == vertices(fψ)
   @test dimension(fψ) == 1
+  @test base(fψ) == 2
 
   dimension_vertices = collect(values(group(v -> first(v) < Int64(0.5 * L), vertices(ψ))))
   fψ = ITensorNetworkFunction(ψ, dimension_vertices)
@@ -54,7 +55,7 @@ end
     ("sin", sin_itn, sin),
   ]
   for (name, net_func, func) in funcs
-    @testset "test $name" begin
+    @testset "test $name in binary" begin
       Lx, Ly = 2, 3
       g = named_comb_tree((2, 3))
       a = 1.2
@@ -65,6 +66,32 @@ end
 
       x = 0.625
       ψ_fx = net_func(s, bit_map; k, a)
+      fx_x = calculate_fx(ψ_fx, x)
+      @test func(k * x + a) ≈ fx_x
+    end
+  end
+
+  funcs = [
+    ("cosh", cosh_itn, cosh),
+    ("sinh", sinh_itn, sinh),
+    ("exp", exp_itn, exp),
+    ("cos", cos_itn, cos),
+    ("sin", sin_itn, sin),
+  ]
+  for (name, net_func, func) in funcs
+    @testset "test $name in trinary" begin
+      Lx, Ly = 2, 3
+      g = named_comb_tree((2, 3))
+      a = 1.2
+      k = 0.125
+      b = 3
+      s = siteinds("S=1", g)
+
+      bit_map = BitMap(g; base=b)
+
+      x = (5.0 / 9.0)
+      ψ_fx = net_func(s, bit_map; k, a)
+      @test base(ψ_fx) == 3
       fx_x = calculate_fx(ψ_fx, x)
       @test func(k * x + a) ≈ fx_x
     end

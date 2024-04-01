@@ -8,7 +8,13 @@ include("itensornetworks_elementary_operators.jl")
 
 export ITensorNetworkFunction
 export BitMap,
-  default_dimension_map, vertex, calculate_xyz, calculate_x, calculate_bit_values, dimension
+  default_dimension_map,
+  vertex,
+  calculate_xyz,
+  calculate_x,
+  calculate_bit_values,
+  dimension,
+  base
 export const_itensornetwork,
   exp_itensornetwork,
   cosh_itensornetwork,
