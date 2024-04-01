@@ -1,7 +1,8 @@
+using Graphs: nv, vertices, edges, neighbors
 using NamedGraphs:
-  vertices, random_bfs_tree, rem_edges, add_edges, undirected_graph, NamedEdge
+  random_bfs_tree, rem_edges, add_edges, undirected_graph, NamedEdge, AbstractGraph, leaf_vertices, a_star
 using ITensors: dim, commoninds
-using ITensorNetworks: IndsNetwork
+using ITensorNetworks: IndsNetwork, underlying_graph
 
 default_c_value() = 1.0
 default_a_value() = 0.0

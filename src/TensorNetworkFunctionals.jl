@@ -1,8 +1,5 @@
 module TensorNetworkFunctionals
 
-using Graphs
-using ITensorNetworks
-
 include("itensornetworksutils.jl")
 include("bitmaps.jl")
 include("itensornetworkfunction.jl")

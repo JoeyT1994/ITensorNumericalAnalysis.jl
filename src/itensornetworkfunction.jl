@@ -1,5 +1,6 @@
-using ITensorNetworks: data_graph_type, AbstractITensorNetwork
+using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph
 using ITensors: ITensor, dim, contract, siteinds
+using Graphs: Graphs
 
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},BM<:BitMap} <:
        AbstractITensorNetwork{V}

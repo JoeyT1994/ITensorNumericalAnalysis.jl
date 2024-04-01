@@ -1,4 +1,5 @@
 using Dictionaries: Dictionary, set!
+using Graphs: Graphs
 
 struct BitMap{VB,VD}
   vertex_bit::VB

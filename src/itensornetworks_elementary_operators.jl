@@ -12,7 +12,7 @@ using ITensors:
   prime,
   noprime!,
   contract
-using ITensorNetworks: IndsNetwork, TTN, TreeTensorNetwork, combine_linkinds
+using ITensorNetworks: IndsNetwork, ITensorNetwork, TTN, TreeTensorNetwork, combine_linkinds
 
 function plus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
   @assert is_tree(s)
