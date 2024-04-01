@@ -1,3 +1,5 @@
+using Dictionaries: Dictionary, set!
+
 struct BitMap{VB,VD}
   vertex_bit::VB
   vertex_dimension::VD

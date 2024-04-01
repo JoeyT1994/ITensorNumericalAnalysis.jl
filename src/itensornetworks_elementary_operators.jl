@@ -1,3 +1,19 @@
+using Graphs: is_tree
+using NamedGraphs: undirected_graph
+using ITensors:
+  sim,
+  OpSum,
+  siteinds,
+  noprime,
+  truncate,
+  replaceinds!,
+  delta,
+  add!,
+  prime,
+  noprime!,
+  contract
+using ITensorNetworks: IndsNetwork, TTN, TreeTensorNetwork, combine_linkinds
+
 function plus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
   @assert is_tree(s)
   ttn_op = OpSum()
@@ -113,7 +129,7 @@ function operate(
   operator::TreeTensorNetwork, ψ::ITensorNetworkFunction; truncate_kwargs=(;), kwargs...
 )
   ψ_tn = TTN(itensornetwork(ψ))
-  ψO_tn = noprime(ITensors.contract(operator, ψ_tn; init=prime(copy(ψ_tn)), kwargs...))
+  ψO_tn = noprime(contract(operator, ψ_tn; init=prime(copy(ψ_tn)), kwargs...))
   ψO_tn = truncate(ψO_tn; truncate_kwargs...)
 
   return ITensorNetworkFunction(ITensorNetwork(ψO_tn), bit_map(ψ))

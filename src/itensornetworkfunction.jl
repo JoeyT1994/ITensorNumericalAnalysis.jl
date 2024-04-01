@@ -1,3 +1,6 @@
+using ITensorNetworks: data_graph_type, AbstractITensorNetwork
+using ITensors: ITensor, dim, contract, siteinds
+
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},BM<:BitMap} <:
        AbstractITensorNetwork{V}
   itensornetwork::TN
@@ -49,7 +52,7 @@ function project(fitn::ITensorNetworkFunction, vertex_to_bit_value_map)
   s = siteinds(fitn)
   for v in keys(vertex_to_bit_value_map)
     proj = ITensor(
-      [i != vertex_to_bit_value_map[v] ? 0 : 1 for i in 0:(ITensors.dim(s[v]) - 1)], s[v]
+      [i != vertex_to_bit_value_map[v] ? 0 : 1 for i in 0:(dim(s[v]) - 1)], s[v]
     )
     fitn[v] = fitn[v] * proj
   end
@@ -61,7 +64,7 @@ function calculate_fxyz(
 )
   vertex_to_bit_value_map = calculate_bit_values(fitn, xs, dimensions)
   fitn_xyz = project(fitn, vertex_to_bit_value_map)
-  return ITensors.contract(fitn_xyz)[]
+  return contract(fitn_xyz)[]
 end
 
 function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector{Float64})

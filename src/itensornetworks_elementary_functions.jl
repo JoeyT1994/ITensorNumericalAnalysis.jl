@@ -1,3 +1,8 @@
+using NamedGraphs:
+  vertices, random_bfs_tree, rem_edges, add_edges, undirected_graph, NamedEdge
+using ITensors: dim, commoninds
+using ITensorNetworks: IndsNetwork
+
 default_c_value() = 1.0
 default_a_value() = 0.0
 default_k_value() = 1.0
@@ -8,7 +13,7 @@ default_dimension() = 1
 function const_itensornetwork(
   s::IndsNetwork, bit_map; c::Union{Float64,ComplexF64}=default_c_value()
 )
-  ψ = copy_tensor_network(s, 1)
+  ψ = copy_tensor_network(s)
   inv_L = Float64(1.0 / nv(s))
   for v in vertices(ψ)
     ψ[v] *= c^inv_L
@@ -148,12 +153,12 @@ function Q_N_tensor(
   N::Int64, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector{Float64}
 )
   @assert length(αind) == N - 1
-  @assert length(xivals) == ITensors.dim(siteind)
-  n = ITensors.dim(betaind) - 1
-  @assert all(x -> x == n + 1, ITensors.dim.(αind))
+  @assert length(xivals) == dim(siteind)
+  n = dim(betaind) - 1
+  @assert all(x -> x == n + 1, dim.(αind))
 
   link_dims = [n + 1 for i in 1:N]
-  dims = vcat([ITensors.dim(siteind)], link_dims)
+  dims = vcat([dim(siteind)], link_dims)
   Q_N_array = zeros(Tuple(dims))
   for (i, xi) in enumerate(xivals)
     for j in 0:((n + 1)^(N) - 1)
@@ -198,11 +203,11 @@ function polynomial_itensornetwork(
   root_vertices_dim = filter(v -> v ∈ dimension_vertices, leaf_vertices(s_tree))
   @assert !isempty(root_vertices_dim)
   root_vertex = first(root_vertices_dim)
-  ψ = copy_tensor_network(s_tree, n + 1)
+  ψ = copy_tensor_network(s_tree; linkdim=n + 1)
   #Place the Q_n tensors, making sure we get the right index pointing towards the root
-  for v in vertices(ψ)
+  for v in dimension_vertices
     siteindex = s_tree[v][]
-    if v != root_vertex && v ∈ dimension_vertices
+    if v != root_vertex
       e = get_edge_toward_root(g_tree, v, root_vertex)
       betaindex = first(commoninds(ψ, e))
       alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
@@ -213,7 +218,7 @@ function polynomial_itensornetwork(
         betaindex,
         [0.0, (1.0 / (2^bit(bit_map, v)))],
       )
-    elseif v == root_vertex && v ∈ dimension_vertices
+    elseif v == root_vertex
       betaindex = Index(n + 1, "DummyInd")
       alphas = setdiff(inds(ψ[v]), Index[siteindex])
       ψv = Q_N_tensor(2, siteindex, alphas, betaindex, [0.0, (1.0 / (2^bit(bit_map, v)))])

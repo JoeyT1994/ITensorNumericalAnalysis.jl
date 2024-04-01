@@ -1,15 +1,7 @@
 module TensorNetworkFunctionals
 
-using ITensors
-using ITensorNetworks
-using NamedGraphs
-using EllipsisNotation
-using Dictionaries
 using Graphs
-
-using SplitApplyCombine: group
-using ITensorNetworks: delta_network
-using NamedGraphs: add_edges, random_bfs_tree, rem_edges
+using ITensorNetworks
 
 include("itensornetworksutils.jl")
 include("bitmaps.jl")
