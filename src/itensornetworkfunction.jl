@@ -1,5 +1,5 @@
 using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph
-using ITensors: ITensor, dim, contract, siteinds
+using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},BM<:BitMap} <:
@@ -53,10 +53,7 @@ function project(fitn::ITensorNetworkFunction, vertex_to_bit_value_map)
   fitn = copy(fitn)
   s = siteinds(fitn)
   for v in keys(vertex_to_bit_value_map)
-    proj = ITensor(
-      [i != vertex_to_bit_value_map[v] ? 0 : 1 for i in 0:(dim(s[v]) - 1)], s[v]
-    )
-    fitn[v] = fitn[v] * proj
+    fitn[v] = fitn[v] * onehot(only(s[v]) => vertex_to_bit_value_map[v] + 1)
   end
   return fitn
 end
