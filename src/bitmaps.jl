@@ -125,3 +125,11 @@ end
 function calculate_bit_values(bm::BitMap, x::Float64; kwargs...)
   return calculate_bit_values(bm, [x], [1]; kwargs...)
 end
+
+function grid_points(bm::BitMap, N::Int64, dimension::Int64)
+  vals = Vector{Float64}
+  L = length(vertices(bm, dimension))
+  a = round(base(bm)^L / N)
+  grid_points = [i * (a / base(bm)^L) for i in 0:(N + 1)]
+  return filter(x -> x <= 1, grid_points)
+end

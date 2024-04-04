@@ -14,7 +14,9 @@ using ITensors:
   contract
 using ITensorNetworks: IndsNetwork, ITensorNetwork, TTN, TreeTensorNetwork, combine_linkinds
 
-function plus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
+function plus_shift_ttn(
+  s::IndsNetwork, bit_map; dimension=default_dimension(), boundary_value=[0.0]
+)
   @assert is_tree(s)
   ttn_op = OpSum()
   dim_vertices = vertices(bit_map, dimension)
@@ -63,6 +65,7 @@ function stencil(
   shifts::Vector{Float64},
   delta_power::Int64;
   dimension=default_dimension(),
+  scale=true,
   truncate_kwargs...,
 )
   @assert length(shifts) == 3
@@ -73,24 +76,38 @@ function stencil(
   stencil_op = plus_shift + minus_shift + no_shift
   stencil_op = truncate(stencil_op; truncate_kwargs...)
 
-  for v in vertices(bit_map, dimension)
-    stencil_op[v] = (base(bit_map)^delta_power) * stencil_op[v]
+  if scale
+    for v in vertices(bit_map, dimension)
+      stencil_op[v] = (base(bit_map)^delta_power) * stencil_op[v]
+    end
   end
 
-  return truncate(stencil_op; truncate_kwargs...)
+  return stencil_op
 end
 
-function laplacian_operator(s::IndsNetwork, bit_map; kwargs...)
-  return stencil(s, bit_map, [1.0, -2.0, 1.0], 2; kwargs...)
+function laplacian_operator(
+  s::IndsNetwork, bit_map; dimensions=[i for i in 1:dimension(bit_map)], kwargs...
+)
+  remaining_dims = copy(dimensions)
+  ∇ = stencil(s, bit_map, [1.0, -2.0, 1.0], 2; dimension=first(remaining_dims), kwargs...)
+  popfirst!(remaining_dims)
+  for rd in remaining_dims
+    ∇ += stencil(s, bit_map, [1.0, -2.0, 1.0], 2; dimension=rd, kwargs...)
+  end
+  return ∇
 end
 
 function derivative_operator(s::IndsNetwork, bit_map; kwargs...)
   return 0.5 * stencil(s, bit_map, [1.0, 0.0, -1.0], 1; kwargs...)
 end
 
-function apply_gx_operator(gx::ITensorNetworkFunction)
-  gx = copy(gx)
-  operator = itensornetwork(gx)
+function identity_operator(s::IndsNetwork, bit_map; kwargs...)
+  return stencil(s, bit_map, [0.0, 1.0, 0.0], 0; kwargs...)
+end
+
+function operator(fx::ITensorNetworkFunction)
+  fx = copy(fx)
+  operator = itensornetwork(fx)
   s = siteinds(operator)
   for v in vertices(operator)
     sind = s[v]

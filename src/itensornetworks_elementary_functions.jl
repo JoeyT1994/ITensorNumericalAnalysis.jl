@@ -248,6 +248,10 @@ function polynomial_itensornetwork(
   return ITensorNetworkFunction(ψ, bit_map)
 end
 
+function random_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
+  return ITensorNetworkFunction(randomITensorNetwork(s; kwargs...), bit_map)
+end
+
 const const_itn = const_itensornetwork
 const poly_itn = polynomial_itensornetwork
 const cosh_itn = cosh_itensornetwork
@@ -256,3 +260,4 @@ const tanh_itn = tanh_itensornetwork
 const exp_itn = exp_itensornetwork
 const sin_itn = sin_itensornetwork
 const cos_itn = cos_itensornetwork
+const rand_itn = random_itensornetwork

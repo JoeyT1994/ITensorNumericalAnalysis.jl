@@ -6,7 +6,7 @@ include("itensornetworkfunction.jl")
 include("itensornetworks_elementary_functions.jl")
 include("itensornetworks_elementary_operators.jl")
 
-export ITensorNetworkFunction
+export ITensorNetworkFunction, itensornetwork
 export BitMap,
   default_dimension_map,
   vertex,
@@ -14,7 +14,8 @@ export BitMap,
   calculate_x,
   calculate_bit_values,
   dimension,
-  base
+  base,
+  grid_points
 export const_itensornetwork,
   exp_itensornetwork,
   cosh_itensornetwork,
@@ -24,10 +25,13 @@ export const_itensornetwork,
   sin_itensornetwork,
   get_edge_toward_root,
   polynomial_itensornetwork,
+  random_itensornetworkfunction,
   laplacian_operator,
-  derivative_operator
-export const_itn, poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn
+  derivative_operator,
+  identity_operator
+export const_itn,
+  poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
 export calculate_fx, calculate_fxyz
-export operate, apply_gx_operator, multiply
+export operate, operator, multiply
 
 end

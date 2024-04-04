@@ -2,13 +2,13 @@ using ITensors: Index, dim, inds
 using ITensorNetworks: randomITensorNetwork, IndsNetwork
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1]."""
-function build_full_rank_tensor(L::Int64, fx::Function)
-  inds = [Index(2, "$i") for i in 1:L]
-  dims = Tuple([2 for i in 1:L])
+function build_full_rank_tensor(L::Int64, fx::Function; base::Int64=2)
+  inds = [Index(base, "$i") for i in 1:L]
+  dims = Tuple([base for i in 1:L])
   array = zeros(dims)
-  for i in 0:(2^(L) - 1)
-    xis = digits(i; base=2, pad=L)
-    x = sum([xis[i] / (2^i) for i in 1:L])
+  for i in 0:(base^(L) - 1)
+    xis = digits(i; base, pad=L)
+    x = sum([xis[i] / (base^i) for i in 1:L])
     array[Tuple(xis + ones(Int64, (L)))...] = fx(x)
   end
 
