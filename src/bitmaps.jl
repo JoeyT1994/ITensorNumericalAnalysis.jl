@@ -1,37 +1,52 @@
+using Dictionaries: Dictionary, set!
+using Graphs: Graphs
+
 struct BitMap{VB,VD}
-  vertex_bit::VB
+  vertex_digit::VB
   vertex_dimension::VD
+  base::Int64
 end
 
-vertex_bit(bm::BitMap) = bm.vertex_bit
+default_base() = 2
+
+vertex_digit(bm::BitMap) = bm.vertex_digit
 vertex_dimension(bm::BitMap) = bm.vertex_dimension
+base(bm::BitMap) = bm.base
 
 default_bit_map(vertices::Vector) = Dictionary(vertices, [i for i in 1:length(vertices)])
 function default_dimension_map(vertices::Vector)
   return Dictionary(vertices, [1 for i in 1:length(vertices)])
 end
 
-BitMap(g) = BitMap(default_bit_map(vertices(g)), default_dimension_map(vertices(g)))
-function BitMap(dimension_vertices::Vector{Vector{V}}) where {V}
-  vertex_bit = Dictionary()
+function BitMap(g; base::Int64=default_base())
+  return BitMap(default_bit_map(vertices(g)), default_dimension_map(vertices(g)), base)
+end
+function BitMap(vertex_digit, vertex_dimension; base::Int64=default_base())
+  return BitMap(vertex_digit, vertex_dimension, base)
+end
+function BitMap(dimension_vertices::Vector{Vector{V}}; base::Int64=default_base()) where {V}
+  vertex_digit = Dictionary()
   vertex_dimension = Dictionary()
   for (dimension, vertices) in enumerate(dimension_vertices)
     for (bit, v) in enumerate(vertices)
-      set!(vertex_bit, v, bit)
+      set!(vertex_digit, v, bit)
       set!(vertex_dimension, v, dimension)
     end
   end
-  return BitMap(vertex_bit, vertex_dimension)
+  return BitMap(vertex_digit, vertex_dimension, base)
 end
 
-Base.copy(bm::BitMap) = BitMap(copy(vertex_bit(bm)), copy(vertex_dimension(bm)))
+function Base.copy(bm::BitMap)
+  return BitMap(copy(vertex_digit(bm)), copy(vertex_dimension(bm)), copy(base(bm)))
+end
 
 dimension(bm::BitMap) = maximum(collect(values(vertex_dimension(bm))))
 dimension(bm::BitMap, vertex) = vertex_dimension(bm)[vertex]
-bit(bm::BitMap, vertex) = vertex_bit(bm)[vertex]
+digit(bm::BitMap, vertex) = vertex_digit(bm)[vertex]
+bit_value_to_scalar(bm::BitMap, vertex, value::Int64) = value / (base(bm)^digit(bm, vertex))
 
 function Graphs.vertices(bm::BitMap)
-  @assert keys(vertex_dimension(bm)) == keys(vertex_bit(bm))
+  @assert keys(vertex_dimension(bm)) == keys(vertex_digit(bm))
   return collect(keys(vertex_dimension(bm)))
 end
 function Graphs.vertices(bm::BitMap, dimension::Int64)
@@ -42,7 +57,7 @@ end
 function vertex(bm::BitMap, dimension::Int64, bit::Int64)
   return only(
     filter(
-      v -> vertex_dimension(bm)[v] == dimension && vertex_bit(bm)[v] == bit,
+      v -> vertex_dimension(bm)[v] == dimension && vertex_digit(bm)[v] == bit,
       keys(vertex_dimension(bm)),
     ),
   )
@@ -52,7 +67,7 @@ function calculate_xyz(bm::BitMap, vertex_to_bit_value_map, dimensions::Vector{I
   out = Float64[]
   for dimension in dimensions
     vs = vertices(bm, dimension)
-    push!(out, sum([vertex_to_bit_value_map[v] / (2^bit(bm, v)) for v in vs]))
+    push!(out, sum([bit_value_to_scalar(bm, v, vertex_to_bit_value_map[v]) for v in vs]))
   end
   return out
 end
@@ -76,13 +91,18 @@ function calculate_bit_values(
     dimension = dimensions[i]
     x_rn = copy(x)
     vs = vertices(bm, dimension)
-    sorted_vertices = sort(vs; by=vs -> bit(bm, vs))
+    sorted_vertices = sort(vs; by=vs -> digit(bm, vs))
     for v in sorted_vertices
-      if (x_rn >= 1.0 / (2^bit(bm, v)))
-        set!(vertex_to_bit_value_map, v, 1)
-        x_rn -= 1.0 / (2^bit(bm, v))
-      else
-        set!(vertex_to_bit_value_map, v, 0)
+      i = base(bm) - 1
+      vertex_set = false
+      while (!vertex_set)
+        if x_rn >= bit_value_to_scalar(bm, v, i)
+          set!(vertex_to_bit_value_map, v, i)
+          x_rn -= bit_value_to_scalar(bm, v, i)
+          vertex_set = true
+        else
+          i = i - 1
+        end
       end
     end
 
@@ -104,4 +124,12 @@ function calculate_bit_values(bm::BitMap, xs::Vector{Float64}; kwargs...)
 end
 function calculate_bit_values(bm::BitMap, x::Float64; kwargs...)
   return calculate_bit_values(bm, [x], [1]; kwargs...)
+end
+
+function grid_points(bm::BitMap, N::Int64, dimension::Int64)
+  vals = Vector{Float64}
+  L = length(vertices(bm, dimension))
+  a = round(base(bm)^L / N)
+  grid_points = [i * (a / base(bm)^L) for i in 0:(N + 1)]
+  return filter(x -> x <= 1, grid_points)
 end

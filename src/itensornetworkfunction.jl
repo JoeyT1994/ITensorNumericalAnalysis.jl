@@ -1,4 +1,6 @@
-include("bitmaps.jl")
+using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph
+using ITensors: ITensor, dim, contract, siteinds, onehot
+using Graphs: Graphs
 
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},BM<:BitMap} <:
        AbstractITensorNetwork{V}
@@ -38,6 +40,7 @@ for f in [
   :calculate_bit_values,
   :calculate_x,
   :calculate_xyz,
+  :base,
 ]
   @eval begin
     function $f(fitn::ITensorNetworkFunction, args...; kwargs...)
@@ -50,10 +53,8 @@ function project(fitn::ITensorNetworkFunction, vertex_to_bit_value_map)
   fitn = copy(fitn)
   s = siteinds(fitn)
   for v in keys(vertex_to_bit_value_map)
-    proj = ITensor(
-      [i != vertex_to_bit_value_map[v] ? 0 : 1 for i in 0:(ITensors.dim(s[v]) - 1)], s[v]
-    )
-    fitn[v] = fitn[v] * proj
+    fitn[v] =
+      fitn[v] * onehot(eltype(fitn[v]), only(s[v]) => vertex_to_bit_value_map[v] + 1)
   end
   return fitn
 end
@@ -63,7 +64,11 @@ function calculate_fxyz(
 )
   vertex_to_bit_value_map = calculate_bit_values(fitn, xs, dimensions)
   fitn_xyz = project(fitn, vertex_to_bit_value_map)
-  return ITensors.contract(fitn_xyz)[]
+  return contract(fitn_xyz)[]
+end
+
+function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector{Float64})
+  return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)])
 end
 
 function calculate_fx(fitn::ITensorNetworkFunction, x::Float64)

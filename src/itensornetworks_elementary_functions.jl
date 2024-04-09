@@ -1,4 +1,15 @@
-include("itensornetworkfunction.jl")
+using Graphs: nv, vertices, edges, neighbors
+using NamedGraphs:
+  random_bfs_tree,
+  rem_edges,
+  add_edges,
+  undirected_graph,
+  NamedEdge,
+  AbstractGraph,
+  leaf_vertices,
+  a_star
+using ITensors: dim, commoninds
+using ITensorNetworks: IndsNetwork, underlying_graph
 
 default_c_value() = 1.0
 default_a_value() = 0.0
@@ -6,14 +17,15 @@ default_k_value() = 1.0
 default_nterms() = 20
 default_dimension() = 1
 
-"""Construct the product state representation of the function f(x) = const."""
+"""Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
 function const_itensornetwork(
-  s::IndsNetwork, bit_map; c::Union{Float64,ComplexF64}=default_c_value()
+  s::IndsNetwork, bit_map; c::Union{Float64,ComplexF64}=default_c_value(), linkdim::Int64=1
 )
-  ψ = copy_tensor_network(s, 1)
+  ψ = random_tensornetwork(s; link_space=linkdim)
   inv_L = Float64(1.0 / nv(s))
   for v in vertices(ψ)
-    ψ[v] *= c^inv_L
+    virt_inds = setdiff(inds(ψ[v]), Index[only(s[v])])
+    ψ[v] = c^inv_L * c_tensor(only(s[v]), virt_inds)
   end
 
   return ITensorNetworkFunction(ψ, bit_map)
@@ -28,13 +40,18 @@ function exp_itensornetwork(
   a::Union{Float64,ComplexF64}=default_a_value(),
   dimension::Int64=default_dimension(),
 )
-  ψ = copy(itensornetwork(const_itensornetwork(s, bit_map)))
+  ψ = const_itensornetwork(s, bit_map)
   Lx = length(vertices(bit_map, dimension))
   for v in vertices(bit_map, dimension)
-    ψ[v] = ITensor([exp(a / Lx), exp(a / Lx) * exp(k / (2^bit(bit_map, v)))], inds(ψ[v]))
+    ψ[v] = ITensor(
+      [
+        exp(a / Lx) * exp(k * bit_value_to_scalar(bit_map, v, i)) for i in 0:(dim(s[v]) - 1)
+      ],
+      inds(ψ[v]),
+    )
   end
 
-  return ITensorNetworkFunction(ψ, bit_map)
+  return ψ
 end
 
 """Construct the bond dim 2 representation of the cosh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -52,7 +69,7 @@ function cosh_itensornetwork(
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= 0.5
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 """Construct the bond dim 2 representation of the sinh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -70,7 +87,7 @@ function sinh_itensornetwork(
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= -0.5
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 """Construct the bond dim n representation of the tanh(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -90,7 +107,7 @@ function tanh_itensornetwork(
     ψ = ψ + ψt
   end
 
-  return ITensorNetworkFunction(ψ, bit_map)
+  return ψ
 end
 
 """Construct the bond dim 2 representation of the cos(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -108,7 +125,7 @@ function cos_itensornetwork(
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= 0.5
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 """Construct the bond dim 2 representation of the sin(kx+a) function for x ∈ [0,1] as an ITensorNetwork, using an IndsNetwork which 
@@ -126,7 +143,7 @@ function sin_itensornetwork(
   ψ1[first(vertices(ψ1))] *= -0.5 * im
   ψ2[first(vertices(ψ1))] *= 0.5 * im
 
-  return ITensorNetworkFunction(ψ1 + ψ2, bit_map)
+  return ψ1 + ψ2
 end
 
 # #FUNCTIONS NEEDED TO IMPLEMENT POLYNOMIALS
@@ -150,12 +167,12 @@ function Q_N_tensor(
   N::Int64, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector{Float64}
 )
   @assert length(αind) == N - 1
-  @assert length(xivals) == ITensors.dim(siteind)
-  n = ITensors.dim(betaind) - 1
-  @assert all(x -> x == n + 1, ITensors.dim.(αind))
+  @assert length(xivals) == dim(siteind)
+  n = dim(betaind) - 1
+  @assert all(x -> x == n + 1, dim.(αind))
 
   link_dims = [n + 1 for i in 1:N]
-  dims = vcat([ITensors.dim(siteind)], link_dims)
+  dims = vcat([dim(siteind)], link_dims)
   Q_N_array = zeros(Tuple(dims))
   for (i, xi) in enumerate(xivals)
     for j in 0:((n + 1)^(N) - 1)
@@ -200,11 +217,11 @@ function polynomial_itensornetwork(
   root_vertices_dim = filter(v -> v ∈ dimension_vertices, leaf_vertices(s_tree))
   @assert !isempty(root_vertices_dim)
   root_vertex = first(root_vertices_dim)
-  ψ = copy_tensor_network(s_tree, n + 1)
+  ψ = const_itensornetwork(s_tree, bit_map; linkdim=n + 1)
   #Place the Q_n tensors, making sure we get the right index pointing towards the root
-  for v in vertices(ψ)
+  for v in dimension_vertices
     siteindex = s_tree[v][]
-    if v != root_vertex && v ∈ dimension_vertices
+    if v != root_vertex
       e = get_edge_toward_root(g_tree, v, root_vertex)
       betaindex = first(commoninds(ψ, e))
       alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
@@ -213,17 +230,27 @@ function polynomial_itensornetwork(
         siteindex,
         alphas,
         betaindex,
-        [0.0, (1.0 / (2^bit(bit_map, v)))],
+        [bit_value_to_scalar(bit_map, v, i) for i in 0:(dim(siteindex) - 1)],
       )
-    elseif v == root_vertex && v ∈ dimension_vertices
+    elseif v == root_vertex
       betaindex = Index(n + 1, "DummyInd")
       alphas = setdiff(inds(ψ[v]), Index[siteindex])
-      ψv = Q_N_tensor(2, siteindex, alphas, betaindex, [0.0, (1.0 / (2^bit(bit_map, v)))])
+      ψv = Q_N_tensor(
+        2,
+        siteindex,
+        alphas,
+        betaindex,
+        [bit_value_to_scalar(bit_map, v, i) for i in 0:(dim(siteindex) - 1)],
+      )
       ψ[v] = ψv * ITensor(reverse(coeffs), betaindex)
     end
   end
 
-  return ITensorNetworkFunction(ψ, bit_map)
+  return ψ
+end
+
+function random_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
+  return ITensorNetworkFunction(random_tensornetwork(s; kwargs...), bit_map)
 end
 
 const const_itn = const_itensornetwork
@@ -234,3 +261,4 @@ const tanh_itn = tanh_itensornetwork
 const exp_itn = exp_itensornetwork
 const sin_itn = sin_itensornetwork
 const cos_itn = cos_itensornetwork
+const rand_itn = random_itensornetwork
