@@ -1,4 +1,4 @@
-name = "TensorNetworkFunctionals"
+name = "ITensorNumericalAnalysis"
 uuid = "666f501e-685d-4e36-ab44-ece85df6022b"
 authors = ["Joseph Tindall <joeytindall94@googlemail.com>", "Ryan Levy <rlevy@flatironinstitute.org>"]
 version = "0.1.0"

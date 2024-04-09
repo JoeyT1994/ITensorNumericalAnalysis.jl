@@ -1,4 +1,4 @@
-module TensorNetworkFunctionals
+module ITensorNumericalAnalysis
 
 include("itensornetworksutils.jl")
 include("bitmaps.jl")

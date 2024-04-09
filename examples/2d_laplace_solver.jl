@@ -1,5 +1,5 @@
 using Test
-using TensorNetworkFunctionals
+using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree, binary_tree, random_regular_graph, is_tree
 using NamedGraphs:

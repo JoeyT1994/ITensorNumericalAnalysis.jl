@@ -1,11 +1,11 @@
 using Test
 using Glob
 using ITensorNetworks
-using TensorNetworkFunctionals
+using ITensorNumericalAnalysis
 
 # https://discourse.julialang.org/t/rdir-search-recursive-for-files-with-a-given-name-pattern/75605/12
 @testset "test directory $root" for (root, dirs, files) in walkdir(
-  joinpath(pkgdir(TensorNetworkFunctionals), "test")
+  joinpath(pkgdir(ITensorNumericalAnalysis), "test")
 )
   test_files = filter!(f -> occursin(Glob.FilenameMatch("test_*.jl"), f), files)
   @testset "Test file $test_file" for test_file in test_files

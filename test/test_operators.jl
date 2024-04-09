@@ -1,11 +1,11 @@
 using Test
-using TensorNetworkFunctionals
+using ITensorNumericalAnalysis
 
 using ITensors: siteinds
 using ITensorNetworks: maxlinkdim
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: named_grid, named_comb_tree, NamedGraph, nv, vertices
-using TensorNetworkFunctionals: itensornetwork
+using ITensorNumericalAnalysis: itensornetwork
 using Dictionaries: Dictionary
 
 @testset "test laplacian in 1D on MPS" begin
