@@ -1,5 +1,5 @@
 using Test
-using TensorNetworkFunctionals
+using ITensorNumericalAnalysis
 
 using NamedGraphs: named_grid, vertices
 using ITensors: siteinds

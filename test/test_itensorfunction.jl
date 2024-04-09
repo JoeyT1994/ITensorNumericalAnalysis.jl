@@ -1,5 +1,5 @@
 using Test
-using TensorNetworkFunctionals
+using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
