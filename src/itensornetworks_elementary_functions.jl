@@ -17,14 +17,15 @@ default_k_value() = 1.0
 default_nterms() = 20
 default_dimension() = 1
 
-"""Construct the product state representation of the function f(x) = const."""
+"""Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
 function const_itensornetwork(
-  s::IndsNetwork, bit_map; c::Union{Float64,ComplexF64}=default_c_value()
+  s::IndsNetwork, bit_map; c::Union{Float64,ComplexF64}=default_c_value(), linkdim::Int64=1
 )
-  ψ = copy_tensor_network(s)
+  ψ = random_tensornetwork(s; link_space=linkdim)
   inv_L = Float64(1.0 / nv(s))
   for v in vertices(ψ)
-    ψ[v] *= c^inv_L
+    virt_inds = setdiff(inds(ψ[v]), Index[only(s[v])])
+    ψ[v] = c^inv_L * c_tensor(only(s[v]), virt_inds)
   end
 
   return ITensorNetworkFunction(ψ, bit_map)
@@ -216,7 +217,7 @@ function polynomial_itensornetwork(
   root_vertices_dim = filter(v -> v ∈ dimension_vertices, leaf_vertices(s_tree))
   @assert !isempty(root_vertices_dim)
   root_vertex = first(root_vertices_dim)
-  ψ = copy_tensor_network(s_tree; linkdim=n + 1)
+  ψ = const_itensornetwork(s_tree, bit_map; linkdim=n + 1)
   #Place the Q_n tensors, making sure we get the right index pointing towards the root
   for v in dimension_vertices
     siteindex = s_tree[v][]
@@ -245,7 +246,7 @@ function polynomial_itensornetwork(
     end
   end
 
-  return ITensorNetworkFunction(ψ, bit_map)
+  return ψ
 end
 
 function random_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
