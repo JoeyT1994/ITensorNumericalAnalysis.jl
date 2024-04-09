@@ -4,14 +4,9 @@ Package for constructing and manipulating low-rank Tensor Network representation
 For example to build a bond-dimension 2 cubic tensor-network representation of the function $\cosh(kx + a)$ over the domain $x \in [0,1]$ we can do
 
 ```
-julia> using ITensors, NamedGraphs, ITensorNetworks, EllipsisNotation
+julia> using ITensors, NamedGraphs, ITensorNetworks
 
-julia> using NamedGraphs: add_edges
-
-julia> using ITensorNetworks: delta_network
-
-julia> include("src/QTT_utils.jl")
-calculate_xis (generic function with 1 method)
+julia> using ITensorNumericalAnalysis
 
 julia> L = 2;
 
@@ -21,9 +16,9 @@ julia> a, k = 1.0, 0.5;
 
 julia> s = siteinds("S=1/2", g);
 
-julia> vertex_map = Dict(vertices(g) .=> [i for i in 1:length(vertices(g))]);
+julia> bit_map = BitMap(g)
 
-julia> ψ = cosh_itn(s, vertex_map; a, k)
+julia> ψ = cosh_itn(s, bit_map; a, k)
 ITensorNetwork{Tuple{Int64, Int64, Int64}} with 8 vertices:
 8-element Vector{Tuple{Int64, Int64, Int64}}:
  (1, 1, 1)
