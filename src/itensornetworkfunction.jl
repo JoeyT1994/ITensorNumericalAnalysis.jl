@@ -1,4 +1,4 @@
-using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph
+using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type
 using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 

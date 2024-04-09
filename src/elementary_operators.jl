@@ -1,33 +1,51 @@
 using Graphs: is_tree
 using NamedGraphs: undirected_graph
 using ITensors:
-  sim,
   OpSum,
+  @OpName_str,
+  @SiteType_str,
+  SiteType,
   siteinds,
   noprime,
+  op,
   truncate,
   replaceinds!,
   delta,
   add!,
   prime,
+  sim,
   noprime!,
   contract
 using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
+
+function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
+  d = dim(s)
+  o = zeros(d, d)
+  o[2, 1] = 1
+  return ITensor(o, s, s')
+end
+function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
+  d = dim(s)
+  o = zeros(d, d)
+  o[1, 2] = 1
+  return ITensor(o, s, s')
+end
 
 function plus_shift_ttn(
   s::IndsNetwork, bit_map; dimension=default_dimension(), boundary_value=[0.0]
 )
   @assert is_tree(s)
+  @assert base(bit_map) == 2
   ttn_op = OpSum()
   dim_vertices = vertices(bit_map, dimension)
   L = length(dim_vertices)
 
-  string_site = [("S+", vertex(bit_map, dimension, L))]
-  add!(ttn_op, 1.0, "S+", vertex(bit_map, dimension, L))
+  string_site = [("D+", vertex(bit_map, dimension, L))]
+  add!(ttn_op, 1.0, "D+", vertex(bit_map, dimension, L))
   for i in L:-1:2
     pop!(string_site)
-    push!(string_site, ("S-", vertex(bit_map, dimension, i)))
-    push!(string_site, ("S+", vertex(bit_map, dimension, i - 1)))
+    push!(string_site, ("D-", vertex(bit_map, dimension, i)))
+    push!(string_site, ("D+", vertex(bit_map, dimension, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
@@ -36,16 +54,17 @@ end
 
 function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
   @assert is_tree(s)
+  @assert base(bit_map) == 2
   ttn_op = OpSum()
   dim_vertices = vertices(bit_map, dimension)
   L = length(dim_vertices)
 
-  string_site = [("S-", vertex(bit_map, dimension, L))]
-  add!(ttn_op, 1.0, "S-", vertex(bit_map, dimension, L))
+  string_site = [("D-", vertex(bit_map, dimension, L))]
+  add!(ttn_op, 1.0, "D-", vertex(bit_map, dimension, L))
   for i in L:-1:2
     pop!(string_site)
-    push!(string_site, ("S+", vertex(bit_map, dimension, i)))
-    push!(string_site, ("S-", vertex(bit_map, dimension, i - 1)))
+    push!(string_site, ("D+", vertex(bit_map, dimension, i)))
+    push!(string_site, ("D-", vertex(bit_map, dimension, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 

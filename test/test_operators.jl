@@ -11,8 +11,8 @@ using Dictionaries: Dictionary
 @testset "test laplacian in 1D on MPS" begin
   g = named_grid((12, 1))
   L = nv(g)
-  s = siteinds("S=1/2", g)
   bit_map = BitMap(g)
+  s = siteinds(g, bit_map)
 
   ∇sq = laplacian_operator(s, bit_map; cutoff=1e-10)
   @test maxlinkdim(∇sq) == 3
@@ -30,8 +30,8 @@ end
 @testset "test derivative in 1D on tree" begin
   g = named_comb_tree((4, 4))
   L = nv(g)
-  s = siteinds("S=1/2", g)
   bit_map = BitMap(g)
+  s = siteinds(g, bit_map)
 
   ∂_∂x = derivative_operator(s, bit_map; cutoff=1e-10)
 
@@ -48,8 +48,8 @@ end
 @testset "test multiplication_operator_in_1D" begin
   g = named_comb_tree((4, 4))
   L = nv(g)
-  s = siteinds("S=1/2", g)
   bit_map = BitMap(g)
+  s = siteinds(g, bit_map)
 
   ψ_gx = sin_itn(s, bit_map; k=0.5 * Float64(pi))
   ψ_fx = cos_itn(s, bit_map; k=0.25 * Float64(pi))
@@ -65,7 +65,6 @@ end
 @testset "test multiplication_operator_in_2D" begin
   L = 10
   g = NamedGraph(SimpleGraph(uniform_tree(L)))
-  s = siteinds("S=1/2", g)
 
   vertex_to_dimension_map = Dictionary(
     vertices(g), [(first(v) % 2) + 1 for v in vertices(g)]
@@ -74,6 +73,7 @@ end
     vertices(g), [ceil(Int64, first(v) * 0.5) for v in vertices(g)]
   )
   bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+  s = siteinds(g, bit_map)
 
   ψ_fx = cos_itn(s, bit_map; k=0.25 * Float64(pi), dimension=1)
   ψ_gy = sin_itn(s, bit_map; k=0.5 * Float64(pi), dimension=2)
@@ -98,7 +98,6 @@ end
 @testset "test differentiation_operator_on_3D_function" begin
   L = 60
   g = named_grid((L, 1))
-  s = siteinds("S=1/2", g)
 
   vertex_to_dimension_map = Dictionary(
     vertices(g), [(first(v) % 3) + 1 for v in vertices(g)]
@@ -107,6 +106,8 @@ end
     vertices(g), [ceil(Int64, first(v) / 3) for v in vertices(g)]
   )
   bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+  s = siteinds(g, bit_map)
+
   ψ_fx = sin_itn(s, bit_map; k=Float64(pi), dimension=1)
   ψ_gy = sin_itn(s, bit_map; k=Float64(pi), dimension=2)
   ψ_hz = sinh_itn(s, bit_map; k=Float64(pi), dimension=3)
