@@ -1,60 +1,9 @@
 # ITensorNumericalAnalysis.jl
 
-Package for constructing and manipulating low-rank Tensor Network representations of arbitrary functions.
-For example to build a bond-dimension 2 cubic tensor-network representation of the function $\cosh(kx + a)$ over the domain $x \in [0,1]$ we can do
+Package for constructing, manipulating low-rank Tensor Network representations of multi-dimensional functions.
 
-```
-julia> using ITensors, NamedGraphs, ITensorNetworks
+1. Represent standard elementary functions with complete flexibility over the tensor network's topology and arrangement of the bits which decompose your continuous variable
+2. Solve multi-dimensional differential equations using tensor network ansatz
 
-julia> using ITensorNumericalAnalysis
-
-julia> L = 2;
-
-julia> g = named_grid((L, L, L));
-
-julia> a, k = 1.0, 0.5;
-
-julia> s = siteinds("S=1/2", g);
-
-julia> bit_map = BitMap(g)
-
-julia> ψ = cosh_itn(s, bit_map; a, k)
-ITensorNetwork{Tuple{Int64, Int64, Int64}} with 8 vertices:
-8-element Vector{Tuple{Int64, Int64, Int64}}:
- (1, 1, 1)
- (2, 1, 1)
- (1, 2, 1)
- (2, 2, 1)
- (1, 1, 2)
- (2, 1, 2)
- (1, 2, 2)
- (2, 2, 2)
-
-and 12 edge(s):
-(1, 1, 1) => (2, 1, 1)
-(1, 1, 1) => (1, 2, 1)
-(1, 1, 1) => (1, 1, 2)
-(2, 1, 1) => (2, 2, 1)
-(2, 1, 1) => (2, 1, 2)
-(1, 2, 1) => (2, 2, 1)
-(1, 2, 1) => (1, 2, 2)
-(2, 2, 1) => (2, 2, 2)
-(1, 1, 2) => (2, 1, 2)
-(1, 1, 2) => (1, 2, 2)
-(2, 1, 2) => (2, 2, 2)
-(1, 2, 2) => (2, 2, 2)
-
-with vertex data:
-8-element Dictionaries.Dictionary{Tuple{Int64, Int64, Int64}, Any}
- (1, 1, 1) │ ((dim=2|id=165|"1×1×1,S=1/2,Site"), (dim=2|id=95|"1×1×1↔2×1×1"), (dim=2|id=729|"1×1×1↔1×2×1"), (dim=2|id=15|"1×1×1↔1…
- (2, 1, 1) │ ((dim=2|id=942|"2×1×1,S=1/2,Site"), (dim=2|id=95|"1×1×1↔2×1×1"), (dim=2|id=74|"2×1×1↔2×2×1"), (dim=2|id=711|"2×1×1↔2…
- (1, 2, 1) │ ((dim=2|id=353|"1×2×1,S=1/2,Site"), (dim=2|id=729|"1×1×1↔1×2×1"), (dim=2|id=352|"1×2×1↔2×2×1"), (dim=2|id=105|"1×2×1…
- (2, 2, 1) │ ((dim=2|id=16|"2×2×1,S=1/2,Site"), (dim=2|id=74|"2×1×1↔2×2×1"), (dim=2|id=352|"1×2×1↔2×2×1"), (dim=2|id=457|"2×2×1↔2…
- (1, 1, 2) │ ((dim=2|id=44|"1×1×2,S=1/2,Site"), (dim=2|id=15|"1×1×1↔1×1×2"), (dim=2|id=235|"1×1×2↔2×1×2"), (dim=2|id=986|"1×1×2↔1…
- (2, 1, 2) │ ((dim=2|id=712|"2×1×2,S=1/2,Site"), (dim=2|id=711|"2×1×1↔2×1×2"), (dim=2|id=235|"1×1×2↔2×1×2"), (dim=2|id=577|"2×1×2…
- (1, 2, 2) │ ((dim=2|id=480|"1×2×2,S=1/2,Site"), (dim=2|id=105|"1×2×1↔1×2×2"), (dim=2|id=986|"1×1×2↔1×2×2"), (dim=2|id=176|"1×2×2…
- (2, 2, 2) │ ((dim=2|id=233|"2×2×2,S=1/2,Site"), (dim=2|id=457|"2×2×1↔2×2×2"), (dim=2|id=577|"2×1×2↔2×2×2"), (dim=2|id=176|"1×2×2…
-
-julia> 
 
 
