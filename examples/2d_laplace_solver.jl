@@ -11,7 +11,7 @@ using NamedGraphs:
   random_bfs_tree,
   undirected_graph
 using ITensors: ITensors, Index, siteinds, dim, tags, replaceprime!, MPO, MPS, inner
-using ITensorNetworks: ITensorNetwork, dmrg, TTN, maxlinkdim
+using ITensorNetworks: ITensorNetwork, dmrg, ttn, maxlinkdim
 using Dictionaries: Dictionary
 using SplitApplyCombine: group
 using Random: seed!
@@ -35,10 +35,10 @@ bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
 @show maxlinkdim(∇)
 
 dmrg_kwargs = (nsweeps=25, normalize=true, maxdim=20, cutoff=1e-12, outputlevel=1, nsites=2)
-ϕ_fxy = dmrg(∇, TTN(itensornetwork(ψ_fxy)); dmrg_kwargs...)
+ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
 ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), bit_map)
 
-final_energy = inner(TTN(itensornetwork(ϕ_fxy))', ∇, TTN(itensornetwork(ϕ_fxy)))
+final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
 #Smallest eigenvalue in this case should be -8
 @show final_energy
 
