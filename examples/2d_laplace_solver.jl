@@ -11,11 +11,7 @@ using NamedGraphs:
   random_bfs_tree,
   undirected_graph
 using ITensors: ITensors, Index, siteinds, dim, tags, replaceprime!, MPO, MPS, inner
-using ITensorNetworks:
-  ITensorNetwork,
-  dmrg,
-  TTN,
-  maxlinkdim
+using ITensorNetworks: ITensorNetwork, dmrg, TTN, maxlinkdim
 using Dictionaries: Dictionary
 using SplitApplyCombine: group
 using Random: seed!

@@ -249,7 +249,7 @@ function polynomial_itensornetwork(
 end
 
 function random_itensornetwork(s::IndsNetwork, bit_map; kwargs...)
-  return ITensorNetworkFunction(randomITensorNetwork(s; kwargs...), bit_map)
+  return ITensorNetworkFunction(random_tensornetwork(s; kwargs...), bit_map)
 end
 
 const const_itn = const_itensornetwork

@@ -53,7 +53,8 @@ function project(fitn::ITensorNetworkFunction, vertex_to_bit_value_map)
   fitn = copy(fitn)
   s = siteinds(fitn)
   for v in keys(vertex_to_bit_value_map)
-    fitn[v] = fitn[v] * onehot(only(s[v]) => vertex_to_bit_value_map[v] + 1)
+    fitn[v] =
+      fitn[v] * onehot(eltype(fitn[v]), only(s[v]) => vertex_to_bit_value_map[v] + 1)
   end
   return fitn
 end

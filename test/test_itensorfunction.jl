@@ -4,7 +4,7 @@ using TensorNetworkFunctionals
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
 using ITensors: siteinds
-using ITensorNetworks: randomITensorNetwork
+using ITensorNetworks: random_tensornetwork
 using Dictionaries: Dictionary
 using SplitApplyCombine: group
 using Random: seed!
@@ -16,7 +16,7 @@ using Distributions: Uniform
   g = named_grid((L, 1))
   s = siteinds("S=1/2", g)
 
-  ψ = randomITensorNetwork(s; link_space=2)
+  ψ = random_tensornetwork(s; link_space=2)
 
   fψ = ITensorNetworkFunction(ψ)
 

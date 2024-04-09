@@ -1,5 +1,5 @@
 using ITensors: Index, dim, inds
-using ITensorNetworks: randomITensorNetwork, IndsNetwork
+using ITensorNetworks: random_tensornetwork, IndsNetwork
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1]."""
 function build_full_rank_tensor(L::Int64, fx::Function; base::Int64=2)
@@ -31,7 +31,7 @@ function c_tensor(phys_ind::Index, virt_inds::Vector)
 end
 
 function copy_tensor_network(s::IndsNetwork; linkdim::Int64=1)
-  tn = randomITensorNetwork(s; link_space=linkdim)
+  tn = random_tensornetwork(s; link_space=linkdim)
   for v in vertices(tn)
     virt_inds = setdiff(inds(tn[v]), Index[only(s[v])])
     tn[v] = c_tensor(only(s[v]), virt_inds)

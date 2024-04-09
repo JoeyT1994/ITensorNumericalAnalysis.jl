@@ -12,7 +12,7 @@ using ITensors:
   prime,
   noprime!,
   contract
-using ITensorNetworks: IndsNetwork, ITensorNetwork, TTN, TreeTensorNetwork, combine_linkinds
+using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
 
 function plus_shift_ttn(
   s::IndsNetwork, bit_map; dimension=default_dimension(), boundary_value=[0.0]
@@ -31,7 +31,7 @@ function plus_shift_ttn(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  return TTN(ttn_op, s; algorithm="svd")
+  return ttn(ttn_op, s; algorithm="svd")
 end
 
 function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
@@ -49,14 +49,14 @@ function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  return TTN(ttn_op, s; algorithm="svd")
+  return ttn(ttn_op, s; algorithm="svd")
 end
 
 function no_shift_ttn(s::IndsNetwork)
   ttn_op = OpSum()
   string_site_full = [("I", v) for v in vertices(s)]
   add!(ttn_op, 1.0, (string_site_full...)...)
-  return TTN(ttn_op, s; algorithm="svd")
+  return ttn(ttn_op, s; algorithm="svd")
 end
 
 function stencil(
@@ -145,7 +145,7 @@ Base.:*(fs::ITensorNetworkFunction...) = multiply(fs...)
 function operate(
   operator::TreeTensorNetwork, ψ::ITensorNetworkFunction; truncate_kwargs=(;), kwargs...
 )
-  ψ_tn = TTN(itensornetwork(ψ))
+  ψ_tn = ttn(itensornetwork(ψ))
   ψO_tn = noprime(contract(operator, ψ_tn; init=prime(copy(ψ_tn)), kwargs...))
   ψO_tn = truncate(ψO_tn; truncate_kwargs...)
 
@@ -153,7 +153,7 @@ function operate(
 end
 
 function operate(operator::ITensorNetwork, ψ::ITensorNetworkFunction; kwargs...)
-  return operate(TTN(operator), ψ; kwargs...)
+  return operate(ttn(operator), ψ; kwargs...)
 end
 
 function operate(
@@ -169,5 +169,5 @@ end
 function operate(
   operators::Vector{ITensorNetwork{V}}, ψ::ITensorNetworkFunction; kwargs...
 ) where {V}
-  return operate(TTN.(operators), ψ; kwargs...)
+  return operate(ttn.(operators), ψ; kwargs...)
 end
