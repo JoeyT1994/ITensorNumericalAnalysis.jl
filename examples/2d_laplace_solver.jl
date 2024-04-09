@@ -23,11 +23,11 @@ using UnicodePlots
 seed!(1234)
 L = 14
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
-s = siteinds("S=1/2", g)
 
 vertex_to_dimension_map = Dictionary(vertices(g), [(v[1] % 2) + 1 for v in vertices(g)])
 vertex_to_bit_map = Dictionary(vertices(g), [ceil(Int64, v[1] * 0.5) for v in vertices(g)])
 bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+s = siteinds(g, bit_map)
 
 ψ_fxy = 0.1 * rand_itn(s, bit_map; link_space=2)
 ∇ = laplacian_operator(s, bit_map; scale=false)

@@ -1,5 +1,6 @@
-using ITensors: Index, dim, inds
-using ITensorNetworks: random_tensornetwork, IndsNetwork
+using Graphs: AbstractGraph
+using ITensors: ITensors, Index, dim, inds, siteinds
+using ITensorNetworks: random_tensornetwork, IndsNetwork, vertex_tag
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int64, fx::Function; base::Int64=2)
@@ -28,4 +29,20 @@ function c_tensor(phys_ind::Index, virt_inds::Vector)
   end
 
   return T
+end
+
+"""Tag for a vertex based on its dimension (Dim) and digit (N)"""
+function digit_tag(bm::BitMap, v)
+  dig = digit(bm, v)
+  dim = dimension(bm, v)
+  return "N $dig, Dim $dim"
+end
+
+"""Generate network of physical indices given a graph and a bitmap"""
+function ITensors.siteinds(g::AbstractGraph, bm::BitMap)
+  is = IndsNetwork(g)
+  for v in vertices(g)
+    is[v] = [Index(base(bm), "Digit, $(digit_tag(bm, v)), V$(vertex_tag(v))")]
+  end
+  return is
 end

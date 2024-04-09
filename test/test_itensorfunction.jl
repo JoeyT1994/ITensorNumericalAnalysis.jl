@@ -34,10 +34,10 @@ end
   @testset "test const" begin
     L = 3
     g = named_grid((L, L))
-    s = siteinds("S=1/2", g)
+    bit_map = BitMap(g)
+    s = siteinds(g, bit_map)
     c = 1.5
 
-    bit_map = BitMap(g)
     ψ_fx = const_itn(s, bit_map; c)
 
     x = 0.5
@@ -60,9 +60,9 @@ end
       g = named_comb_tree((2, 3))
       a = 1.2
       k = 0.125
-      s = siteinds("S=1/2", g)
 
       bit_map = BitMap(g)
+      s = siteinds(g, bit_map)
 
       x = 0.625
       ψ_fx = net_func(s, bit_map; k, a)
@@ -85,9 +85,9 @@ end
       a = 1.2
       k = 0.125
       b = 3
-      s = siteinds("S=1", g)
 
       bit_map = BitMap(g; base=b)
+      s = siteinds(g, bit_map)
 
       x = (5.0 / 9.0)
       ψ_fx = net_func(s, bit_map; k, a)
@@ -103,9 +103,9 @@ end
     a = 1.3
     k = 0.15
     nterms = 50
-    s = siteinds("S=1/2", g)
 
     bit_map = BitMap(g)
+    s = siteinds(g, bit_map)
 
     x = 0.625
     ψ_fx = tanh_itn(s, bit_map; k, a, nterms)
@@ -123,11 +123,11 @@ end
       seed!(1234 * deg)
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
       g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
-      s = siteinds("S=1/2", g)
+      bit_map = BitMap(g)
+      s = siteinds(g, bit_map)
 
       coeffs = [rand(Uniform(-2, 2)) for i in 1:(deg + 1)]
 
-      bit_map = BitMap(g)
       x = 0.875
       ψ_fx = poly_itn(s, bit_map, coeffs)
       fx_x = calculate_fx(ψ_fx, x)
@@ -142,12 +142,13 @@ end
   #Constant function but represented in three dimension
   @testset "test const" begin
     g = named_grid((3, 3))
-    s = siteinds("S=1/2", g)
-    c = 1.5
 
     vertex_to_dimension_map = Dictionary(vertices(g), [v[1] for v in vertices(g)])
     vertex_to_bit_map = Dictionary(vertices(g), [v[2] for v in vertices(g)])
     bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+    s = siteinds(g, bit_map)
+
+    c = 1.5
 
     ψ_fxyz = const_itn(s, bit_map; c)
 
@@ -179,7 +180,7 @@ end
     @testset "test $name" begin
       a = 1.2
       k = 0.125
-      s = siteinds("S=1/2", g)
+      s = siteinds(g, bit_map)
 
       ψ_fx = net_func(s, bit_map; k, a, dimension=1)
       ψ_fy = net_func(s, bit_map; k, a, dimension=2)
@@ -197,11 +198,10 @@ end
     a = 1.3
     k = 0.15
     nterms = 10
-    s = siteinds("S=1/2", g)
-
     vertex_to_dimension_map = Dictionary(vertices(g), [v[2] for v in vertices(g)])
     vertex_to_bit_map = Dictionary(vertices(g), [v[1] for v in vertices(g)])
     bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+    s = siteinds(g, bit_map)
 
     x, y = 0.625, 0.875
     ψ_fx = tanh_itn(s, bit_map; k, a, nterms, dimension=1)

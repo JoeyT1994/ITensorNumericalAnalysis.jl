@@ -9,8 +9,9 @@ using Dictionaries: Dictionary
   L = 4
 
   g = named_grid((L, L))
-  s = siteinds("S=1/2", g)
   bit_map = BitMap(g)
+
+  s = siteinds(g, bit_map)
 
   @test dimension(bit_map) == 1
   @test Set(vertices(bit_map)) == Set(vertices(g))

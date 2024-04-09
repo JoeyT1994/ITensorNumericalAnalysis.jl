@@ -1,10 +1,10 @@
 module ITensorNumericalAnalysis
 
-include("itensornetworksutils.jl")
-include("bitmaps.jl")
+include("bitmap.jl")
+include("utils.jl")
 include("itensornetworkfunction.jl")
-include("itensornetworks_elementary_functions.jl")
-include("itensornetworks_elementary_operators.jl")
+include("elementary_functions.jl")
+include("elementary_operators.jl")
 
 export ITensorNetworkFunction, itensornetwork
 export BitMap,
