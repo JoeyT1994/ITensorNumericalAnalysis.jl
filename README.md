@@ -1,4 +1,4 @@
-# TensorNetworkFunctionals
+# ITensorNetworkNumericalAnalysis.jl
 
 Package for constructing and manipulating low-rank Tensor Network representations of arbitrary functions.
 For example to build a bond-dimension 2 cubic tensor-network representation of the function $\cosh(kx + a)$ over the domain $x \in [0,1]$ we can do
