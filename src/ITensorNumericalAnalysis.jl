@@ -2,6 +2,7 @@ module ITensorNumericalAnalysis
 
 include("bitmap.jl")
 include("utils.jl")
+include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")

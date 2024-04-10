@@ -13,13 +13,21 @@ vertex_digit(bm::BitMap) = bm.vertex_digit
 vertex_dimension(bm::BitMap) = bm.vertex_dimension
 base(bm::BitMap) = bm.base
 
-default_bit_map(vertices::Vector) = Dictionary(vertices, [i for i in 1:length(vertices)])
-function default_dimension_map(vertices::Vector)
-  return Dictionary(vertices, [1 for i in 1:length(vertices)])
+function default_digit_map(vertices::Vector; map_dimension::Int64=1)
+  return Dictionary(
+    vertices, [ceil(Int64, i / map_dimension) for (i, v) in enumerate(vertices)]
+  )
+end
+function default_dimension_map(vertices::Vector; map_dimension::Int64)
+  return Dictionary(vertices, [(i % map_dimension) + 1 for (i, v) in enumerate(vertices)])
 end
 
-function BitMap(g; base::Int64=default_base())
-  return BitMap(default_bit_map(vertices(g)), default_dimension_map(vertices(g)), base)
+function BitMap(g; base::Int64=default_base(), map_dimension::Int64=1)
+  return BitMap(
+    default_digit_map(vertices(g); map_dimension),
+    default_dimension_map(vertices(g); map_dimension),
+    base,
+  )
 end
 function BitMap(vertex_digit, vertex_dimension; base::Int64=default_base())
   return BitMap(vertex_digit, vertex_dimension, base)
