@@ -75,3 +75,9 @@ function calculate_fx(fitn::ITensorNetworkFunction, x::Float64)
   @assert dimension(fitn) == 1
   return calculate_fxyz(fitn, [x], [1])
 end
+
+function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)
+  @assert is_tree(fitn)
+  ψ = truncate(ttn(itensornetwork(fitn)); kwargs...)
+  return ITensorNetworkFunction(ITensorNetwork(ψ), bit_map(fitn))
+end

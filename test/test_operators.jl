@@ -66,13 +66,7 @@ end
   L = 10
   g = NamedGraph(SimpleGraph(uniform_tree(L)))
 
-  vertex_to_dimension_map = Dictionary(
-    vertices(g), [(first(v) % 2) + 1 for v in vertices(g)]
-  )
-  vertex_to_bit_map = Dictionary(
-    vertices(g), [ceil(Int64, first(v) * 0.5) for v in vertices(g)]
-  )
-  bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+  bit_map = BitMap(g; map_dimension=2)
   s = siteinds(g, bit_map)
 
   ψ_fx = cos_itn(s, bit_map; k=0.25 * Float64(pi), dimension=1)
@@ -99,16 +93,10 @@ end
   L = 60
   g = named_grid((L, 1))
 
-  vertex_to_dimension_map = Dictionary(
-    vertices(g), [(first(v) % 3) + 1 for v in vertices(g)]
-  )
-  vertex_to_bit_map = Dictionary(
-    vertices(g), [ceil(Int64, first(v) / 3) for v in vertices(g)]
-  )
-  bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+  bit_map = BitMap(g; map_dimension=3)
   s = siteinds(g, bit_map)
 
-  ψ_fx = sin_itn(s, bit_map; k=Float64(pi), dimension=1)
+  ψ_fx = poly_itn(s, bit_map, [0.0, -1.0, 1.0]; dimension=1)
   ψ_gy = sin_itn(s, bit_map; k=Float64(pi), dimension=2)
   ψ_hz = sinh_itn(s, bit_map; k=Float64(pi), dimension=3)
   @assert dimension(ψ_fx) == dimension(ψ_gy) == dimension(ψ_hz) == 3
@@ -126,10 +114,10 @@ end
     for y in ys
       for z in zs
         ψ_fxgyhz_xyz = real(calculate_fxyz(ψ_fxgyhz, [x, y, z]))
-        @test ψ_fxgyhz_xyz ≈ sin(pi * x) * sin(pi * y) * sinh(pi * z) atol = 1e-3
+        @test ψ_fxgyhz_xyz ≈ (x^2 - x) * sin(pi * y) * sinh(pi * z) atol = 1e-3
 
         ∂_∂y_ψ_fxgyhz_xyz = real(calculate_fxyz(∂_∂y_ψ_fxgyhz, [x, y, z]))
-        @test ∂_∂y_ψ_fxgyhz_xyz ≈ pi * sin(pi * x) * cos(pi * y) * sinh(pi * z) atol = 1e-3
+        @test ∂_∂y_ψ_fxgyhz_xyz ≈ pi * (x^2 - x) * cos(pi * y) * sinh(pi * z) atol = 1e-3
       end
     end
   end
