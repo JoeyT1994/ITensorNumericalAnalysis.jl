@@ -18,6 +18,8 @@ using ITensors:
   contract
 using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
 
+default_boundary() = "Dirichlet"
+
 function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
   d = dim(s)
   o = zeros(d, d)
@@ -30,9 +32,21 @@ function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
   o[1, 2] = 1
   return ITensor(o, s, s')
 end
+function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
+  d = dim(s)
+  o = zeros(d, d)
+  o[1, 1] = 1
+  return ITensor(o, s, s')
+end
+function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
+  d = dim(s)
+  o = zeros(d, d)
+  o[2, 2] = 1
+  return ITensor(o, s, s')
+end
 
 function plus_shift_ttn(
-  s::IndsNetwork, bit_map; dimension=default_dimension(), boundary_value=[0.0]
+  s::IndsNetwork, bit_map; dimension=default_dimension(), boundary=default_boundary()
 )
   @assert is_tree(s)
   @assert base(bit_map) == 2
@@ -49,10 +63,19 @@ function plus_shift_ttn(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
+  if boundary == "Neumann"
+    pop!(string_site)
+    push!(string_site, ("D-", vertex(bit_map, dimension, 1)))
+    add!(ttn_op, 1.0, (string_site...)...)
+  elseif boundary == "Periodic"
+    string_site = [("Dup", vertex(bit_map, dimension, i)) for i in 1:L]
+    add!(ttn_op, 1.0, (string_site...)...)
+  end
+
   return ttn(ttn_op, s; algorithm="svd")
 end
 
-function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
+function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension(), boundary=default_boundary())
   @assert is_tree(s)
   @assert base(bit_map) == 2
   ttn_op = OpSum()
@@ -65,6 +88,15 @@ function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
     pop!(string_site)
     push!(string_site, ("D+", vertex(bit_map, dimension, i)))
     push!(string_site, ("D-", vertex(bit_map, dimension, i - 1)))
+    add!(ttn_op, 1.0, (string_site...)...)
+  end
+
+  if boundary == "Neumann"
+    pop!(string_site)
+    push!(string_site, ("D+", vertex(bit_map, dimension, 1)))
+    add!(ttn_op, 1.0, (string_site...)...)
+  elseif boundary == "Periodic"
+    string_site = [("Ddn", vertex(bit_map, dimension, i)) for i in 1:L]
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
@@ -84,12 +116,14 @@ function stencil(
   shifts::Vector{Float64},
   delta_power::Int64;
   dimension=default_dimension(),
+  left_boundary = default_boundary(),
+  right_boundary = default_boundary(),
   scale=true,
   truncate_kwargs...,
 )
   @assert length(shifts) == 3
-  plus_shift = first(shifts) * plus_shift_ttn(s, bit_map; dimension)
-  minus_shift = last(shifts) * minus_shift_ttn(s, bit_map; dimension)
+  plus_shift = first(shifts) * plus_shift_ttn(s, bit_map; dimension, boundary = right_boundary)
+  minus_shift = last(shifts) * minus_shift_ttn(s, bit_map; dimension, boundary = left_boundary)
   no_shift = shifts[2] * no_shift_ttn(s)
 
   stencil_op = plus_shift + minus_shift + no_shift
