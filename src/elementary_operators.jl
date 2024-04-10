@@ -64,11 +64,10 @@ function plus_shift_ttn(
   end
 
   if boundary == "Neumann"
-    pop!(string_site)
-    push!(string_site, ("D-", vertex(bit_map, dimension, 1)))
+    string_site = [("Dup", vertex(bit_map, dimension, i)) for i in 1:L]
     add!(ttn_op, 1.0, (string_site...)...)
   elseif boundary == "Periodic"
-    string_site = [("Dup", vertex(bit_map, dimension, i)) for i in 1:L]
+    string_site = [("D-", vertex(bit_map, dimension, i)) for i in 1:L]
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
@@ -92,11 +91,10 @@ function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension(),
   end
 
   if boundary == "Neumann"
-    pop!(string_site)
-    push!(string_site, ("D+", vertex(bit_map, dimension, 1)))
+    string_site = [("Ddn", vertex(bit_map, dimension, i)) for i in 1:L]
     add!(ttn_op, 1.0, (string_site...)...)
   elseif boundary == "Periodic"
-    string_site = [("Ddn", vertex(bit_map, dimension, i)) for i in 1:L]
+    string_site = [("D+", vertex(bit_map, dimension, i)) for i in 1:L]
     add!(ttn_op, 1.0, (string_site...)...)
   end
 

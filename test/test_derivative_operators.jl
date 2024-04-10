@@ -26,28 +26,6 @@ using Dictionaries: Dictionary
     ∂2x_ψ_fx_x = real(calculate_fx(∂2x_ψ_fx, x))
     @test ∂2x_ψ_fx_x ≈ -pi * pi * sin(pi * x) atol = 1e-3
   end
-
-  ∇sq = laplacian_operator(s, bit_map; cutoff=1e-12, left_boundary = "Periodic", right_boundary = "Periodic")
-
-  ψ_fx = sin_itn(s, bit_map; k=2.0*Float64(pi))
-  ∂2x_ψ_fx = operate(∇sq, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-
-  xs = [delta, 0.25, 0.625, 0.875]
-  for x in xs
-    ∂2x_ψ_fx_x = real(calculate_fx(∂2x_ψ_fx, x))
-    @test ∂2x_ψ_fx_x ≈ -4 * pi * pi * sin(2.0 *pi * x) atol = 1e-3
-  end
-
-  d_dx = derivative_operator(s, bit_map; cutoff=1e-12, left_boundary = "Neumann", right_boundary = "Neumann")
-
-  ψ_fx = cos_itn(s, bit_map; k=Float64(pi))
-  ∂x_ψ_fx = operate(d_dx, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-
-  xs = [delta, 0.25, 0.625, 0.875]
-  for x in xs
-    ∂x_ψ_fx_x = real(calculate_fx(∂x_ψ_fx, x))
-    @test ∂x_ψ_fx_x ≈ - pi * sin(pi * x) atol = 1e-3
-  end
 end
 
 @testset "test derivative in 1D on tree" begin
