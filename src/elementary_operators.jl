@@ -74,7 +74,9 @@ function plus_shift_ttn(
   return ttn(ttn_op, s; algorithm="svd")
 end
 
-function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension(), boundary=default_boundary())
+function minus_shift_ttn(
+  s::IndsNetwork, bit_map; dimension=default_dimension(), boundary=default_boundary()
+)
   @assert is_tree(s)
   @assert base(bit_map) == 2
   ttn_op = OpSum()
@@ -114,14 +116,16 @@ function stencil(
   shifts::Vector{Float64},
   delta_power::Int64;
   dimension=default_dimension(),
-  left_boundary = default_boundary(),
-  right_boundary = default_boundary(),
+  left_boundary=default_boundary(),
+  right_boundary=default_boundary(),
   scale=true,
   truncate_kwargs...,
 )
   @assert length(shifts) == 3
-  plus_shift = first(shifts) * plus_shift_ttn(s, bit_map; dimension, boundary = right_boundary)
-  minus_shift = last(shifts) * minus_shift_ttn(s, bit_map; dimension, boundary = left_boundary)
+  plus_shift =
+    first(shifts) * plus_shift_ttn(s, bit_map; dimension, boundary=right_boundary)
+  minus_shift =
+    last(shifts) * minus_shift_ttn(s, bit_map; dimension, boundary=left_boundary)
   no_shift = shifts[2] * no_shift_ttn(s)
 
   stencil_op = plus_shift + minus_shift + no_shift
