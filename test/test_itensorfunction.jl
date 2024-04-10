@@ -132,7 +132,7 @@ end
       ψ_fx = poly_itn(s, bit_map, coeffs)
       fx_x = calculate_fx(ψ_fx, x)
 
-      fx_exact = sum([coeffs[i] * (x^(deg + 1 - i)) for i in 1:(deg + 1)])
+      fx_exact = sum([coeffs[i] * (x^(i - 1)) for i in 1:(deg + 1)])
       @test fx_x ≈ fx_exact atol = 1e-4
     end
   end
@@ -142,10 +142,7 @@ end
   #Constant function but represented in three dimension
   @testset "test const" begin
     g = named_grid((3, 3))
-
-    vertex_to_dimension_map = Dictionary(vertices(g), [v[1] for v in vertices(g)])
-    vertex_to_bit_map = Dictionary(vertices(g), [v[2] for v in vertices(g)])
-    bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+    bit_map = BitMap(g; map_dimension=2)
     s = siteinds(g, bit_map)
 
     c = 1.5
@@ -169,11 +166,7 @@ end
   ]
   L = 10
   g = named_grid((L, 1))
-  vertex_to_dimension_map = Dictionary(vertices(g), [(v[1] % 2) + 1 for v in vertices(g)])
-  vertex_to_bit_map = Dictionary(
-    vertices(g), [ceil(Int64, v[1] * 0.5) for v in vertices(g)]
-  )
-  bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+  bit_map = BitMap(g; map_dimension=2)
   x, y = 0.625, 0.25
 
   for (name, net_func, func) in funcs
@@ -198,9 +191,7 @@ end
     a = 1.3
     k = 0.15
     nterms = 10
-    vertex_to_dimension_map = Dictionary(vertices(g), [v[2] for v in vertices(g)])
-    vertex_to_bit_map = Dictionary(vertices(g), [v[1] for v in vertices(g)])
-    bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+    bit_map = BitMap(g; map_dimension=2)
     s = siteinds(g, bit_map)
 
     x, y = 0.625, 0.875

@@ -1,21 +1,12 @@
 using Test
 using ITensorNumericalAnalysis
 
-using Graphs: SimpleGraph, uniform_tree, binary_tree, random_regular_graph, is_tree
-using NamedGraphs:
-  NamedGraph,
-  named_grid,
-  vertices,
-  named_comb_tree,
-  rename_vertices,
-  random_bfs_tree,
-  undirected_graph
+using Graphs: SimpleGraph, uniform_tree
+using NamedGraphs: NamedGraph
 using ITensors: ITensors, Index, siteinds, dim, tags, replaceprime!, MPO, MPS, inner
 using ITensorNetworks: ITensorNetwork, dmrg, ttn, maxlinkdim
 using Dictionaries: Dictionary
-using SplitApplyCombine: group
 using Random: seed!
-using Distributions: Uniform
 
 using UnicodePlots
 
@@ -24,23 +15,34 @@ seed!(1234)
 L = 14
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
 
-vertex_to_dimension_map = Dictionary(vertices(g), [(v[1] % 2) + 1 for v in vertices(g)])
-vertex_to_bit_map = Dictionary(vertices(g), [ceil(Int64, v[1] * 0.5) for v in vertices(g)])
-bit_map = BitMap(vertex_to_bit_map, vertex_to_dimension_map)
+bit_map = BitMap(g; map_dimension=2)
 s = siteinds(g, bit_map)
 
 ψ_fxy = 0.1 * rand_itn(s, bit_map; link_space=2)
 ∇ = laplacian_operator(s, bit_map; scale=false)
-∇ = truncate(∇; cutoff=1e-12)
-@show maxlinkdim(∇)
+∇ = truncate(∇; cutoff=1e-8)
+println("2D Laplacian constructed for this tree, bond dimension is $(maxlinkdim(∇))")
 
-dmrg_kwargs = (nsweeps=25, normalize=true, maxdim=20, cutoff=1e-12, outputlevel=1, nsites=2)
+init_energy =
+  inner(ttn(itensornetwork(ψ_fxy))', ∇, ttn(itensornetwork(ψ_fxy))) /
+  inner(ttn(itensornetwork(ψ_fxy)), ttn(itensornetwork(ψ_fxy)))
+println(
+  "Starting DMRG to find eigensolution of 2D Laplace operator. Initial energy is $init_energy",
+)
+
+dmrg_kwargs = (nsweeps=10, normalize=true, maxdim=15, cutoff=1e-10, outputlevel=1, nsites=2)
 ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
 ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), bit_map)
 
+ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-8)
+
 final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
-#Smallest eigenvalue in this case should be -8
-@show final_energy
+println(
+  "Finished DMRG. Found solution of energy $final_energy with bond dimension $(maxlinkdim(ϕ_fxy))",
+)
+println(
+  "Note that in 2D, the discrete laplacian with a step size of 1 has a lowest eigenvalue of -8.",
+)
 
 n_grid = 100
 x_vals, y_vals = grid_points(bit_map, n_grid, 1), grid_points(bit_map, n_grid, 2)
@@ -51,4 +53,5 @@ for (i, x) in enumerate(x_vals)
   end
 end
 
-show(heatmap(vals))
+println("Here is the heatmap of the 2D function")
+show(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
