@@ -28,7 +28,10 @@ export const_itensornetwork,
   polynomial_itensornetwork,
   random_itensornetworkfunction,
   laplacian_operator,
-  derivative_operator,
+  first_derivative_operator,
+  second_derivative_operator,
+  third_derivative_operator,
+  fourth_derivative_operator,
   identity_operator
 export const_itn,
   poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
