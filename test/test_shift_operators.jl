@@ -8,7 +8,7 @@ using NamedGraphs: named_grid, named_comb_tree, NamedGraph, nv, vertices
 using ITensorNumericalAnalysis: itensornetwork
 using Dictionaries: Dictionary
 
-using ITensorNumericalAnalysis: plus_shift_ttn, minus_shift_ttn
+using ITensorNumericalAnalysis: stencil
 
 @testset "test shift operators in 1D on MPS" begin
   g = named_grid((6, 1))
@@ -19,23 +19,30 @@ using ITensorNumericalAnalysis: plus_shift_ttn, minus_shift_ttn
   xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
   ψ_fx = poly_itn(s, bit_map, [1.0, 0.5, 0.25])
 
-  plus_shift_dirichlet = plus_shift_ttn(s, bit_map; boundary="Dirichlet")
-  minus_shift_dirichlet = minus_shift_ttn(s, bit_map; boundary="Dirichlet")
-  plus_shift_pbc = plus_shift_ttn(s, bit_map; boundary="Periodic")
-  minus_shift_pbc = minus_shift_ttn(s, bit_map; boundary="Periodic")
-  plus_shift_neumann = plus_shift_ttn(s, bit_map; boundary="Neumann")
-  minus_shift_neumann = minus_shift_ttn(s, bit_map; boundary="Neumann")
-
-  ψ_fx_pshift_dirichlet = operate(
-    plus_shift_dirichlet, ψ_fx; truncate_kwargs=(; cutoff=1e-12)
+  plus_shift_dirichlet = stencil(
+    s, bit_map, [0.0, 1.0, 0.0, 0.0, 0.0], 0; scale=false, right_boundary="Dirichlet"
   )
-  ψ_fx_mshift_dirichlet = operate(
-    minus_shift_dirichlet, ψ_fx; truncate_kwargs=(; cutoff=1e-12)
+  minus_shift_dirichlet = stencil(
+    s, bit_map, [0.0, 0.0, 0.0, 1.0, 0.0], 0; scale=false, left_boundary="Dirichlet"
   )
-  ψ_fx_pshift_pbc = operate(plus_shift_pbc, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fx_mshift_pbc = operate(minus_shift_pbc, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fx_pshift_neumann = operate(plus_shift_neumann, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fx_mshift_neumann = operate(minus_shift_neumann, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
+  plus_shift_pbc = stencil(
+    s, bit_map, [0.0, 1.0, 0.0, 0.0, 0.0], 0; scale=false, right_boundary="Periodic"
+  )
+  minus_shift_pbc = stencil(
+    s, bit_map, [0.0, 0.0, 0.0, 1.0, 0.0], 0; scale=false, left_boundary="Periodic"
+  )
+  plus_shift_neumann = stencil(
+    s, bit_map, [0.0, 1.0, 0.0, 0.0, 0.0], 0; scale=false, right_boundary="Neumann"
+  )
+  minus_shift_neumann = stencil(
+    s, bit_map, [0.0, 0.0, 0.0, 1.0, 0.0], 0; scale=false, left_boundary="Neumann"
+  )
+  ψ_fx_pshift_dirichlet = operate(plus_shift_dirichlet, ψ_fx; cutoff=1e-12)
+  ψ_fx_mshift_dirichlet = operate(minus_shift_dirichlet, ψ_fx; cutoff=1e-12)
+  ψ_fx_pshift_pbc = operate(plus_shift_pbc, ψ_fx; cutoff=1e-12)
+  ψ_fx_mshift_pbc = operate(minus_shift_pbc, ψ_fx; cutoff=1e-12)
+  ψ_fx_pshift_neumann = operate(plus_shift_neumann, ψ_fx; cutoff=1e-12)
+  ψ_fx_mshift_neumann = operate(minus_shift_neumann, ψ_fx; cutoff=1e-12)
 
   for x in xs
     if x + delta < 1
@@ -72,23 +79,31 @@ end
   xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
   ψ_fx = poly_itn(s, bit_map, [1.0, 0.5, 0.25])
 
-  plus_shift_dirichlet = plus_shift_ttn(s, bit_map; boundary="Dirichlet")
-  minus_shift_dirichlet = minus_shift_ttn(s, bit_map; boundary="Dirichlet")
-  plus_shift_pbc = plus_shift_ttn(s, bit_map; boundary="Periodic")
-  minus_shift_pbc = minus_shift_ttn(s, bit_map; boundary="Periodic")
-  plus_shift_neumann = plus_shift_ttn(s, bit_map; boundary="Neumann")
-  minus_shift_neumann = minus_shift_ttn(s, bit_map; boundary="Neumann")
+  plus_shift_dirichlet = stencil(
+    s, bit_map, [0.0, 1.0, 0.0, 0.0, 0.0], 0; scale=false, right_boundary="Dirichlet"
+  )
+  minus_shift_dirichlet = stencil(
+    s, bit_map, [0.0, 0.0, 0.0, 1.0, 0.0], 0; scale=false, left_boundary="Dirichlet"
+  )
+  plus_shift_pbc = stencil(
+    s, bit_map, [0.0, 1.0, 0.0, 0.0, 0.0], 0; scale=false, right_boundary="Periodic"
+  )
+  minus_shift_pbc = stencil(
+    s, bit_map, [0.0, 0.0, 0.0, 1.0, 0.0], 0; scale=false, left_boundary="Periodic"
+  )
+  plus_shift_neumann = stencil(
+    s, bit_map, [0.0, 1.0, 0.0, 0.0, 0.0], 0; scale=false, right_boundary="Neumann"
+  )
+  minus_shift_neumann = stencil(
+    s, bit_map, [0.0, 0.0, 0.0, 1.0, 0.0], 0; scale=false, left_boundary="Neumann"
+  )
 
-  ψ_fx_pshift_dirichlet = operate(
-    plus_shift_dirichlet, ψ_fx; truncate_kwargs=(; cutoff=1e-12)
-  )
-  ψ_fx_mshift_dirichlet = operate(
-    minus_shift_dirichlet, ψ_fx; truncate_kwargs=(; cutoff=1e-12)
-  )
-  ψ_fx_pshift_pbc = operate(plus_shift_pbc, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fx_mshift_pbc = operate(minus_shift_pbc, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fx_pshift_neumann = operate(plus_shift_neumann, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fx_mshift_neumann = operate(minus_shift_neumann, ψ_fx; truncate_kwargs=(; cutoff=1e-12))
+  ψ_fx_pshift_dirichlet = operate(plus_shift_dirichlet, ψ_fx; cutoff=1e-12)
+  ψ_fx_mshift_dirichlet = operate(minus_shift_dirichlet, ψ_fx; cutoff=1e-12)
+  ψ_fx_pshift_pbc = operate(plus_shift_pbc, ψ_fx; cutoff=1e-12)
+  ψ_fx_mshift_pbc = operate(minus_shift_pbc, ψ_fx; cutoff=1e-12)
+  ψ_fx_pshift_neumann = operate(plus_shift_neumann, ψ_fx; cutoff=1e-12)
+  ψ_fx_mshift_neumann = operate(minus_shift_neumann, ψ_fx; cutoff=1e-12)
 
   for x in xs
     if x + delta < 1
@@ -128,27 +143,67 @@ end
   ψ_fy = cos_itn(s, bit_map; dimension=2)
   ψ_fxy = ψ_fx + ψ_fx
 
-  plus_shift_dirichlet = plus_shift_ttn(s, bit_map; dimension=2, boundary="Dirichlet")
-  minus_shift_dirichlet = minus_shift_ttn(s, bit_map; dimension=2, boundary="Dirichlet")
-  plus_shift_pbc = plus_shift_ttn(s, bit_map; dimension=2, boundary="Periodic")
-  minus_shift_pbc = minus_shift_ttn(s, bit_map; dimension=2, boundary="Periodic")
-  plus_shift_neumann = plus_shift_ttn(s, bit_map; dimension=2, boundary="Neumann")
-  minus_shift_neumann = minus_shift_ttn(s, bit_map; dimension=2, boundary="Neumann")
+  plus_shift_dirichlet = stencil(
+    s,
+    bit_map,
+    [0.0, 1.0, 0.0, 0.0, 0.0],
+    0;
+    scale=false,
+    dimension=2,
+    right_boundary="Dirichlet",
+  )
+  minus_shift_dirichlet = stencil(
+    s,
+    bit_map,
+    [0.0, 0.0, 0.0, 1.0, 0.0],
+    0;
+    scale=false,
+    dimension=2,
+    left_boundary="Dirichlet",
+  )
+  plus_shift_pbc = stencil(
+    s,
+    bit_map,
+    [0.0, 1.0, 0.0, 0.0, 0.0],
+    0;
+    scale=false,
+    dimension=2,
+    right_boundary="Periodic",
+  )
+  minus_shift_pbc = stencil(
+    s,
+    bit_map,
+    [0.0, 0.0, 0.0, 1.0, 0.0],
+    0;
+    scale=false,
+    dimension=2,
+    left_boundary="Periodic",
+  )
+  plus_shift_neumann = stencil(
+    s,
+    bit_map,
+    [0.0, 1.0, 0.0, 0.0, 0.0],
+    0;
+    scale=false,
+    dimension=2,
+    right_boundary="Neumann",
+  )
+  minus_shift_neumann = stencil(
+    s,
+    bit_map,
+    [0.0, 0.0, 0.0, 1.0, 0.0],
+    0;
+    scale=false,
+    dimension=2,
+    left_boundary="Neumann",
+  )
 
-  ψ_fxy_pshift_dirichlet = operate(
-    plus_shift_dirichlet, ψ_fxy; truncate_kwargs=(; cutoff=1e-12)
-  )
-  ψ_fxy_mshift_dirichlet = operate(
-    minus_shift_dirichlet, ψ_fxy; truncate_kwargs=(; cutoff=1e-12)
-  )
-  ψ_fxy_pshift_pbc = operate(plus_shift_pbc, ψ_fxy; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fxy_mshift_pbc = operate(minus_shift_pbc, ψ_fxy; truncate_kwargs=(; cutoff=1e-12))
-  ψ_fxy_pshift_neumann = operate(
-    plus_shift_neumann, ψ_fxy; truncate_kwargs=(; cutoff=1e-12)
-  )
-  ψ_fxy_mshift_neumann = operate(
-    minus_shift_neumann, ψ_fxy; truncate_kwargs=(; cutoff=1e-12)
-  )
+  ψ_fxy_pshift_dirichlet = operate(plus_shift_dirichlet, ψ_fxy; cutoff=1e-12)
+  ψ_fxy_mshift_dirichlet = operate(minus_shift_dirichlet, ψ_fxy; cutoff=1e-12)
+  ψ_fxy_pshift_pbc = operate(plus_shift_pbc, ψ_fxy; cutoff=1e-12)
+  ψ_fxy_mshift_pbc = operate(minus_shift_pbc, ψ_fxy; cutoff=1e-12)
+  ψ_fxy_pshift_neumann = operate(plus_shift_neumann, ψ_fxy; cutoff=1e-12)
+  ψ_fxy_mshift_neumann = operate(minus_shift_neumann, ψ_fxy; cutoff=1e-12)
 
   for y in ys
     if y + delta < 1
