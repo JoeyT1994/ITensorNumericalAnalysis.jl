@@ -29,7 +29,7 @@ function Q_N_tensor(
   Q_N_array = zeros(Tuple(dims))
   for (i, xi) in enumerate(xivals)
     for j in 0:((n + 1)^(N) - 1)
-      is = digits(j; base=n + 1, pad=N)
+      is = Base.digits(j; base=n + 1, pad=N)
       f = f_alpha_beta(is[1:(N - 1)], last(is))
       Q_N_array[(i, Tuple(is + ones(Int64, (N)))...)...] =
         _coeff(N, is[1:(N - 1)], last(is)) * (xi^f)
@@ -53,7 +53,7 @@ function transfer_tensor(phys_ind::Index, beta_ind::Index, alpha_inds::Vector)
     for j in 0:(dim(beta_ind) - 1)
       if !isempty(alpha_inds)
         for k in 0:((first(virt_dims))^(N) - 1)
-          is = digits(k; base=first(virt_dims), pad=N)
+          is = Base.digits(k; base=first(virt_dims), pad=N)
           if sum(is) == j
             T_array[(i + 1, j + 1, Tuple(is + ones(Int64, (N)))...)...] = 1.0
           end

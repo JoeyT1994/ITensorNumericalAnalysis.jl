@@ -14,28 +14,28 @@ using ITensorNumericalAnalysis: backward_shift_op, forward_shift_op
   g = named_comb_tree((2, 3))
   L = nv(g)
   delta = 2.0^(-1.0 * L)
-  bit_map = BitMap(g)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s)
   xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-  ψ_fx = poly_itn(s, bit_map, [1.0, 0.5, 0.25])
+  ψ_fx = poly_itn(s, index_map, [1.0, 0.5, 0.25])
 
   forward_shift_dirichlet = forward_shift_op(
-    s, bit_map; boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_dirichlet = backward_shift_op(
-    s, bit_map; boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
   )
   forward_shift_pbc = forward_shift_op(
-    s, bit_map; boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_pbc = backward_shift_op(
-    s, bit_map; boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
   )
   forward_shift_neumann = forward_shift_op(
-    s, bit_map; boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_neumann = backward_shift_op(
-    s, bit_map; boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
   )
 
   ψ_fx_pshift_dirichlet = operate(forward_shift_dirichlet, ψ_fx; cutoff=1e-12)
@@ -75,29 +75,29 @@ end
   g = named_comb_tree((2, 3))
   L = nv(g)
   delta = 2.0^(-1.0 * L)
-  bit_map = BitMap(g)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s)
   xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-  ψ_fx = poly_itn(s, bit_map, [1.0, 0.5, 0.25])
+  ψ_fx = poly_itn(s, index_map, [1.0, 0.5, 0.25])
   n = 1
 
   forward_shift_dirichlet = forward_shift_op(
-    s, bit_map; n, boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; n, boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_dirichlet = backward_shift_op(
-    s, bit_map; n, boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; n, boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
   )
   forward_shift_pbc = forward_shift_op(
-    s, bit_map; n, boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; n, boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_pbc = backward_shift_op(
-    s, bit_map; n, boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; n, boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
   )
   forward_shift_neumann = forward_shift_op(
-    s, bit_map; n, boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; n, boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_neumann = backward_shift_op(
-    s, bit_map; n, boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; n, boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
   )
 
   ψ_fx_pshift_dirichlet = operate(forward_shift_dirichlet, ψ_fx; cutoff=1e-12)
@@ -136,33 +136,33 @@ end
 
 @testset "test shift operators in 2D on Tree" begin
   g = named_comb_tree((3, 3))
-  bit_map = BitMap(g; map_dimension=2)
-  L = length(vertices(bit_map, 2))
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s; map_dimension=2)
+  L = length(inds(index_map, 2))
   delta = 2.0^(-1.0 * L)
-  s = siteinds(g, bit_map)
   x = 0.5
   ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-  ψ_fx = poly_itn(s, bit_map, [1.0, 0.5, 0.25]; dimension=1)
-  ψ_fy = cos_itn(s, bit_map; dimension=2)
+  ψ_fx = poly_itn(s, index_map, [1.0, 0.5, 0.25]; dimension=1)
+  ψ_fy = cos_itn(s, index_map; dimension=2)
   ψ_fxy = ψ_fx + ψ_fx
 
   forward_shift_dirichlet = forward_shift_op(
-    s, bit_map; boundary="Dirichlet", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Dirichlet", dimension=2, truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_dirichlet = backward_shift_op(
-    s, bit_map; boundary="Dirichlet", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Dirichlet", dimension=2, truncate_kwargs=(; cutoff=1e-10)
   )
   forward_shift_pbc = forward_shift_op(
-    s, bit_map; boundary="Periodic", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Periodic", dimension=2, truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_pbc = backward_shift_op(
-    s, bit_map; boundary="Periodic", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Periodic", dimension=2, truncate_kwargs=(; cutoff=1e-10)
   )
   forward_shift_neumann = forward_shift_op(
-    s, bit_map; boundary="Neumann", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Neumann", dimension=2, truncate_kwargs=(; cutoff=1e-10)
   )
   backward_shift_neumann = backward_shift_op(
-    s, bit_map; boundary="Neumann", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+    s, index_map; boundary="Neumann", dimension=2, truncate_kwargs=(; cutoff=1e-10)
   )
 
   ψ_fxy_pshift_dirichlet = operate(forward_shift_dirichlet, ψ_fxy; cutoff=1e-12)

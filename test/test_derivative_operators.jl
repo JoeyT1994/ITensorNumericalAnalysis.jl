@@ -12,16 +12,16 @@ using Dictionaries: Dictionary
   g = named_grid((9, 1))
   L = nv(g)
   delta = (2.0)^(-Float64(L))
-  bit_map = BitMap(g)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s)
   left_boundary, right_boundary = "Periodic", "Periodic"
 
-  f1 = first_derivative_operator(s, bit_map; cutoff=1e-12, left_boundary, right_boundary)
-  f2 = second_derivative_operator(s, bit_map; cutoff=1e-12, left_boundary, right_boundary)
-  f3 = third_derivative_operator(s, bit_map; cutoff=1e-12, left_boundary, right_boundary)
-  f4 = fourth_derivative_operator(s, bit_map; cutoff=1e-12, left_boundary, right_boundary)
+  f1 = first_derivative_operator(s, index_map; cutoff=1e-12, left_boundary, right_boundary)
+  f2 = second_derivative_operator(s, index_map; cutoff=1e-12, left_boundary, right_boundary)
+  f3 = third_derivative_operator(s, index_map; cutoff=1e-12, left_boundary, right_boundary)
+  f4 = fourth_derivative_operator(s, index_map; cutoff=1e-12, left_boundary, right_boundary)
 
-  ψ_fx = sin_itn(s, bit_map; k=2.0 * Float64(pi))
+  ψ_fx = sin_itn(s, index_map; k=2.0 * Float64(pi))
 
   ψ_f1x = operate(f1, ψ_fx; cutoff=1e-8)
   ψ_f2x = operate(f2, ψ_fx; cutoff=1e-8)
@@ -45,12 +45,12 @@ end
   g = named_comb_tree((4, 3))
   L = nv(g)
   delta = 2.0^(-Float64(L))
-  bit_map = BitMap(g)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s)
 
-  ∂_∂x = first_derivative_operator(s, bit_map; cutoff=1e-10)
+  ∂_∂x = first_derivative_operator(s, index_map; cutoff=1e-10)
 
-  ψ_fx = sin_itn(s, bit_map; k=Float64(pi))
+  ψ_fx = sin_itn(s, index_map; k=Float64(pi))
   ∂x_ψ_fx = operate(∂_∂x, ψ_fx; cutoff=1e-12)
 
   xs = [delta, 0.125, 0.25, 0.625, 0.875]
@@ -63,11 +63,11 @@ end
 @testset "test multiplication_operator_in_1D" begin
   g = named_comb_tree((4, 3))
   L = nv(g)
-  bit_map = BitMap(g)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s)
 
-  ψ_gx = sin_itn(s, bit_map; k=0.5 * Float64(pi))
-  ψ_fx = cos_itn(s, bit_map; k=0.25 * Float64(pi))
+  ψ_gx = sin_itn(s, index_map; k=0.5 * Float64(pi))
+  ψ_fx = cos_itn(s, index_map; k=0.25 * Float64(pi))
 
   ψ_fxgx = ψ_gx * ψ_fx
   xs = [0.025, 0.1, 0.25, 0.625, 0.875]
@@ -81,11 +81,11 @@ end
   L = 8
   g = NamedGraph(SimpleGraph(uniform_tree(L)))
 
-  bit_map = BitMap(g; map_dimension=2)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s; map_dimension=2)
 
-  ψ_fx = cos_itn(s, bit_map; k=0.25 * Float64(pi), dimension=1)
-  ψ_gy = sin_itn(s, bit_map; k=0.5 * Float64(pi), dimension=2)
+  ψ_fx = cos_itn(s, index_map; k=0.25 * Float64(pi), dimension=1)
+  ψ_gy = sin_itn(s, index_map; k=0.5 * Float64(pi), dimension=2)
   @assert dimension(ψ_fx) == dimension(ψ_gy) == 2
 
   ψ_fxgy = ψ_fx * ψ_gy
@@ -108,17 +108,17 @@ end
   L = 45
   g = named_grid((L, 1))
 
-  bit_map = BitMap(g; map_dimension=3)
-  s = siteinds(g, bit_map)
+  s = continuous_siteinds(g)
+  index_map = IndexMap(s; map_dimension=3)
 
-  ψ_fx = poly_itn(s, bit_map, [0.0, -1.0, 1.0]; dimension=1)
-  ψ_gy = sin_itn(s, bit_map; k=Float64(pi), dimension=2)
-  ψ_hz = sin_itn(s, bit_map; k=Float64(pi), dimension=3)
+  ψ_fx = poly_itn(s, index_map, [0.0, -1.0, 1.0]; dimension=1)
+  ψ_gy = sin_itn(s, index_map; k=Float64(pi), dimension=2)
+  ψ_hz = sin_itn(s, index_map; k=Float64(pi), dimension=3)
   @assert dimension(ψ_fx) == dimension(ψ_gy) == dimension(ψ_hz) == 3
 
   ψ_fxgyhz = ψ_fx * ψ_gy * ψ_hz
 
-  ∂_∂y = first_derivative_operator(s, bit_map; dimension=2, cutoff=1e-10)
+  ∂_∂y = first_derivative_operator(s, index_map; dimension=2, cutoff=1e-10)
 
   ∂_∂y_ψ_fxgyhz = operate([∂_∂y], ψ_fxgyhz; cutoff=1e-10)
 
