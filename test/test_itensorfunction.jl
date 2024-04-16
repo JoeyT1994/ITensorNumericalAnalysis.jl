@@ -22,7 +22,7 @@ using Distributions: Uniform
   @test dimension_vertices(fψ, 1) == vertices(fψ)
   @test dimension(fψ) == 1
 
-  dim_vertices = collect(values(group(v -> first(v) < Int64(0.5 * L), vertices(ψ))))
+  dim_vertices = collect(values(group(v -> first(v) < Int(0.5 * L), vertices(ψ))))
   fψ = ITensorNetworkFunction(ψ, dim_vertices)
   @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
     Set(vertices(fψ))

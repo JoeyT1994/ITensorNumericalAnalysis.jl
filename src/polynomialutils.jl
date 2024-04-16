@@ -1,12 +1,12 @@
 using ITensors: Index, ITensor, dim
 
 """Exponent on x_i for the tensor Q(x_i) on the tree"""
-function f_alpha_beta(α::Vector{Int64}, beta::Int64)
+function f_alpha_beta(α::Vector{Int}, beta::Int)
   return !isempty(α) ? max(0, beta - sum(α)) : max(0, beta)
 end
 
 """Coefficient on x_i for the tensor Q(x_i) on the tree"""
-function _coeff(N::Int64, α::Vector{Int64}, beta)
+function _coeff(N::Int, α::Vector{Int}, beta)
   @assert length(α) == N - 1
   return if N == 1
     1
@@ -17,7 +17,7 @@ end
 
 """Constructor for the tensor that sits on a vertex of degree N"""
 function Q_N_tensor(
-  N::Int64, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector{Float64}
+  N::Int, siteind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector
 )
   @assert length(αind) == N - 1
   @assert length(xivals) == dim(siteind)
@@ -31,7 +31,7 @@ function Q_N_tensor(
     for j in 0:((n + 1)^(N) - 1)
       is = Base.digits(j; base=n + 1, pad=N)
       f = f_alpha_beta(is[1:(N - 1)], last(is))
-      Q_N_array[(i, Tuple(is + ones(Int64, (N)))...)...] =
+      Q_N_array[(i, Tuple(is + ones(Int, (N)))...)...] =
         _coeff(N, is[1:(N - 1)], last(is)) * (xi^f)
     end
   end
@@ -55,7 +55,7 @@ function transfer_tensor(phys_ind::Index, beta_ind::Index, alpha_inds::Vector)
         for k in 0:((first(virt_dims))^(N) - 1)
           is = Base.digits(k; base=first(virt_dims), pad=N)
           if sum(is) == j
-            T_array[(i + 1, j + 1, Tuple(is + ones(Int64, (N)))...)...] = 1.0
+            T_array[(i + 1, j + 1, Tuple(is + ones(Int, (N)))...)...] = 1.0
           end
         end
       else

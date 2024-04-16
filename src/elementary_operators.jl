@@ -46,7 +46,7 @@ function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
 end
 
 function forward_shift_opsum(
-  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int64=0
+  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
@@ -87,7 +87,7 @@ function forward_shift_opsum(
 end
 
 function backward_shift_opsum(
-  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int64=0
+  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
@@ -146,8 +146,8 @@ end
 
 function stencil(
   s::IndsNetworkMap,
-  shifts::Vector{Float64},
-  delta_power::Int64;
+  shifts::Vector,
+  delta_power::Int;
   dimension=default_dimension(),
   left_boundary=default_boundary(),
   right_boundary=default_boundary(),

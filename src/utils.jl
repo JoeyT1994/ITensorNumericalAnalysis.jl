@@ -3,14 +3,14 @@ using ITensors: ITensors, Index, dim, inds, siteinds
 using ITensorNetworks: IndsNetwork, random_tensornetwork, vertex_tag
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
-function build_full_rank_tensor(L::Int64, fx::Function; base::Int64=2)
+function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
   inds = [Index(base, "$i") for i in 1:L]
   dims = Tuple([base for i in 1:L])
   array = zeros(dims)
   for i in 0:(base^(L) - 1)
     xis = digits(i; base, pad=L)
     x = sum([xis[i] / (base^i) for i in 1:L])
-    array[Tuple(xis + ones(Int64, (L)))...] = fx(x)
+    array[Tuple(xis + ones(Int, (L)))...] = fx(x)
   end
 
   return ITensor(array, inds)

@@ -30,7 +30,7 @@ println(
 
 dmrg_kwargs = (nsweeps=15, normalize=true, maxdim=30, cutoff=1e-12, outputlevel=1, nsites=2)
 ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
-ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), index_map)
+ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), s)
 
 ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-10)
 
@@ -43,7 +43,7 @@ println(
 )
 
 n_grid = 100
-x_vals, y_vals = grid_points(index_map, n_grid, 1), grid_points(index_map, n_grid, 2)
+x_vals, y_vals = grid_points(s, n_grid, 1), grid_points(s, n_grid, 2)
 vals = zeros((length(x_vals), length(y_vals)))
 for (i, x) in enumerate(x_vals)
   for (j, y) in enumerate(y_vals)
@@ -55,7 +55,7 @@ println("Here is the heatmap of the 2D function")
 show(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
 
 n_grid = 100
-x_vals = grid_points(index_map, n_grid, 1)
+x_vals = grid_points(s, n_grid, 1)
 y = 0.5
 vals = zeros(length(x_vals))
 for (i, x) in enumerate(x_vals)

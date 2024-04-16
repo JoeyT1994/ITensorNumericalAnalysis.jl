@@ -5,13 +5,13 @@ using ITensors: siteinds
 using ITensorNetworks: maxlinkdim
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: named_grid, named_comb_tree, NamedGraph, nv, vertices
-using ITensorNumericalAnalysis: itensornetwork
+using ITensorNumericalAnalysis: itensornetwork, forward_shift_op, backward_shift_op
 using Dictionaries: Dictionary
 
 @testset "test differentiation in 1D on MPS" begin
   g = named_grid((9, 1))
   L = nv(g)
-  delta = (2.0)^(-Float64(L))
+  delta = (2.0)^(-Number(L))
   s = continuous_siteinds(g)
   left_boundary, right_boundary = "Periodic", "Periodic"
 
@@ -20,7 +20,7 @@ using Dictionaries: Dictionary
   f3 = third_derivative_operator(s; cutoff=1e-12, left_boundary, right_boundary)
   f4 = fourth_derivative_operator(s; cutoff=1e-12, left_boundary, right_boundary)
 
-  ψ_fx = sin_itn(s; k=2.0 * Float64(pi))
+  ψ_fx = sin_itn(s; k=2.0 * Number(pi))
 
   ψ_f1x = operate(f1, ψ_fx; cutoff=1e-8)
   ψ_f2x = operate(f2, ψ_fx; cutoff=1e-8)
@@ -43,12 +43,12 @@ end
 @testset "test differentiation in 1D on tree" begin
   g = named_comb_tree((4, 3))
   L = nv(g)
-  delta = 2.0^(-Float64(L))
+  delta = 2.0^(-Number(L))
   s = continuous_siteinds(g)
 
   ∂_∂x = first_derivative_operator(s; cutoff=1e-10)
 
-  ψ_fx = sin_itn(s; k=Float64(pi))
+  ψ_fx = sin_itn(s; k=Number(pi))
   ∂x_ψ_fx = operate(∂_∂x, ψ_fx; cutoff=1e-12)
 
   xs = [delta, 0.125, 0.25, 0.625, 0.875]
@@ -65,8 +65,8 @@ end
   s = continuous_siteinds(g; map_dimension=3)
 
   ψ_fx = poly_itn(s, [0.0, -1.0, 1.0]; dimension=1)
-  ψ_gy = sin_itn(s; k=Float64(pi), dimension=2)
-  ψ_hz = sin_itn(s; k=Float64(pi), dimension=3)
+  ψ_gy = sin_itn(s; k=Number(pi), dimension=2)
+  ψ_hz = sin_itn(s; k=Number(pi), dimension=3)
   @assert dimension(ψ_fx) == dimension(ψ_gy) == dimension(ψ_hz) == 3
 
   ψ_fxgyhz = ψ_fx * ψ_gy * ψ_hz
@@ -96,8 +96,8 @@ end
   L = nv(g)
   s = continuous_siteinds(g)
 
-  ψ_gx = sin_itn(s; k=0.5 * Float64(pi))
-  ψ_fx = cos_itn(s; k=0.25 * Float64(pi))
+  ψ_gx = sin_itn(s; k=0.5 * Number(pi))
+  ψ_fx = cos_itn(s; k=0.25 * Number(pi))
 
   ψ_fxgx = ψ_gx * ψ_fx
   xs = [0.025, 0.1, 0.25, 0.625, 0.875]
@@ -113,8 +113,8 @@ end
 
   s = continuous_siteinds(g; map_dimension=2)
 
-  ψ_fx = cos_itn(s; k=0.25 * Float64(pi), dimension=1)
-  ψ_gy = sin_itn(s; k=0.5 * Float64(pi), dimension=2)
+  ψ_fx = cos_itn(s; k=0.25 * Number(pi), dimension=1)
+  ψ_gy = sin_itn(s; k=0.5 * Number(pi), dimension=2)
   @assert dimension(ψ_fx) == dimension(ψ_gy) == 2
 
   ψ_fxgy = ψ_fx * ψ_gy

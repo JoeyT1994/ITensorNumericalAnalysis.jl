@@ -19,10 +19,10 @@ default_dimension() = 1
 
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
 function const_itensornetwork(
-  s::IndsNetworkMap; c::Union{Float64,ComplexF64}=default_c_value(), linkdim::Int64=1
+  s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1
 )
   ψ = random_itensornetwork(s; link_space=linkdim)
-  inv_L = Float64(1.0 / nv(s))
+  inv_L = Number(1.0 / nv(s))
   for v in vertices(ψ)
     sinds = inds(s, v)
     virt_inds = setdiff(inds(ψ[v]), sinds)
@@ -36,9 +36,9 @@ end
 function for x ∈ [0,1] as an ITensorNetworkFunction, along the specified dim"""
 function exp_itensornetwork(
   s::IndsNetworkMap;
-  k::Union{Float64,ComplexF64}=default_k_value(),
-  a::Union{Float64,ComplexF64}=default_a_value(),
-  dimension::Int64=default_dimension(),
+  k=default_k_value(),
+  a=default_a_value(),
+  dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   Lx = length(dimension_vertices(ψ, dimension))
@@ -54,9 +54,9 @@ end
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function cosh_itensornetwork(
   s::IndsNetworkMap;
-  k::Union{Float64,ComplexF64}=default_k_value(),
-  a::Union{Float64,ComplexF64}=default_a_value(),
-  dimension::Int64=default_dimension(),
+  k=default_k_value(),
+  a=default_a_value(),
+  dimension::Int=default_dimension(),
 )
   ψ1 = exp_itensornetwork(s; a, k, dimension)
   ψ2 = exp_itensornetwork(s; a=-a, k=-k, dimension)
@@ -71,9 +71,9 @@ end
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function sinh_itensornetwork(
   s::IndsNetworkMap;
-  k::Union{Float64,ComplexF64}=default_k_value(),
-  a::Union{Float64,ComplexF64}=default_a_value(),
-  dimension::Int64=default_dimension(),
+  k=default_k_value(),
+  a=default_a_value(),
+  dimension::Int=default_dimension(),
 )
   ψ1 = exp_itensornetwork(s; a, k, dimension)
   ψ2 = exp_itensornetwork(s; a=-a, k=-k, dimension)
@@ -88,10 +88,10 @@ end
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function tanh_itensornetwork(
   s::IndsNetworkMap;
-  k::Union{Float64,ComplexF64}=default_k_value(),
-  a::Union{Float64,ComplexF64}=default_a_value(),
-  nterms::Int64=default_nterms(),
-  dimension::Int64=default_dimension(),
+  k=default_k_value(),
+  a=default_a_value(),
+  nterms::Int=default_nterms(),
+  dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   for n in 1:nterms
@@ -107,9 +107,9 @@ end
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function cos_itensornetwork(
   s::IndsNetworkMap;
-  k::Union{Float64,ComplexF64}=default_k_value(),
-  a::Union{Float64,ComplexF64}=default_a_value(),
-  dimension::Int64=default_dimension(),
+  k=default_k_value(),
+  a=default_a_value(),
+  dimension::Int=default_dimension(),
 )
   ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, dimension)
   ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, dimension)
@@ -124,9 +124,9 @@ end
 defines the network geometry. Vertex map provides the ordering of the sites as bits"""
 function sin_itensornetwork(
   s::IndsNetworkMap;
-  k::Union{Float64,ComplexF64}=default_k_value(),
-  a::Union{Float64,ComplexF64}=default_a_value(),
-  dimension::Int64=default_dimension(),
+  k=default_k_value(),
+  a=default_a_value(),
+  dimension::Int=default_dimension(),
 )
   ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, dimension)
   ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, dimension)
@@ -140,7 +140,7 @@ end
 """Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i} on the graph structure specified
 by indsnetwork"""
 function polynomial_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector{Float64}; dimension::Int64=default_dimension()
+  s::IndsNetworkMap, coeffs::Vector; dimension::Int=default_dimension()
 )
   n = length(coeffs)
   #First treeify the index network (ignore edges that form loops)
