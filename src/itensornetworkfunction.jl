@@ -1,15 +1,16 @@
+using Base: Base
 using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type
 using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 
-struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},IM<:IndexMap} <:
+struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},INM<:IndsNetworkMap} <:
        AbstractITensorNetwork{V}
   itensornetwork::TN
-  indexmap::IM
+  indsnetworkmap::INM
 end
 
 itensornetwork(fitn::ITensorNetworkFunction) = fitn.itensornetwork
-indexmap(fitn::ITensorNetworkFunction) = fitn.indexmap
+indsnetworkmap(fitn::ITensorNetworkFunction) = fitn.indsnetworkmap
 
 #Needed for interface from AbstractITensorNetwork
 function ITensorNetworks.data_graph_type(TN::Type{<:ITensorNetworkFunction})
@@ -17,22 +18,21 @@ function ITensorNetworks.data_graph_type(TN::Type{<:ITensorNetworkFunction})
 end
 ITensorNetworks.data_graph(fitn::ITensorNetworkFunction) = data_graph(itensornetwork(fitn))
 function Base.copy(fitn::ITensorNetworkFunction)
-  return ITensorNetworkFunction(copy(itensornetwork(fitn)), copy(indexmap(fitn)))
+  return ITensorNetworkFunction(copy(itensornetwork(fitn)), copy(indsnetworkmap(fitn)))
 end
 
 function ITensorNetworkFunction(
   itn::AbstractITensorNetwork, dimension_vertices::Vector{Vector{V}}
 ) where {V}
   s = siteinds(itn)
-  return ITensorNetworkFunction(itn, IndexMap(s, dimension_vertices))
+  return ITensorNetworkFunction(itn, IndsNetworkMap(s, dimension_vertices))
 end
 
-#Constructor, assume one-dimensional and ordered as vertices of the itn
 function ITensorNetworkFunction(itn::AbstractITensorNetwork)
-  return ITensorNetworkFunction(itn, IndexMap(siteinds(itn)))
+  return ITensorNetworkFunction(itn, IndsNetworkMap(siteinds(itn)))
 end
 
-#Forward functionality from indexmap
+#Forward functionality from indsnetworkmap
 for f in [
   :ind,
   :dimension,
@@ -43,15 +43,6 @@ for f in [
   :calculate_x,
   :calculate_xyz,
   :grid_points,
-]
-  @eval begin
-    function $f(fitn::ITensorNetworkFunction, args...; kwargs...)
-      return $f(indexmap(fitn), args...; kwargs...)
-    end
-  end
-end
-
-for f in [
   :vertices_dimensions,
   :vertices_digits,
   :vertex_digit,
@@ -60,14 +51,16 @@ for f in [
 ]
   @eval begin
     function $f(fitn::ITensorNetworkFunction, args...; kwargs...)
-      return $f(siteinds(fitn), indexmap(fitn), args...; kwargs...)
+      return $f(indsnetworkmap(fitn), args...; kwargs...)
     end
   end
 end
 
+ITensors.siteinds(fitn::ITensorNetworkFunction) = indsnetwork(indsnetworkmap(fitn))
+
 function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
   fitn = copy(fitn)
-  s = siteinds(fitn)
+  s = indsnetwork(indsnetworkmap(fitn))
   for v in vertices(fitn)
     indices = inds(s, v)
     for ind in indices
@@ -97,5 +90,5 @@ end
 function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)
   @assert is_tree(fitn)
   ψ = truncate(ttn(itensornetwork(fitn)); kwargs...)
-  return ITensorNetworkFunction(ITensorNetwork(ψ), indexmap(fitn))
+  return ITensorNetworkFunction(ITensorNetwork(ψ), indsnetworkmap(fitn))
 end

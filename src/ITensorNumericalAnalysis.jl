@@ -2,6 +2,7 @@ module ITensorNumericalAnalysis
 
 include("utils.jl")
 include("indexmap.jl")
+include("indsnetworkmap.jl")
 include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
 include("elementary_functions.jl")
@@ -11,6 +12,7 @@ export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
 export IndexMap,
   default_dimension_map,
+  dimension_inds,
   calculate_xyz,
   calculate_x,
   calculate_ind_values,
@@ -18,6 +20,7 @@ export IndexMap,
   dimensions,
   grid_points
 export IndsNetworkMap,
+  continuous_siteinds,
   indsnetwork,
   indexmap,
   vertex_dimension,
@@ -33,7 +36,7 @@ export const_itensornetwork,
   sin_itensornetwork,
   get_edge_toward_root,
   polynomial_itensornetwork,
-  random_itensornetworkfunction,
+  random_itensornetwork,
   laplacian_operator,
   first_derivative_operator,
   second_derivative_operator,

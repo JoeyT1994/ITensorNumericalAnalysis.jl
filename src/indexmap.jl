@@ -1,3 +1,4 @@
+using Base: Base
 using Dictionaries: Dictionary, set!
 using ITensors: ITensors, Index, dim
 using ITensorNetworks: IndsNetwork, vertex_data
@@ -67,7 +68,7 @@ function ITensors.inds(im::IndexMap)
   @assert keys(index_dimension(im)) == keys(index_digit(im))
   return collect(keys(index_dimension(im)))
 end
-function ITensors.inds(im::IndexMap, dimension::Int64)
+function dimension_inds(im::IndexMap, dimension::Int64)
   return collect(
     filter(i -> index_dimension(im)[i] == dimension, keys(index_dimension(im)))
   )
@@ -88,7 +89,7 @@ end
 function calculate_xyz(im::IndexMap, ind_to_ind_value_map, dimensions::Vector{Int64})
   out = Float64[]
   for dimension in dimensions
-    indices = inds(im, dimension)
+    indices = dimension_inds(im, dimension)
     push!(
       out,
       sum([index_value_to_scalar(im, ind, ind_to_ind_value_map[ind]) for ind in indices]),
@@ -114,8 +115,8 @@ function calculate_ind_values(
   ind_to_ind_value_map = Dictionary()
   for (i, x) in enumerate(xs)
     dimension = dimensions[i]
-    x_rn = copy(x)
-    indices = inds(im, dimension)
+    x_rn = x
+    indices = dimension_inds(im, dimension)
     sorted_inds = sort(indices; by=indices -> digit(im, indices))
     for ind in sorted_inds
       ind_val = dim(ind) - 1
@@ -152,42 +153,12 @@ function calculate_ind_values(im::IndexMap, x::Float64; kwargs...)
 end
 
 function grid_points(im::IndexMap, N::Int64, dimension::Int64)
-  dims = dim.(inds(im, dimension))
+  dims = dim.(dimension_inds(im, dimension))
   @assert all(y -> y == first(dims), dims)
   base = first(dims)
   vals = Vector{Float64}
-  L = length(inds(im, dimension))
+  L = length(dimension_inds(im, dimension))
   a = round(base^L / N)
   grid_points = [i * (a / base^L) for i in 0:(N + 1)]
   return filter(x -> x <= 1, grid_points)
-end
-
-#Functions for translating onto vertices through an IndsNetwork
-function vertices_dimensions(s::IndsNetwork, im::IndexMap, verts::Vector)
-  indices = inds(s, verts)
-  return [dimension(im, i) for i in indices]
-end
-
-function vertices_digits(s::IndsNetwork, im::IndexMap, verts::Vector)
-  indices = inds(s, verts)
-  return [digit(im, i) for i in indices]
-end
-
-function vertex_dimension(s::IndsNetwork, im::IndexMap, v)
-  ind = only(inds(s, v))
-  return dimension(im, ind)
-end
-
-function vertex_digit(s::IndsNetwork, im::IndexMap, v)
-  ind = only(inds(s, v))
-  return digit(im, ind)
-end
-
-function dimension_vertices(s::IndsNetwork, im::IndexMap, dimension::Int64)
-  return filter(v -> vertex_dimension(s, im, v) == dimension, vertices(s))
-end
-
-function vertex(s::IndsNetwork, im::IndexMap, dimension::Int64, digit::Int64)
-  index = ind(im, dimension, digit)
-  return only(filter(v -> index ∈ s[v], vertices(s)))
 end

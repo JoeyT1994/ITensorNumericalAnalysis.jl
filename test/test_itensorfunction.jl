@@ -4,7 +4,6 @@ using ITensorNumericalAnalysis
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
 using ITensors: siteinds
-using ITensorNetworks: random_tensornetwork
 using Dictionaries: Dictionary
 using SplitApplyCombine: group
 using Random: seed!
@@ -16,7 +15,7 @@ using Distributions: Uniform
   g = named_grid((L, 1))
   s = continuous_siteinds(g)
 
-  ψ = random_tensornetwork(s; link_space=2)
+  ψ = random_itensornetwork(s; link_space=2)
 
   fψ = ITensorNetworkFunction(ψ)
 
@@ -35,10 +34,9 @@ end
     L = 3
     g = named_grid((L, L))
     s = continuous_siteinds(g)
-    index_map = IndexMap(s)
     c = 1.5
 
-    ψ_fx = const_itn(s, index_map; c)
+    ψ_fx = const_itn(s; c)
 
     x = 0.5
     ind_to_ind_value_map = calculate_ind_values(ψ_fx, x)
@@ -62,10 +60,9 @@ end
       k = 0.125
 
       s = continuous_siteinds(g)
-      index_map = IndexMap(s)
 
       x = 0.625
-      ψ_fx = net_func(s, index_map; k, a)
+      ψ_fx = net_func(s; k, a)
       fx_x = calculate_fx(ψ_fx, x)
       @test func(k * x + a) ≈ fx_x
     end
@@ -87,10 +84,9 @@ end
       b = 3
 
       s = continuous_siteinds(g; base=3)
-      index_map = IndexMap(s)
 
       x = (5.0 / 9.0)
-      ψ_fx = net_func(s, index_map; k, a)
+      ψ_fx = net_func(s; k, a)
       fx_x = calculate_fx(ψ_fx, x)
       @test func(k * x + a) ≈ fx_x
     end
@@ -104,10 +100,9 @@ end
     nterms = 50
 
     s = continuous_siteinds(g)
-    index_map = IndexMap(s)
 
     x = 0.625
-    ψ_fx = tanh_itn(s, index_map; k, a, nterms)
+    ψ_fx = tanh_itn(s; k, a, nterms)
     fx_x = calculate_fx(ψ_fx, x)
 
     @test tanh(k * x + a) ≈ fx_x
@@ -123,12 +118,11 @@ end
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
       g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
       s = continuous_siteinds(g)
-      index_map = IndexMap(s)
 
       coeffs = [rand(Uniform(-2, 2)) for i in 1:(deg + 1)]
 
       x = 0.875
-      ψ_fx = poly_itn(s, index_map, coeffs)
+      ψ_fx = poly_itn(s, coeffs)
       fx_x = calculate_fx(ψ_fx, x)
 
       fx_exact = sum([coeffs[i] * (x^(i - 1)) for i in 1:(deg + 1)])
@@ -141,12 +135,11 @@ end
   #Constant function but represented in three dimension
   @testset "test const" begin
     g = named_grid((3, 3))
-    s = continuous_siteinds(g)
-    index_map = IndexMap(s; map_dimension=3)
+    s = continuous_siteinds(g; map_dimension=3)
 
     c = 1.5
 
-    ψ_fxyz = const_itn(s, index_map; c)
+    ψ_fxyz = const_itn(s; c)
 
     x, y, z = 0.5, 0.25, 0.0
 
@@ -164,8 +157,7 @@ end
   ]
   L = 10
   g = named_grid((L, 1))
-  s = continuous_siteinds(g)
-  index_map = IndexMap(s; map_dimension=2)
+  s = continuous_siteinds(g; map_dimension=2)
   x, y = 0.625, 0.25
 
   for (name, net_func, func) in funcs
@@ -173,8 +165,8 @@ end
       a = 1.2
       k = 0.125
 
-      ψ_fx = net_func(s, index_map; k, a, dimension=1)
-      ψ_fy = net_func(s, index_map; k, a, dimension=2)
+      ψ_fx = net_func(s; k, a, dimension=1)
+      ψ_fy = net_func(s; k, a, dimension=2)
 
       ψ_fxy = ψ_fx + ψ_fy
       fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])
@@ -189,12 +181,11 @@ end
     a = 1.3
     k = 0.15
     nterms = 10
-    s = continuous_siteinds(g)
-    index_map = IndexMap(s; map_dimension=2)
+    s = continuous_siteinds(g; map_dimension=2)
 
     x, y = 0.625, 0.875
-    ψ_fx = tanh_itn(s, index_map; k, a, nterms, dimension=1)
-    ψ_fy = tanh_itn(s, index_map; k, a, nterms, dimension=2)
+    ψ_fx = tanh_itn(s; k, a, nterms, dimension=1)
+    ψ_fy = tanh_itn(s; k, a, nterms, dimension=2)
 
     ψ_fxy = ψ_fx + ψ_fy
     fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])

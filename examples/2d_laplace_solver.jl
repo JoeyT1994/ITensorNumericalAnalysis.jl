@@ -15,11 +15,10 @@ seed!(1234)
 L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
 
-s = continuous_siteinds(g)
-index_map = IndexMap(s; map_dimension=2)
+s = continuous_siteinds(g; map_dimension=2)
 
-ψ_fxy = 0.1 * rand_itn(s, index_map; link_space=2)
-∇ = laplacian_operator(s, index_map; scale=false, cutoff=1e-8)
+ψ_fxy = 0.1 * rand_itn(s; link_space=2)
+∇ = laplacian_operator(s; scale=false, cutoff=1e-8)
 println("2D Laplacian constructed for this tree, bond dimension is $(maxlinkdim(∇))")
 
 init_energy =

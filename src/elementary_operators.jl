@@ -46,42 +46,38 @@ function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
 end
 
 function forward_shift_opsum(
-  s::IndsNetwork,
-  index_map::IndexMap;
-  dimension=default_dimension(),
-  boundary=default_boundary(),
-  n::Int64=0,
+  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int64=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
   ttn_op = OpSum()
-  dim_vertices = dimension_vertices(s, index_map, dimension)
+  dim_vertices = dimension_vertices(s, dimension)
   L = length(dim_vertices)
 
-  string_site = [("D+", vertex(s, index_map, dimension, L - n))]
-  add!(ttn_op, 1.0, "D+", vertex(s, index_map, dimension, L - n))
+  string_site = [("D+", vertex(s, dimension, L - n))]
+  add!(ttn_op, 1.0, "D+", vertex(s, dimension, L - n))
   for i in (L - n):-1:2
     pop!(string_site)
-    push!(string_site, ("D-", vertex(s, index_map, dimension, i)))
-    push!(string_site, ("D+", vertex(s, index_map, dimension, i - 1)))
+    push!(string_site, ("D-", vertex(s, dimension, i)))
+    push!(string_site, ("D+", vertex(s, dimension, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
   if boundary == "Neumann"
     string_site = [
       if j <= (L - n)
-        ("Dup", vertex(s, index_map, dimension, j))
+        ("Dup", vertex(s, dimension, j))
       else
-        ("I", vertex(s, index_map, dimension, j))
+        ("I", vertex(s, dimension, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
   elseif boundary == "Periodic"
     string_site = [
       if j <= (L - n)
-        ("D-", vertex(s, index_map, dimension, j))
+        ("D-", vertex(s, dimension, j))
       else
-        ("I", vertex(s, index_map, dimension, j))
+        ("I", vertex(s, dimension, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
@@ -91,42 +87,38 @@ function forward_shift_opsum(
 end
 
 function backward_shift_opsum(
-  s::IndsNetwork,
-  index_map::IndexMap;
-  dimension=default_dimension(),
-  boundary=default_boundary(),
-  n::Int64=0,
+  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int64=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
   ttn_op = OpSum()
-  dim_vertices = dimension_vertices(s, index_map, dimension)
+  dim_vertices = dimension_vertices(s, dimension)
   L = length(dim_vertices)
 
-  string_site = [("D-", vertex(s, index_map, dimension, L - n))]
-  add!(ttn_op, 1.0, "D-", vertex(s, index_map, dimension, L - n))
+  string_site = [("D-", vertex(s, dimension, L - n))]
+  add!(ttn_op, 1.0, "D-", vertex(s, dimension, L - n))
   for i in (L - n):-1:2
     pop!(string_site)
-    push!(string_site, ("D+", vertex(s, index_map, dimension, i)))
-    push!(string_site, ("D-", vertex(s, index_map, dimension, i - 1)))
+    push!(string_site, ("D+", vertex(s, dimension, i)))
+    push!(string_site, ("D-", vertex(s, dimension, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
   if boundary == "Neumann"
     string_site = [
       if j <= (L - n)
-        ("Ddn", vertex(s, index_map, dimension, j))
+        ("Ddn", vertex(s, dimension, j))
       else
-        ("I", vertex(s, index_map, dimension, j))
+        ("I", vertex(s, dimension, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
   elseif boundary == "Periodic"
     string_site = [
       if j <= (L - n)
-        ("D+", vertex(s, index_map, dimension, j))
+        ("D+", vertex(s, dimension, j))
       else
-        ("I", vertex(s, index_map, dimension, j))
+        ("I", vertex(s, dimension, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
@@ -135,30 +127,25 @@ function backward_shift_opsum(
   return ttn_op
 end
 
-function no_shift_opsum(s::IndsNetwork)
+function no_shift_opsum(s::IndsNetworkMap)
   ttn_op = OpSum()
   string_site_full = [("I", v) for v in vertices(s)]
   add!(ttn_op, 1.0, (string_site_full...)...)
   return ttn_op
 end
 
-function backward_shift_op(
-  s::IndsNetwork, index_map::IndexMap; truncate_kwargs=(;), kwargs...
-)
-  ttn_opsum = backward_shift_opsum(s, index_map; kwargs...)
-  return ttn(ttn_opsum, s; algorithm="svd", truncate_kwargs...)
+function backward_shift_op(s::IndsNetworkMap; truncate_kwargs=(;), kwargs...)
+  ttn_opsum = backward_shift_opsum(s; kwargs...)
+  return ttn(ttn_opsum, indsnetwork(s); algorithm="svd", truncate_kwargs...)
 end
 
-function forward_shift_op(
-  s::IndsNetwork, index_map::IndexMap; truncate_kwargs=(;), kwargs...
-)
-  ttn_opsum = forward_shift_opsum(s, index_map; kwargs...)
-  return ttn(ttn_opsum, s; algorithm="svd", truncate_kwargs...)
+function forward_shift_op(s::IndsNetworkMap; truncate_kwargs=(;), kwargs...)
+  ttn_opsum = forward_shift_opsum(s; kwargs...)
+  return ttn(ttn_opsum, indsnetwork(s); algorithm="svd", truncate_kwargs...)
 end
 
 function stencil(
-  s::IndsNetwork,
-  index_map,
+  s::IndsNetworkMap,
   shifts::Vector{Float64},
   delta_power::Int64;
   dimension=default_dimension(),
@@ -175,7 +162,7 @@ function stencil(
     n = i == 1 ? 1 : 0
     if !iszero(shifts[i])
       stencil_opsum +=
-        shifts[i] * forward_shift_opsum(s, index_map; dimension, boundary=right_boundary, n)
+        shifts[i] * forward_shift_opsum(s; dimension, boundary=right_boundary, n)
     end
   end
 
@@ -183,14 +170,14 @@ function stencil(
     n = i == 5 ? 1 : 0
     if !iszero(shifts[i])
       stencil_opsum +=
-        shifts[i] * backward_shift_opsum(s, index_map; dimension, boundary=left_boundary, n)
+        shifts[i] * backward_shift_opsum(s; dimension, boundary=left_boundary, n)
     end
   end
 
-  stencil_op = ttn(stencil_opsum, s; algorithm="svd", kwargs...)
+  stencil_op = ttn(stencil_opsum, indsnetwork(s); algorithm="svd", kwargs...)
 
   if scale
-    for v in dimension_vertices(s, index_map, dimension)
+    for v in dimension_vertices(s, dimension)
       stencil_op[v] = (b^delta_power) * stencil_op[v]
     end
   end
@@ -198,36 +185,36 @@ function stencil(
   return stencil_op
 end
 
-function first_derivative_operator(s::IndsNetwork, index_map; kwargs...)
-  return stencil(s, index_map, [0.0, 0.5, 0.0, -0.5, 0.0], 1; kwargs...)
+function first_derivative_operator(s::IndsNetworkMap; kwargs...)
+  return stencil(s, [0.0, 0.5, 0.0, -0.5, 0.0], 1; kwargs...)
 end
 
-function second_derivative_operator(s::IndsNetwork, index_map; kwargs...)
-  return stencil(s, index_map, [0.0, 1.0, -2.0, 1.0, 0.0], 2; kwargs...)
+function second_derivative_operator(s::IndsNetworkMap; kwargs...)
+  return stencil(s, [0.0, 1.0, -2.0, 1.0, 0.0], 2; kwargs...)
 end
 
-function third_derivative_operator(s::IndsNetwork, index_map; kwargs...)
-  return stencil(s, index_map, [0.5, -1.0, 0.0, 1.0, -0.5], 3; kwargs...)
+function third_derivative_operator(s::IndsNetworkMap; kwargs...)
+  return stencil(s, [0.5, -1.0, 0.0, 1.0, -0.5], 3; kwargs...)
 end
 
-function fourth_derivative_operator(s::IndsNetwork, index_map; kwargs...)
-  return stencil(s, index_map, [1.0, -4.0, 6.0, -4.0, 1.0], 4; kwargs...)
+function fourth_derivative_operator(s::IndsNetworkMap; kwargs...)
+  return stencil(s, [1.0, -4.0, 6.0, -4.0, 1.0], 4; kwargs...)
 end
 
 function laplacian_operator(
-  s::IndsNetwork, index_map; dimensions=[i for i in 1:dimension(index_map)], kwargs...
+  s::IndsNetworkMap; dimensions=[i for i in 1:dimension(s)], kwargs...
 )
   remaining_dims = copy(dimensions)
-  ∇ = second_derivative_operator(s, index_map; dimension=first(remaining_dims), kwargs...)
+  ∇ = second_derivative_operator(s; dimension=first(remaining_dims), kwargs...)
   popfirst!(remaining_dims)
   for rd in remaining_dims
-    ∇ += second_derivative_operator(s, index_map; dimension=rd, kwargs...)
+    ∇ += second_derivative_operator(s; dimension=rd, kwargs...)
   end
   return ∇
 end
 
-function identity_operator(s::IndsNetwork, index_map; kwargs...)
-  return stencil(s, index_map, [0.0, 1.0, 0.0], 0; kwargs...)
+function identity_operator(s::IndsNetworkMap; kwargs...)
+  return stencil(s, [0.0, 1.0, 0.0], 0; kwargs...)
 end
 
 function operator(fx::ITensorNetworkFunction)
@@ -271,7 +258,7 @@ function operate(operator::TreeTensorNetwork, ψ::ITensorNetworkFunction; kwargs
   ψ_tn = ttn(itensornetwork(ψ))
   ψO_tn = noprime(contract(operator, ψ_tn; init=prime(copy(ψ_tn)), kwargs...))
 
-  return ITensorNetworkFunction(ITensorNetwork(ψO_tn), indexmap(ψ))
+  return ITensorNetworkFunction(ITensorNetwork(ψO_tn), indsnetworkmap(ψ))
 end
 
 function operate(operator::ITensorNetwork, ψ::ITensorNetworkFunction; kwargs...)

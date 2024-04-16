@@ -43,17 +43,17 @@ function ITensors.inds(s::IndsNetwork)
   return inds(s, vertices(s))
 end
 
-function continuous_siteinds(g::AbstractGraph; base=2)
-  is = IndsNetwork(g)
-  for v in vertices(g)
-    is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
-  end
-  return is
-end
-
 function base(s::IndsNetwork)
   indices = inds(s)
   dims = dim.(indices)
   @assert all(d -> d == first(dims), dims)
   return first(dims)
+end
+
+function digit_siteinds(g::AbstractGraph; base=2)
+  is = IndsNetwork(g)
+  for v in vertices(g)
+    is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
+  end
+  return is
 end
