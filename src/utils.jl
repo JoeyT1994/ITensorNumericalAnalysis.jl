@@ -31,22 +31,6 @@ function c_tensor(phys_ind::Index, virt_inds::Vector)
   return T
 end
 
-# """Tag for a vertex based on its dimension (Dim) and digit (N)"""
-# function digit_tag(im::IndexMap, v)
-#   dig = digit(im, v)
-#   dim = dimension(im, v)
-#   return "N $dig, Dim $dim"
-# end
-
-# """Generate network of physical indices given a graph and a IndexMap"""
-# function ITensors.siteinds(g::AbstractGraph, im::IndexMap)
-#   is = IndsNetwork(g)
-#   for v in vertices(g)
-#     is[v] = [Index(base(im), "Digit, $(digit_tag(im, v)), V$(vertex_tag(v))")]
-#   end
-#   return is
-# end
-
 function ITensors.inds(s::IndsNetwork, v)
   return s[v]
 end
