@@ -45,7 +45,7 @@ function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
   return ITensor(o, s, s')
 end
 
-function plus_shift_opsum(
+function forward_shift_opsum(
   s::IndsNetwork,
   bit_map;
   dimension=default_dimension(),
@@ -90,7 +90,7 @@ function plus_shift_opsum(
   return ttn_op
 end
 
-function minus_shift_opsum(
+function backward_shift_opsum(
   s::IndsNetwork,
   bit_map;
   dimension=default_dimension(),
@@ -142,6 +142,16 @@ function no_shift_opsum(s::IndsNetwork)
   return ttn_op
 end
 
+function backward_shift_op(s::IndsNetwork, bit_map::BitMap; truncate_kwargs=(;), kwargs...)
+  ttn_opsum = backward_shift_opsum(s, bit_map; kwargs...)
+  return ttn(ttn_opsum, s; algorithm="svd", truncate_kwargs...)
+end
+
+function forward_shift_op(s::IndsNetwork, bit_map::BitMap; truncate_kwargs=(;), kwargs...)
+  ttn_opsum = forward_shift_opsum(s, bit_map; kwargs...)
+  return ttn(ttn_opsum, s; algorithm="svd", truncate_kwargs...)
+end
+
 function stencil(
   s::IndsNetwork,
   bit_map,
@@ -160,7 +170,7 @@ function stencil(
     n = i == 1 ? 1 : 0
     if !iszero(shifts[i])
       stencil_opsum +=
-        shifts[i] * plus_shift_opsum(s, bit_map; dimension, boundary=right_boundary, n)
+        shifts[i] * forward_shift_opsum(s, bit_map; dimension, boundary=right_boundary, n)
     end
   end
 
@@ -168,7 +178,7 @@ function stencil(
     n = i == 5 ? 1 : 0
     if !iszero(shifts[i])
       stencil_opsum +=
-        shifts[i] * minus_shift_opsum(s, bit_map; dimension, boundary=left_boundary, n)
+        shifts[i] * backward_shift_opsum(s, bit_map; dimension, boundary=left_boundary, n)
     end
   end
 

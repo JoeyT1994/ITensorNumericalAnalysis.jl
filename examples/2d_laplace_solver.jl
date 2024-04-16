@@ -12,15 +12,14 @@ using UnicodePlots
 
 #Solve the 2D Laplace equation on a random tree
 seed!(1234)
-L = 14
+L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
 
 bit_map = BitMap(g; map_dimension=2)
 s = siteinds(g, bit_map)
 
 ψ_fxy = 0.1 * rand_itn(s, bit_map; link_space=2)
-∇ = laplacian_operator(s, bit_map; scale=false)
-∇ = truncate(∇; cutoff=1e-8)
+∇ = laplacian_operator(s, bit_map; scale=false, cutoff=1e-8)
 println("2D Laplacian constructed for this tree, bond dimension is $(maxlinkdim(∇))")
 
 init_energy =
