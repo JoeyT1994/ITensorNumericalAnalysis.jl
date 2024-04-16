@@ -18,6 +18,8 @@ using ITensors:
   contract
 using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
 
+default_boundary() = "Dirichlet"
+
 function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
   d = dim(s)
   o = zeros(d, d)
@@ -30,9 +32,25 @@ function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
   o[1, 2] = 1
   return ITensor(o, s, s')
 end
+function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
+  d = dim(s)
+  o = zeros(d, d)
+  o[1, 1] = 1
+  return ITensor(o, s, s')
+end
+function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
+  d = dim(s)
+  o = zeros(d, d)
+  o[2, 2] = 1
+  return ITensor(o, s, s')
+end
 
-function plus_shift_ttn(
-  s::IndsNetwork, bit_map; dimension=default_dimension(), boundary_value=[0.0]
+function forward_shift_opsum(
+  s::IndsNetwork,
+  bit_map;
+  dimension=default_dimension(),
+  boundary=default_boundary(),
+  n::Int64=0,
 )
   @assert is_tree(s)
   @assert base(bit_map) == 2
@@ -40,42 +58,98 @@ function plus_shift_ttn(
   dim_vertices = vertices(bit_map, dimension)
   L = length(dim_vertices)
 
-  string_site = [("D+", vertex(bit_map, dimension, L))]
-  add!(ttn_op, 1.0, "D+", vertex(bit_map, dimension, L))
-  for i in L:-1:2
+  string_site = [("D+", vertex(bit_map, dimension, L - n))]
+  add!(ttn_op, 1.0, "D+", vertex(bit_map, dimension, L - n))
+  for i in (L - n):-1:2
     pop!(string_site)
     push!(string_site, ("D-", vertex(bit_map, dimension, i)))
     push!(string_site, ("D+", vertex(bit_map, dimension, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  return ttn(ttn_op, s; algorithm="svd")
+  if boundary == "Neumann"
+    string_site = [
+      if j <= (L - n)
+        ("Dup", vertex(bit_map, dimension, j))
+      else
+        ("I", vertex(bit_map, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  elseif boundary == "Periodic"
+    string_site = [
+      if j <= (L - n)
+        ("D-", vertex(bit_map, dimension, j))
+      else
+        ("I", vertex(bit_map, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  end
+
+  return ttn_op
 end
 
-function minus_shift_ttn(s::IndsNetwork, bit_map; dimension=default_dimension())
+function backward_shift_opsum(
+  s::IndsNetwork,
+  bit_map;
+  dimension=default_dimension(),
+  boundary=default_boundary(),
+  n::Int64=0,
+)
   @assert is_tree(s)
   @assert base(bit_map) == 2
   ttn_op = OpSum()
   dim_vertices = vertices(bit_map, dimension)
   L = length(dim_vertices)
 
-  string_site = [("D-", vertex(bit_map, dimension, L))]
-  add!(ttn_op, 1.0, "D-", vertex(bit_map, dimension, L))
-  for i in L:-1:2
+  string_site = [("D-", vertex(bit_map, dimension, L - n))]
+  add!(ttn_op, 1.0, "D-", vertex(bit_map, dimension, L - n))
+  for i in (L - n):-1:2
     pop!(string_site)
     push!(string_site, ("D+", vertex(bit_map, dimension, i)))
     push!(string_site, ("D-", vertex(bit_map, dimension, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  return ttn(ttn_op, s; algorithm="svd")
+  if boundary == "Neumann"
+    string_site = [
+      if j <= (L - n)
+        ("Ddn", vertex(bit_map, dimension, j))
+      else
+        ("I", vertex(bit_map, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  elseif boundary == "Periodic"
+    string_site = [
+      if j <= (L - n)
+        ("D+", vertex(bit_map, dimension, j))
+      else
+        ("I", vertex(bit_map, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  end
+
+  return ttn_op
 end
 
-function no_shift_ttn(s::IndsNetwork)
+function no_shift_opsum(s::IndsNetwork)
   ttn_op = OpSum()
   string_site_full = [("I", v) for v in vertices(s)]
   add!(ttn_op, 1.0, (string_site_full...)...)
-  return ttn(ttn_op, s; algorithm="svd")
+  return ttn_op
+end
+
+function backward_shift_op(s::IndsNetwork, bit_map::BitMap; truncate_kwargs=(;), kwargs...)
+  ttn_opsum = backward_shift_opsum(s, bit_map; kwargs...)
+  return ttn(ttn_opsum, s; algorithm="svd", truncate_kwargs...)
+end
+
+function forward_shift_op(s::IndsNetwork, bit_map::BitMap; truncate_kwargs=(;), kwargs...)
+  ttn_opsum = forward_shift_opsum(s, bit_map; kwargs...)
+  return ttn(ttn_opsum, s; algorithm="svd", truncate_kwargs...)
 end
 
 function stencil(
@@ -84,16 +158,31 @@ function stencil(
   shifts::Vector{Float64},
   delta_power::Int64;
   dimension=default_dimension(),
+  left_boundary=default_boundary(),
+  right_boundary=default_boundary(),
   scale=true,
-  truncate_kwargs...,
+  truncate_op=true,
+  kwargs...,
 )
-  @assert length(shifts) == 3
-  plus_shift = first(shifts) * plus_shift_ttn(s, bit_map; dimension)
-  minus_shift = last(shifts) * minus_shift_ttn(s, bit_map; dimension)
-  no_shift = shifts[2] * no_shift_ttn(s)
+  @assert length(shifts) == 5
+  stencil_opsum = shifts[3] * no_shift_opsum(s)
+  for i in [1, 2]
+    n = i == 1 ? 1 : 0
+    if !iszero(shifts[i])
+      stencil_opsum +=
+        shifts[i] * forward_shift_opsum(s, bit_map; dimension, boundary=right_boundary, n)
+    end
+  end
 
-  stencil_op = plus_shift + minus_shift + no_shift
-  stencil_op = truncate(stencil_op; truncate_kwargs...)
+  for i in [4, 5]
+    n = i == 5 ? 1 : 0
+    if !iszero(shifts[i])
+      stencil_opsum +=
+        shifts[i] * backward_shift_opsum(s, bit_map; dimension, boundary=left_boundary, n)
+    end
+  end
+
+  stencil_op = ttn(stencil_opsum, s; algorithm="svd", kwargs...)
 
   if scale
     for v in vertices(bit_map, dimension)
@@ -104,20 +193,32 @@ function stencil(
   return stencil_op
 end
 
+function first_derivative_operator(s::IndsNetwork, bit_map; kwargs...)
+  return stencil(s, bit_map, [0.0, 0.5, 0.0, -0.5, 0.0], 1; kwargs...)
+end
+
+function second_derivative_operator(s::IndsNetwork, bit_map; kwargs...)
+  return stencil(s, bit_map, [0.0, 1.0, -2.0, 1.0, 0.0], 2; kwargs...)
+end
+
+function third_derivative_operator(s::IndsNetwork, bit_map; kwargs...)
+  return stencil(s, bit_map, [0.5, -1.0, 0.0, 1.0, -0.5], 3; kwargs...)
+end
+
+function fourth_derivative_operator(s::IndsNetwork, bit_map; kwargs...)
+  return stencil(s, bit_map, [1.0, -4.0, 6.0, -4.0, 1.0], 4; kwargs...)
+end
+
 function laplacian_operator(
   s::IndsNetwork, bit_map; dimensions=[i for i in 1:dimension(bit_map)], kwargs...
 )
   remaining_dims = copy(dimensions)
-  ∇ = stencil(s, bit_map, [1.0, -2.0, 1.0], 2; dimension=first(remaining_dims), kwargs...)
+  ∇ = second_derivative_operator(s, bit_map; dimension=first(remaining_dims), kwargs...)
   popfirst!(remaining_dims)
   for rd in remaining_dims
-    ∇ += stencil(s, bit_map, [1.0, -2.0, 1.0], 2; dimension=rd, kwargs...)
+    ∇ += second_derivative_operator(s, bit_map; dimension=rd, kwargs...)
   end
   return ∇
-end
-
-function derivative_operator(s::IndsNetwork, bit_map; kwargs...)
-  return 0.5 * stencil(s, bit_map, [1.0, 0.0, -1.0], 1; kwargs...)
 end
 
 function identity_operator(s::IndsNetwork, bit_map; kwargs...)
@@ -161,12 +262,9 @@ end
 
 Base.:*(fs::ITensorNetworkFunction...) = multiply(fs...)
 
-function operate(
-  operator::TreeTensorNetwork, ψ::ITensorNetworkFunction; truncate_kwargs=(;), kwargs...
-)
+function operate(operator::TreeTensorNetwork, ψ::ITensorNetworkFunction; kwargs...)
   ψ_tn = ttn(itensornetwork(ψ))
   ψO_tn = noprime(contract(operator, ψ_tn; init=prime(copy(ψ_tn)), kwargs...))
-  ψO_tn = truncate(ψO_tn; truncate_kwargs...)
 
   return ITensorNetworkFunction(ITensorNetwork(ψO_tn), bit_map(ψ))
 end

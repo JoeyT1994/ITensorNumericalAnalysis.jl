@@ -12,15 +12,14 @@ using UnicodePlots
 
 #Solve the 2D Laplace equation on a random tree
 seed!(1234)
-L = 14
+L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
 
 bit_map = BitMap(g; map_dimension=2)
 s = siteinds(g, bit_map)
 
 ψ_fxy = 0.1 * rand_itn(s, bit_map; link_space=2)
-∇ = laplacian_operator(s, bit_map; scale=false)
-∇ = truncate(∇; cutoff=1e-8)
+∇ = laplacian_operator(s, bit_map; scale=false, cutoff=1e-8)
 println("2D Laplacian constructed for this tree, bond dimension is $(maxlinkdim(∇))")
 
 init_energy =
@@ -30,11 +29,11 @@ println(
   "Starting DMRG to find eigensolution of 2D Laplace operator. Initial energy is $init_energy",
 )
 
-dmrg_kwargs = (nsweeps=10, normalize=true, maxdim=15, cutoff=1e-10, outputlevel=1, nsites=2)
+dmrg_kwargs = (nsweeps=15, normalize=true, maxdim=30, cutoff=1e-12, outputlevel=1, nsites=2)
 ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
 ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), bit_map)
 
-ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-8)
+ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-10)
 
 final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
 println(
@@ -55,3 +54,14 @@ end
 
 println("Here is the heatmap of the 2D function")
 show(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
+
+n_grid = 100
+x_vals = grid_points(bit_map, n_grid, 1)
+y = 0.5
+vals = zeros(length(x_vals))
+for (i, x) in enumerate(x_vals)
+  vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]))
+end
+
+println("Here is a cut of the function at y = $y")
+show(lineplot(x_vals, vals))
