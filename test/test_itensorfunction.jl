@@ -4,7 +4,6 @@ using ITensorNumericalAnalysis
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
 using ITensors: siteinds
-using ITensorNetworks: random_tensornetwork
 using Dictionaries: Dictionary
 using SplitApplyCombine: group
 using Random: seed!
@@ -14,19 +13,19 @@ using Distributions: Uniform
   L = 10
 
   g = named_grid((L, 1))
-  s = siteinds("S=1/2", g)
+  s = continuous_siteinds(g)
 
-  ψ = random_tensornetwork(s; link_space=2)
+  ψ = random_itensornetwork(s; link_space=2)
 
   fψ = ITensorNetworkFunction(ψ)
 
-  @test vertices(fψ, 1) == vertices(fψ)
+  @test dimension_vertices(fψ, 1) == vertices(fψ)
   @test dimension(fψ) == 1
-  @test base(fψ) == 2
 
-  dimension_vertices = collect(values(group(v -> first(v) < Int64(0.5 * L), vertices(ψ))))
-  fψ = ITensorNetworkFunction(ψ, dimension_vertices)
-  @test union(Set(vertices(fψ, 1)), Set(vertices(fψ, 2))) == Set(vertices(fψ))
+  dim_vertices = collect(values(group(v -> first(v) < Int(0.5 * L), vertices(ψ))))
+  fψ = ITensorNetworkFunction(ψ, dim_vertices)
+  @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
+    Set(vertices(fψ))
   @test dimension(fψ) == 2
 end
 
@@ -34,14 +33,13 @@ end
   @testset "test const" begin
     L = 3
     g = named_grid((L, L))
-    bit_map = BitMap(g)
-    s = siteinds(g, bit_map)
+    s = continuous_siteinds(g)
     c = 1.5
 
-    ψ_fx = const_itn(s, bit_map; c)
+    ψ_fx = const_itn(s; c)
 
     x = 0.5
-    vertex_to_bit_value_map = calculate_bit_values(ψ_fx, x)
+    ind_to_ind_value_map = calculate_ind_values(ψ_fx, x)
 
     fx_x = calculate_fx(ψ_fx, x)
     @test fx_x ≈ c
@@ -61,11 +59,10 @@ end
       a = 1.2
       k = 0.125
 
-      bit_map = BitMap(g)
-      s = siteinds(g, bit_map)
+      s = continuous_siteinds(g)
 
       x = 0.625
-      ψ_fx = net_func(s, bit_map; k, a)
+      ψ_fx = net_func(s; k, a)
       fx_x = calculate_fx(ψ_fx, x)
       @test func(k * x + a) ≈ fx_x
     end
@@ -86,12 +83,10 @@ end
       k = 0.125
       b = 3
 
-      bit_map = BitMap(g; base=b)
-      s = siteinds(g, bit_map)
+      s = continuous_siteinds(g; base=3)
 
       x = (5.0 / 9.0)
-      ψ_fx = net_func(s, bit_map; k, a)
-      @test base(ψ_fx) == 3
+      ψ_fx = net_func(s; k, a)
       fx_x = calculate_fx(ψ_fx, x)
       @test func(k * x + a) ≈ fx_x
     end
@@ -104,11 +99,10 @@ end
     k = 0.15
     nterms = 50
 
-    bit_map = BitMap(g)
-    s = siteinds(g, bit_map)
+    s = continuous_siteinds(g)
 
     x = 0.625
-    ψ_fx = tanh_itn(s, bit_map; k, a, nterms)
+    ψ_fx = tanh_itn(s; k, a, nterms)
     fx_x = calculate_fx(ψ_fx, x)
 
     @test tanh(k * x + a) ≈ fx_x
@@ -123,13 +117,12 @@ end
       seed!(1234 * deg)
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
       g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
-      bit_map = BitMap(g)
-      s = siteinds(g, bit_map)
+      s = continuous_siteinds(g)
 
       coeffs = [rand(Uniform(-2, 2)) for i in 1:(deg + 1)]
 
       x = 0.875
-      ψ_fx = poly_itn(s, bit_map, coeffs)
+      ψ_fx = poly_itn(s, coeffs)
       fx_x = calculate_fx(ψ_fx, x)
 
       fx_exact = sum([coeffs[i] * (x^(i - 1)) for i in 1:(deg + 1)])
@@ -142,15 +135,13 @@ end
   #Constant function but represented in three dimension
   @testset "test const" begin
     g = named_grid((3, 3))
-    bit_map = BitMap(g; map_dimension=2)
-    s = siteinds(g, bit_map)
+    s = continuous_siteinds(g; map_dimension=3)
 
     c = 1.5
 
-    ψ_fxyz = const_itn(s, bit_map; c)
+    ψ_fxyz = const_itn(s; c)
 
     x, y, z = 0.5, 0.25, 0.0
-    vertex_to_bit_value_map = calculate_bit_values(ψ_fxyz, [x, y, z], [1, 2, 3])
 
     fx_xyz = calculate_fxyz(ψ_fxyz, [x, y, z], [1, 2, 3])
     @test fx_xyz ≈ c
@@ -166,17 +157,16 @@ end
   ]
   L = 10
   g = named_grid((L, 1))
-  bit_map = BitMap(g; map_dimension=2)
+  s = continuous_siteinds(g; map_dimension=2)
   x, y = 0.625, 0.25
 
   for (name, net_func, func) in funcs
     @testset "test $name" begin
       a = 1.2
       k = 0.125
-      s = siteinds(g, bit_map)
 
-      ψ_fx = net_func(s, bit_map; k, a, dimension=1)
-      ψ_fy = net_func(s, bit_map; k, a, dimension=2)
+      ψ_fx = net_func(s; k, a, dimension=1)
+      ψ_fy = net_func(s; k, a, dimension=2)
 
       ψ_fxy = ψ_fx + ψ_fy
       fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])
@@ -191,12 +181,11 @@ end
     a = 1.3
     k = 0.15
     nterms = 10
-    bit_map = BitMap(g; map_dimension=2)
-    s = siteinds(g, bit_map)
+    s = continuous_siteinds(g; map_dimension=2)
 
     x, y = 0.625, 0.875
-    ψ_fx = tanh_itn(s, bit_map; k, a, nterms, dimension=1)
-    ψ_fy = tanh_itn(s, bit_map; k, a, nterms, dimension=2)
+    ψ_fx = tanh_itn(s; k, a, nterms, dimension=1)
+    ψ_fy = tanh_itn(s; k, a, nterms, dimension=2)
 
     ψ_fxy = ψ_fx + ψ_fy
     fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])

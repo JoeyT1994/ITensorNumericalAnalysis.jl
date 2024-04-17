@@ -8,15 +8,14 @@ using Random: Random
 L = 12
 Random.seed!(1234)
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
-bit_map = BitMap(g; map_dimension=3)
-s = siteinds(g, bit_map)
+s = continuous_siteinds(g; map_dimension=3)
 
 println(
   "Constructing the 3D function f(x,y,z) = x³(y + y²) + cosh(πz) as a tensor network on a randomly chosen tree with $L vertices",
 )
-ψ_fx = poly_itn(s, bit_map, [0.0, 0.0, 0.0, 1.0]; dimension=1)
-ψ_fy = poly_itn(s, bit_map, [0.0, 1.0, 1.0, 0.0]; dimension=2)
-ψ_fz = cosh_itn(s, bit_map; k=Float64(pi), dimension=3)
+ψ_fx = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension=1)
+ψ_fy = poly_itn(s, [0.0, 1.0, 1.0, 0.0]; dimension=2)
+ψ_fz = cosh_itn(s; k=Number(pi), dimension=3)
 ψxyz = ψ_fx * ψ_fy + ψ_fz
 
 ψxyz = truncate(ψxyz; cutoff=1e-12)

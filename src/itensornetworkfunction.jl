@@ -1,15 +1,16 @@
+using Base: Base
 using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type
 using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 
-struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},BM<:BitMap} <:
+struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},INM<:IndsNetworkMap} <:
        AbstractITensorNetwork{V}
   itensornetwork::TN
-  bit_map::BM
+  indsnetworkmap::INM
 end
 
 itensornetwork(fitn::ITensorNetworkFunction) = fitn.itensornetwork
-bit_map(fitn::ITensorNetworkFunction) = fitn.bit_map
+indsnetworkmap(fitn::ITensorNetworkFunction) = fitn.indsnetworkmap
 
 #Needed for interface from AbstractITensorNetwork
 function ITensorNetworks.data_graph_type(TN::Type{<:ITensorNetworkFunction})
@@ -17,61 +18,69 @@ function ITensorNetworks.data_graph_type(TN::Type{<:ITensorNetworkFunction})
 end
 ITensorNetworks.data_graph(fitn::ITensorNetworkFunction) = data_graph(itensornetwork(fitn))
 function Base.copy(fitn::ITensorNetworkFunction)
-  return ITensorNetworkFunction(copy(itensornetwork(fitn)), copy(bit_map(fitn)))
+  return ITensorNetworkFunction(copy(itensornetwork(fitn)), copy(indsnetworkmap(fitn)))
 end
 
 function ITensorNetworkFunction(
   itn::AbstractITensorNetwork, dimension_vertices::Vector{Vector{V}}
 ) where {V}
-  return ITensorNetworkFunction(itn, BitMap(dimension_vertices))
+  s = siteinds(itn)
+  return ITensorNetworkFunction(itn, IndsNetworkMap(s, dimension_vertices))
 end
 
-#Constructor, assume one-dimensional and ordered as vertices of the itn
 function ITensorNetworkFunction(itn::AbstractITensorNetwork)
-  return ITensorNetworkFunction(itn, BitMap(itn))
+  return ITensorNetworkFunction(itn, IndsNetworkMap(siteinds(itn)))
 end
 
-#Forward functionality from bit_map
+#Forward functionality from indsnetworkmap
 for f in [
-  :vertex,
+  :ind,
   :dimension,
-  :bit,
-  :(Graphs.vertices),
-  :calculate_bit_values,
+  :dimensions,
+  :digit,
+  :digits,
+  :calculate_ind_values,
   :calculate_x,
   :calculate_xyz,
-  :base,
+  :grid_points,
+  :vertices_dimensions,
+  :vertices_digits,
+  :vertex_digit,
+  :vertex_dimension,
+  :dimension_vertices,
 ]
   @eval begin
     function $f(fitn::ITensorNetworkFunction, args...; kwargs...)
-      return $f(bit_map(fitn), args...; kwargs...)
+      return $f(indsnetworkmap(fitn), args...; kwargs...)
     end
   end
 end
 
-function project(fitn::ITensorNetworkFunction, vertex_to_bit_value_map)
+ITensors.siteinds(fitn::ITensorNetworkFunction) = indsnetwork(indsnetworkmap(fitn))
+
+function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
   fitn = copy(fitn)
-  s = siteinds(fitn)
-  for v in keys(vertex_to_bit_value_map)
-    fitn[v] =
-      fitn[v] * onehot(eltype(fitn[v]), only(s[v]) => vertex_to_bit_value_map[v] + 1)
+  s = indsnetwork(indsnetworkmap(fitn))
+  for v in vertices(fitn)
+    indices = inds(s, v)
+    for ind in indices
+      fitn[v] = fitn[v] * onehot(eltype(fitn[v]), ind => ind_to_ind_value_map[ind] + 1)
+    end
   end
   return fitn
 end
 
-function calculate_fxyz(
-  fitn::ITensorNetworkFunction, xs::Vector{Float64}, dimensions::Vector{Int64}
-)
-  vertex_to_bit_value_map = calculate_bit_values(fitn, xs, dimensions)
-  fitn_xyz = project(fitn, vertex_to_bit_value_map)
+function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector, dimensions::Vector{Int})
+  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
+  fitn_xyz = project(fitn, ind_to_ind_value_map)
   return contract(fitn_xyz)[]
 end
 
-function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector{Float64})
+function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector)
   return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)])
 end
 
-function calculate_fx(fitn::ITensorNetworkFunction, x::Float64)
+function calculate_fx(fitn::ITensorNetworkFunction, x::Number)
   @assert dimension(fitn) == 1
   return calculate_fxyz(fitn, [x], [1])
 end
@@ -79,5 +88,5 @@ end
 function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)
   @assert is_tree(fitn)
   ψ = truncate(ttn(itensornetwork(fitn)); kwargs...)
-  return ITensorNetworkFunction(ITensorNetwork(ψ), bit_map(fitn))
+  return ITensorNetworkFunction(ITensorNetwork(ψ), indsnetworkmap(fitn))
 end

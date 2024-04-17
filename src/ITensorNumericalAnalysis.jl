@@ -1,22 +1,32 @@
 module ITensorNumericalAnalysis
 
-include("bitmap.jl")
 include("utils.jl")
+include("indexmap.jl")
+include("indsnetworkmap.jl")
 include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 
-export ITensorNetworkFunction, itensornetwork
-export BitMap,
+export continuous_siteinds
+export ITensorNetworkFunction, itensornetwork, dimension_vertices
+export IndexMap,
   default_dimension_map,
-  vertex,
+  dimension_inds,
   calculate_xyz,
   calculate_x,
-  calculate_bit_values,
+  calculate_ind_values,
   dimension,
-  base,
+  dimensions,
   grid_points
+export IndsNetworkMap,
+  continuous_siteinds,
+  indsnetwork,
+  indexmap,
+  vertex_dimension,
+  vertex_digit,
+  vertices_dimensions,
+  vertices_digits
 export const_itensornetwork,
   exp_itensornetwork,
   cosh_itensornetwork,
@@ -26,7 +36,7 @@ export const_itensornetwork,
   sin_itensornetwork,
   get_edge_toward_root,
   polynomial_itensornetwork,
-  random_itensornetworkfunction,
+  random_itensornetwork,
   laplacian_operator,
   first_derivative_operator,
   second_derivative_operator,
