@@ -70,9 +70,7 @@ function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
   return fitn
 end
 
-function calculate_fxyz(
-  fitn::ITensorNetworkFunction, xs::Vector, dimensions::Vector{Int}
-)
+function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector, dimensions::Vector{Int})
   ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
   return contract(fitn_xyz)[]

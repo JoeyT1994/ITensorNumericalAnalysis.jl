@@ -18,9 +18,7 @@ default_nterms() = 20
 default_dimension() = 1
 
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
-function const_itensornetwork(
-  s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1
-)
+function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1)
   ψ = random_itensornetwork(s; link_space=linkdim)
   inv_L = Number(1.0 / nv(s))
   for v in vertices(ψ)
