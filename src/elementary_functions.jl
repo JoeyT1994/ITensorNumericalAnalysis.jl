@@ -36,13 +36,17 @@ function exp_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   Lx = length(dimension_vertices(ψ, dimension))
+  c_inv = c^Number(1.0 / Lx)
   for v in dimension_vertices(ψ, dimension)
     sind = only(inds(s, v))
-    ψ[v] = ITensor(exp(a / Lx) * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v]))
+    ψ[v] = ITensor(
+      exp(a / Lx) * c_inv * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v])
+    )
   end
 
   return ψ
@@ -54,10 +58,11 @@ function cosh_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, dimension)
+  ψ1 = exp_itensornetwork(s; a, k, c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c, dimension)
 
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= 0.5
@@ -71,10 +76,11 @@ function sinh_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, dimension)
+  ψ1 = exp_itensornetwork(s; a, k, c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c, dimension)
 
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= -0.5
@@ -88,12 +94,13 @@ function tanh_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   nterms::Int=default_nterms(),
   dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   for n in 1:nterms
-    ψt = exp_itensornetwork(s; a=-2 * n * a, k=-2 * k * n, dimension)
+    ψt = exp_itensornetwork(s; a=-2 * n * a, c, k=-2 * k * n, dimension)
     ψt[first(vertices(ψt))] *= 2 * ((-1)^n)
     ψ = ψ + ψt
   end
@@ -107,10 +114,11 @@ function cos_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, dimension)
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=c, dimension)
 
   ψ1[first(vertices(ψ1))] *= 0.5
   ψ2[first(vertices(ψ1))] *= 0.5

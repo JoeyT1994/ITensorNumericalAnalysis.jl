@@ -1,5 +1,6 @@
 using Base: Base
-using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type
+using ITensorNetworks:
+  ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type, scalar
 using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 
@@ -73,7 +74,7 @@ end
 function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector, dimensions::Vector{Int})
   ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
-  return contract(fitn_xyz)[]
+  return scalar(itensornetwork(fitn_xyz); alg="bp")
 end
 
 function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector)
