@@ -1,3 +1,7 @@
+using ITensors: inds, dim
+using ITensorNetworks: AbstractITensorNetwork
+using NamedGraphs: vertices
+
 function calc_error(exact_vals::Vector, approx_vals::Vector)
   @assert length(exact_vals) == length(approx_vals)
 
@@ -9,4 +13,13 @@ function calc_error(exact_vals::Vector, approx_vals::Vector)
     eps += abs((e - approx_vals[i]) / e)
   end
   return eps / length(exact_vals)
+end
+
+function no_elements(tn::AbstractITensorNetwork)
+    no_elements = 0
+    for v in vertices(tn)
+        dims = dim.(inds(tn[v]))
+        no_elements += prod(dims)
+    end
+    return no_elements
 end

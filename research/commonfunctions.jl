@@ -46,18 +46,22 @@ function weirstrass_coefficients(nterms::Int64, a::Float64, b::Float64)
   return cs, ks
 end
 
-function weirstrass_itn(s::IndsNetworkMap, cs::Vector, ks::Vector)
-  ψ = cos_itn(s; k=first(ks), c=first(cs))
-  for i in 2:length(cs)
-    ψ = ψ + cos_itn(s; k=ks[i], c=cs[i])
+function weirstrass_coefficients_V2(nterms::Int64, a::Float64)
+    return [Float64(pi) * i^a for i in 1:nterms]
+  end
+
+function weirstrass_itn_V2(s::IndsNetworkMap, ks::Vector)
+  ψ = sin_itn(s; k=first(ks), c=1.0 / first(ks))
+  for i in 2:length(ks)
+    ψ = ψ + sin_itn(s; k=ks[i], c= 1.0 /ks[i])
   end
   return ψ
 end
 
-function calulate_weirstrass(x::Float64, cs::Vector, ks::Vector)
+function calulate_weirstrass_V2(x::Float64, ks::Vector)
   out = 0
   for i in 1:length(cs)
-    out += cs[i] * cos(ks[i] * x)
+    out += (1.0 /ks[i]) * sin(ks[i] * x)
   end
   return out
 end

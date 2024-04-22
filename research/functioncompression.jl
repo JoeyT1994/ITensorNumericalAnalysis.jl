@@ -9,32 +9,40 @@ using Random: Random
 
 Random.seed!(1234)
 
-s = continuous_siteinds(named_comb_tree((6, 6)))
-s = star_siteinds(3, 10)
-L = nv(s)
-#s = qtt_siteinds(L)
+s1 = star_siteinds(5,8)
+L = nv(s1)
+s2 = qtt_siteinds(L)
 
-χ = 3
-nterms, a, b = 20, 0.75, 3.0
-cs, ks = weirstrass_coefficients(nterms, a, b)
-fx = weirstrass_itn(s, cs, ks)
-gx = truncate(fx; maxdim=χ)
-@show maxlinkdim(fx)
-@show maxlinkdim(gx)
-xs = grid_points(fx, 500, 1)
-fx_xs, gx_xs = [], []
+χ1, χ2  = 2, 4
+nterms, a = 10, 3.0
+ks = weirstrass_coefficients_V2(nterms, a)
+fx_1 = weirstrass_itn_V2(s1, ks)
+gx_1 = truncate(fx_1; maxdim=χ1)
+
+fx_2 = weirstrass_itn_V2(s2, ks)
+gx_2 = truncate(fx_2; maxdim=χ2)
+
+xs = grid_points(fx_1, 250, 1)
+fx1_xs, fx2_xs, gx1_xs, gx2_xs = [], [], [], []
 fx_xs_exact = []
 xs = xs[2:length(xs)]
 for x in xs
-  append!(fx_xs, real(calculate_fx(fx, x)))
-  append!(gx_xs, real(calculate_fx(gx, x)))
-  append!(fx_xs_exact, calulate_weirstrass(x, cs, ks))
+  append!(fx1_xs, real(calculate_fx(fx_1, x)))
+  append!(gx1_xs, real(calculate_fx(gx_1, x)))
+  append!(fx2_xs, real(calculate_fx(fx_2, x)))
+  append!(gx2_xs, real(calculate_fx(gx_2, x)))
+  append!(fx_xs_exact, calulate_weirstrass_V2(x, ks))
 end
 
-err_nocutoff = calc_error(fx_xs_exact, fx_xs)
-err_cutoff = calc_error(fx_xs_exact, gx_xs)
-@show err_nocutoff, err_cutoff
+err1_nocutoff = calc_error(fx_xs_exact, fx1_xs)
+err1_cutoff = calc_error(fx_xs_exact, gx1_xs)
+@show err1_nocutoff, err1_cutoff, no_elements(gx_1)
 
-plt = plot(xs, fx_xs)
-plot!(plt, xs, gx_xs; name="Truncated")
+err2_nocutoff = calc_error(fx_xs_exact, fx2_xs)
+err2_cutoff = calc_error(fx_xs_exact, gx2_xs)
+@show err2_nocutoff, err2_cutoff, no_elements(gx_2)
+
+plt = plot(xs, abs(fx_xs_exact - gx1_xs); label = "Exact")
+plot!(plt, xs, gx1_xs; label="Truncated Star, chi = $χ1")
+plot!(plt, xs, gx2_xs; label="Truncated MPS, chi = $χ2")
 #plot!(plt, xs, fx_xs_exact, name = "Exact")

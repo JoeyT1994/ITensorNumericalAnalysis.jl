@@ -14,7 +14,7 @@ using ITensorNetworks: IndsNetwork, underlying_graph
 default_c_value() = 1.0
 default_a_value() = 0.0
 default_k_value() = 1.0
-default_nterms() = 20
+default_nterms() = 30
 default_dimension() = 1
 
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
@@ -132,10 +132,11 @@ function sin_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c = default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, dimension)
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c =c,  dimension)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c = c, dimension)
 
   ψ1[first(vertices(ψ1))] *= -0.5 * im
   ψ2[first(vertices(ψ1))] *= 0.5 * im
