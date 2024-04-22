@@ -58,7 +58,7 @@ dimensions(im::IndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(im::IndexMap, ind::Index) = index_digit(im)[ind]
 digits(im::IndexMap, inds::Vector{Index}) = digit.(inds)
 function index_value_to_scalar(im::IndexMap, ind::Index, value::Int)
-  return value / (dim(ind)^digit(im, ind))
+  return (value) / (dim(ind)^digit(im, ind))
 end
 function index_values_to_scalars(im::IndexMap, ind::Index)
   return [index_value_to_scalar(im, ind, i) for i in 0:(dim(ind) - 1)]

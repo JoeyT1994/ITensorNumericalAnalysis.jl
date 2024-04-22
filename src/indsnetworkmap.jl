@@ -1,7 +1,6 @@
 using Base: Base
 using Graphs: Graphs
 using NamedGraphs: NamedGraphs
-using DataGraphs: DataGraphs
 using ITensors: ITensors
 using ITensorNetworks:
   ITensorNetworks, AbstractIndsNetwork, IndsNetwork, data_graph, underlying_graph
@@ -17,11 +16,11 @@ indexmap(inm::IndsNetworkMap) = inm.indexmap
 indtype(inm::IndsNetworkMap) = indtype(typeof(indsnetwork(inm)))
 indtype(::Type{<:IndsNetworkMap{V,I,IN,IM}}) where {V,I,IN,IM} = I
 ITensorNetworks.data_graph(inm::IndsNetworkMap) = data_graph(indsnetwork(inm))
-function DataGraphs.underlying_graph(inm::IndsNetworkMap)
+function ITensorNetworks.underlying_graph(inm::IndsNetworkMap)
   return underlying_graph(data_graph(indsnetwork(inm)))
 end
 NamedGraphs.vertextype(::Type{<:IndsNetworkMap{V,I,IN,IM}}) where {V,I,IN,IM} = V
-DataGraphs.underlying_graph_type(G::Type{<:IndsNetworkMap}) = NamedGraph{vertextype(G)}
+ITensorNetworks.underlying_graph_type(G::Type{<:IndsNetworkMap}) = NamedGraph{vertextype(G)}
 Graphs.is_directed(::Type{<:IndsNetworkMap}) = false
 
 function Base.copy(inm::IndsNetworkMap)

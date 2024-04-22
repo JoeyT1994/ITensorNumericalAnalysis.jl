@@ -29,7 +29,7 @@ using Dictionaries: Dictionary
 
   xs = [0.0, 0.25, 0.625, 0.875, 1.0 - delta]
   for x in xs
-    @test 1.0 + calculate_fx(ψ_fx, x) ≈ 1.0 + sin(2.0 * pi * x) rtol = 1e-3
+    @test 1.0 + calculate_fx(ψ_fx, x; alg="exact") ≈ 1.0 + sin(2.0 * pi * x) rtol = 1e-3
     @test 1.0 + calculate_fx(ψ_f1x, x) ≈ 1.0 + 2.0 * pi * cos(2.0 * pi * x) rtol = 1e-3
     @test 1.0 + calculate_fx(ψ_f2x, x) ≈ 1.0 + -1.0 * (2.0 * pi)^2 * sin(2.0 * pi * x) rtol =
       1e-3
@@ -235,7 +235,7 @@ end
       @test fx_xplus ≈ calculate_fx(ψ_fx_pshift_pbc, x) atol = 1e-8
       @test fx_xplus ≈ calculate_fx(ψ_fx_pshift_neumann, x) atol = 1e-8
     elseif x == 1.0 - 2.0 * delta || x == 1.0 - delta
-      @test calculate_fx(ψ_fx_pshift_dirichlet, x) ≈ 0.0 atol = 1e-8
+      @test calculate_fx(ψ_fx_pshift_dirichlet, x; alg="exact") ≈ 0.0 atol = 1e-8
       @test calculate_fx(ψ_fx_pshift_pbc, x) ≈ calculate_fx(ψ_fx, x + 2.0 * delta - 1.0) atol =
         1e-8
       @test calculate_fx(ψ_fx_pshift_neumann, x) ≈ calculate_fx(ψ_fx, x) atol = 1e-8

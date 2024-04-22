@@ -1,7 +1,10 @@
 using Base: Base
-using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type
+using ITensorNetworks:
+  ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type, scalar
 using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
+
+default_contraction_alg() = "bp"
 
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},INM<:IndsNetworkMap} <:
        AbstractITensorNetwork{V}
@@ -70,19 +73,25 @@ function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
   return fitn
 end
 
-function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector, dimensions::Vector{Int})
+function calculate_fxyz(
+  fitn::ITensorNetworkFunction,
+  xs::Vector,
+  dimensions::Vector{Int};
+  alg=default_contraction_alg(),
+  kwargs...,
+)
   ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
-  return contract(fitn_xyz)[]
+  return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
 end
 
-function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector)
-  return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)])
+function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector; kwargs...)
+  return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)]; kwargs...)
 end
 
-function calculate_fx(fitn::ITensorNetworkFunction, x::Number)
+function calculate_fx(fitn::ITensorNetworkFunction, x::Number; kwargs...)
   @assert dimension(fitn) == 1
-  return calculate_fxyz(fitn, [x], [1])
+  return calculate_fxyz(fitn, [x], [1]; kwargs...)
 end
 
 function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)

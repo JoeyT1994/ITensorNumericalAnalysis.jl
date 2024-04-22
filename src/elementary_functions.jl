@@ -36,6 +36,7 @@ function exp_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
@@ -44,6 +45,8 @@ function exp_itensornetwork(
     sind = only(inds(s, v))
     ψ[v] = ITensor(exp(a / Lx) * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v]))
   end
+
+  ψ[first(dimension_vertices(ψ, dimension))] *= c
 
   return ψ
 end
@@ -54,13 +57,11 @@ function cosh_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, dimension)
-
-  ψ1[first(vertices(ψ1))] *= 0.5
-  ψ2[first(vertices(ψ1))] *= 0.5
+  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -71,13 +72,11 @@ function sinh_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, dimension)
-
-  ψ1[first(vertices(ψ1))] *= 0.5
-  ψ2[first(vertices(ψ1))] *= -0.5
+  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -88,15 +87,18 @@ function tanh_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   nterms::Int=default_nterms(),
   dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   for n in 1:nterms
     ψt = exp_itensornetwork(s; a=-2 * n * a, k=-2 * k * n, dimension)
-    ψt[first(vertices(ψt))] *= 2 * ((-1)^n)
+    ψt[first(dimension_vertices(ψ, dimension))] *= 2 * ((-1)^n)
     ψ = ψ + ψt
   end
+
+  ψ[first(dimension_vertices(ψ, dimension))] *= c
 
   return ψ
 end
@@ -107,13 +109,11 @@ function cos_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, dimension)
-
-  ψ1[first(vertices(ψ1))] *= 0.5
-  ψ2[first(vertices(ψ1))] *= 0.5
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=0.5 * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -124,13 +124,11 @@ function sin_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, dimension)
-
-  ψ1[first(vertices(ψ1))] *= -0.5 * im
-  ψ2[first(vertices(ψ1))] *= 0.5 * im
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=-0.5 * im * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * im * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -138,9 +136,14 @@ end
 """Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i} on the graph structure specified
 by indsnetwork"""
 function polynomial_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector; dimension::Int=default_dimension()
+  s::IndsNetworkMap,
+  coeffs::Vector;
+  dimension::Int=default_dimension(),
+  k=default_k_value(),
+  c=default_c_value(),
 )
   n = length(coeffs)
+  coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
   #First treeify the index network (ignore edges that form loops)
   _s = indsnetwork(s)
   g = underlying_graph(_s)
@@ -178,6 +181,8 @@ function polynomial_itensornetwork(
       ψ[v] = ψv * ITensor(coeffs, betaindex)
     end
   end
+
+  ψ[first(dim_vertices)] *= c
 
   #Put the transfer tensors in, these are special tensors that
   # go on the digits (sites) that don't correspond to the desired dimension
