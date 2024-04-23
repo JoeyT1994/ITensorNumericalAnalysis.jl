@@ -47,9 +47,9 @@ end
 
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
 
-function apply_boundary!(ttn_op,s::IndsNetworkMap,
-    boundary,dimension,isFwd::Bool,n::Int=0)
-
+function apply_boundary!(
+  ttn_op, s::IndsNetworkMap, boundary, dimension, isFwd::Bool, n::Int=0
+)
   dim_vertices = dimension_vertices(s, dimension)
   L = length(dim_vertices)
 
@@ -72,7 +72,6 @@ function apply_boundary!(ttn_op,s::IndsNetworkMap,
     ]
     add!(ttn_op, 1.0, (string_site...)...)
   end
-
 end
 
 function forward_shift_opsum(
@@ -93,7 +92,7 @@ function forward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  apply_boundary!(ttn_op,s,boundary,dimension, true,n)
+  apply_boundary!(ttn_op, s, boundary, dimension, true, n)
 
   return ttn_op
 end
@@ -116,7 +115,7 @@ function backward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  apply_boundary!(ttn_op,s,boundary,dimension,false,n)
+  apply_boundary!(ttn_op, s, boundary, dimension, false, n)
 
   return ttn_op
 end
