@@ -45,6 +45,36 @@ function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
   return ITensor(o, s, s')
 end
 
+## TODO: turn this into a proper system ala sites which can be externally overloaded
+
+function apply_boundary!(ttn_op,s::IndsNetworkMap,
+    boundary,dimension,isFwd::Bool,n::Int=0)
+
+  dim_vertices = dimension_vertices(s, dimension)
+  L = length(dim_vertices)
+
+  if boundary == "Neumann"
+    string_site = [
+      if j <= (L - n)
+        (isFwd ? "Dup" : "Ddn", vertex(s, dimension, j))
+      else
+        ("I", vertex(s, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  elseif boundary == "Periodic"
+    string_site = [
+      if j <= (L - n)
+        (isFwd ? "D-" : "D+", vertex(s, dimension, j))
+      else
+        ("I", vertex(s, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  end
+
+end
+
 function forward_shift_opsum(
   s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int=0
 )
@@ -63,25 +93,7 @@ function forward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  if boundary == "Neumann"
-    string_site = [
-      if j <= (L - n)
-        ("Dup", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  elseif boundary == "Periodic"
-    string_site = [
-      if j <= (L - n)
-        ("D-", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  end
+  apply_boundary!(ttn_op,s,boundary,dimension, true,n)
 
   return ttn_op
 end
@@ -104,25 +116,7 @@ function backward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  if boundary == "Neumann"
-    string_site = [
-      if j <= (L - n)
-        ("Ddn", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  elseif boundary == "Periodic"
-    string_site = [
-      if j <= (L - n)
-        ("D+", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  end
+  apply_boundary!(ttn_op,s,boundary,dimension,false,n)
 
   return ttn_op
 end
