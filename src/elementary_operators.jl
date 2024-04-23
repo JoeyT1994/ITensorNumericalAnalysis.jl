@@ -155,6 +155,7 @@ function stencil(
   truncate_op=true,
   kwargs...,
 )
+  # shifts = [ x+2Δh, x+Δh, x, x-Δh, x-2Δh]
   @assert length(shifts) == 5
   b = base(s)
   stencil_opsum = shifts[3] * no_shift_opsum(s)
@@ -214,7 +215,7 @@ function laplacian_operator(
 end
 
 function identity_operator(s::IndsNetworkMap; kwargs...)
-  return stencil(s, [0.0, 1.0, 0.0], 0; kwargs...)
+  return stencil(s, [0.0, 0.0, 1.0, 0.0, 0.0], 0; kwargs...)
 end
 
 function operator(fx::ITensorNetworkFunction)
