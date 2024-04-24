@@ -27,7 +27,7 @@ default_boundary() = "Dirichlet"
 # reuse Qudit definitions for now
 
 function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
-    return parse(Int, String(N)) + 1
+  return parse(Int, String(N)) + 1
 end
 
 function ITensors.state(::StateName{N}, ::SiteType"Digit", s::Index) where {N}
