@@ -2,8 +2,6 @@ using Graphs: is_tree
 using NamedGraphs: undirected_graph
 using ITensors:
   OpSum,
-  @OpName_str,
-  @SiteType_str,
   SiteType,
   siteinds,
   noprime,
@@ -15,65 +13,24 @@ using ITensors:
   prime,
   sim,
   noprime!,
-  contract,
-  val,
-  state,
-  ValName,
-  StateName
+  contract
 using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
 
 default_boundary() = "Dirichlet"
 
-# reuse Qudit definitions for now
-
-function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
-  return parse(Int, String(N)) + 1
-end
-
-function ITensors.state(::StateName{N}, ::SiteType"Digit", s::Index) where {N}
-  n = parse(Int, String(N))
-  st = zeros(dim(s))
-  st[n + 1] = 1.0
-  return ITensor(st, s)
-end
-
-function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 2] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 2] = 1
-  return ITensor(o, s, s')
-end
-
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
 
-function apply_boundary!(
-  ttn_op, s::IndsNetworkMap, boundary, dimension, isFwd::Bool, n::Int=0
+function boundary_term(
+  s::IndsNetworkMap, boundary::String, dimension, isfwd::Bool, n::Int=0
 )
+  ttn_op = OpSum()
   dim_vertices = dimension_vertices(s, dimension)
   L = length(dim_vertices)
 
   if boundary == "Neumann"
     string_site = [
       if j <= (L - n)
-        (isFwd ? "Dup" : "Ddn", vertex(s, dimension, j))
+        (isfwd ? "Dup" : "Ddn", vertex(s, dimension, j))
       else
         ("I", vertex(s, dimension, j))
       end for j in 1:L
@@ -82,13 +39,14 @@ function apply_boundary!(
   elseif boundary == "Periodic"
     string_site = [
       if j <= (L - n)
-        (isFwd ? "D-" : "D+", vertex(s, dimension, j))
+        (isfwd ? "D-" : "D+", vertex(s, dimension, j))
       else
         ("I", vertex(s, dimension, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
   end
+  return ttn_op
 end
 
 function forward_shift_opsum(
@@ -109,7 +67,7 @@ function forward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  apply_boundary!(ttn_op, s, boundary, dimension, true, n)
+  ttn_op += boundary_term(s, boundary, dimension, true, n)
 
   return ttn_op
 end
@@ -132,7 +90,7 @@ function backward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  apply_boundary!(ttn_op, s, boundary, dimension, false, n)
+  ttn_op += boundary_term(s, boundary, dimension, false, n)
 
   return ttn_op
 end
@@ -225,7 +183,8 @@ function laplacian_operator(
 end
 
 function identity_operator(s::IndsNetworkMap; kwargs...)
-  return stencil(s, [0.0, 0.0, 1.0, 0.0, 0.0], 0; kwargs...)
+  operator_inds = union_all_inds(siteinds(s), prime(siteinds(s)))
+  return ITensorNetwork(Op("I"), operator_inds)
 end
 
 function operator(fx::ITensorNetworkFunction)
