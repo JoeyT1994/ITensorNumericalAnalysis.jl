@@ -15,10 +15,27 @@ using ITensors:
   prime,
   sim,
   noprime!,
-  contract
+  contract,
+  val,
+  state,
+  ValName,
+  StateName
 using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
 
 default_boundary() = "Dirichlet"
+
+# reuse Qudit definitions for now
+
+function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
+    return parse(Int, String(N)) + 1
+end
+
+function ITensors.state(::StateName{N}, ::SiteType"Digit", s::Index) where {N}
+  n = parse(Int, String(N))
+  st = zeros(dim(s))
+  st[n + 1] = 1.0
+  return ITensor(st, s)
+end
 
 function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
   d = dim(s)
