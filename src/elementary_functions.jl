@@ -201,6 +201,23 @@ function random_itensornetwork(s::IndsNetworkMap; kwargs...)
   return ITensorNetworkFunction(random_tensornetwork(indsnetwork(s); kwargs...), s)
 end
 
+"Create a product state of a given bit configuration"
+function delta_xyz(s::IndsNetworkMap, xs::Vector, dimensions::Vector{Int}; kwargs...)
+  ind_to_ind_value_map = calculate_ind_values(s, xs, dimensions)
+  tn = ITensorNetwork(v -> string(ind_to_ind_value_map[only(s[v])]), indsnetwork(s))
+  return ITensorNetworkFunction(tn, s)
+end
+
+function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
+  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
+end
+
+"Create a product state of a given bit configuration of a 1D function"
+function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
+  @assert dimension(s) == 1
+  return delta_xyz(s, [x], [1]; kwargs...)
+end
+
 const const_itn = const_itensornetwork
 const poly_itn = polynomial_itensornetwork
 const cosh_itn = cosh_itensornetwork

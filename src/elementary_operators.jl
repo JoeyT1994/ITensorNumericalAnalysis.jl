@@ -182,6 +182,9 @@ function laplacian_operator(
   end
   return ∇
 end
+function laplacian_operator(s::IndsNetworkMap, boundary::String; kwargs...)
+  return laplacian_operator(s; left_boundary=boundary, right_boundary=boundary, kwargs...)
+end
 
 function identity_operator(s::IndsNetworkMap; kwargs...)
   operator_inds = ITensorNetworks.union_all_inds(indsnetwork(s), prime(indsnetwork(s)))
@@ -199,23 +202,6 @@ function operator(fx::ITensorNetworkFunction)
     operator[v] = operator[v] * delta(vcat(sind, sindsim, sind'))
   end
   return operator
-end
-
-"Create a product state of a given bit configuration"
-function delta_xyz(s::IndsNetworkMap, xs::Vector, dimensions::Vector{Int}; kwargs...)
-  ind_to_ind_value_map = calculate_ind_values(s, xs, dimensions)
-  ps = [string(ind_to_ind_value_map[s[v][1]]) for v in vertices(s)]
-  return ttn(ps, indsnetwork(s); kwargs...)
-end
-
-function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
-  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
-end
-
-"Create a product state of a given bit configuration of a 1D function"
-function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
-  @assert dimension(s) == 1
-  return delta_xyz(s, [x], [1]; kwargs...)
 end
 
 function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
