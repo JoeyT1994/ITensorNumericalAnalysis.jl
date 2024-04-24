@@ -6,6 +6,7 @@ using ITensors:
   siteinds,
   noprime,
   op,
+  Op,
   truncate,
   replaceinds,
   delta,
@@ -14,8 +15,8 @@ using ITensors:
   sim,
   noprime!,
   contract
-using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
-
+using ITensorNetworks:
+  IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn, union_all_inds
 default_boundary() = "Dirichlet"
 
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
@@ -183,7 +184,7 @@ function laplacian_operator(
 end
 
 function identity_operator(s::IndsNetworkMap; kwargs...)
-  operator_inds = union_all_inds(siteinds(s), prime(siteinds(s)))
+  operator_inds = ITensorNetworks.union_all_inds(indsnetwork(s), prime(indsnetwork(s)))
   return ITensorNetwork(Op("I"), operator_inds)
 end
 
