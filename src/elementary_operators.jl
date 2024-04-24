@@ -241,6 +241,23 @@ function operator(fx::ITensorNetworkFunction)
   return operator
 end
 
+"Create a product state of a given bit configuration"
+function delta_xyz(s::IndsNetworkMap, xs::Vector, dimensions::Vector{Int}; kwargs...)
+  ind_to_ind_value_map = calculate_ind_values(s, xs, dimensions)
+  ps = [string(ind_to_ind_value_map[s[v][1]]) for v in vertices(s)]
+  return ttn(ps, indsnetwork(s); kwargs...)
+end
+
+function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
+  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
+end
+
+"Create a product state of a given bit configuration of a 1D function"
+function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
+  @assert dimension(s) == 1
+  return delta_xyz(s, [x], [1]; kwargs...)
+end
+
 function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
   @assert vertices(gx) == vertices(fx)
   fx, fxgx = copy(fx), copy(gx)
