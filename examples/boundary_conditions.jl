@@ -10,7 +10,6 @@ using Random: seed!
 
 using UnicodePlots
 
-#Solve the 2D Laplace equation on a random tree
 seed!(1234)
 L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
@@ -24,9 +23,10 @@ Zero_X = zero_point_op(s, [0, 1], 1)
 Zero_Y = zero_point_op(s, [0, 1], 2)
 Zero_X = truncate(Zero_X; cutoff=1e-14)
 Zero_Y = truncate(Zero_Y; cutoff=1e-14)
+@show maxlinkdim(Zero_X),maxlinkdim(Zero_Y)
 
 maxdim = 4
-cutoff = 0e-8 #0e-16
+cutoff = 0 #0e-16
 ϕ_fxy = copy(ψ_fxy)
 ϕ_fxy = operate([Zero_X, Zero_Y], ϕ_fxy; cutoff, maxdim, normalize=true)
 @show maxlinkdim(ϕ_fxy)
