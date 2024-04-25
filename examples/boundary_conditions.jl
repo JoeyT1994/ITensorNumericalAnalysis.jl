@@ -2,7 +2,7 @@ using Test
 using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
-using NamedGraphs: NamedGraph
+using NamedGraphs: NamedGraph, named_grid
 using ITensors: ITensors, Index, siteinds, dim, tags, replaceprime!, MPO, MPS, inner
 using ITensorNetworks: ITensorNetwork, dmrg, ttn, maxlinkdim
 using Dictionaries: Dictionary
@@ -13,20 +13,24 @@ using UnicodePlots
 seed!(1234)
 L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
+#g = named_grid((L,1))
 
 s = continuous_siteinds(g; map_dimension=2)
 
-ψ_fxy = const_itn(s; c=1)
+ψ_fxy = const_itn(s; c=2, linkdim=2)
+#ψ_fxy = sin_itn(s)
+#ψ_fxy = delta_xyz(s, [0.0,0.5] )
 @show maxlinkdim(ψ_fxy)
 
-Zero_X = zero_point_op(s, [0, 1], 1)
-Zero_Y = zero_point_op(s, [0, 1], 2)
+Zero_X = zero_point_op(s, [0, 1 - 1 / 2^(L ÷ 2)], 1)
+Zero_Y = zero_point_op(s, [0, 1 - 1 / 2^(L ÷ 2)], 2)
 Zero_X = truncate(Zero_X; cutoff=1e-14)
 Zero_Y = truncate(Zero_Y; cutoff=1e-14)
-@show maxlinkdim(Zero_X),maxlinkdim(Zero_Y)
+@show maxlinkdim(Zero_X), maxlinkdim(Zero_Y)
 
-maxdim = 4
-cutoff = 0 #0e-16
+maxdim = 10
+cutoff = 0e-16 #0e-16
+@show cutoff
 ϕ_fxy = copy(ψ_fxy)
 ϕ_fxy = operate([Zero_X, Zero_Y], ϕ_fxy; cutoff, maxdim, normalize=true)
 @show maxlinkdim(ϕ_fxy)
@@ -62,3 +66,5 @@ end
 
 println("Here is a cut of the function at x = $x or y = $y")
 show(lineplot!(lp, y_vals, vals3; name="cut y=$y"))
+
+@show vals2[1], vals2[end - 1], vals3[1], vals3[end - 1]
