@@ -44,7 +44,8 @@ export const_itensornetwork,
   fourth_derivative_operator,
   identity_operator,
   delta_x,
-  delta_xyz
+  delta_xyz,
+  zero_point_op
 export const_itn,
   poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
 export calculate_fx, calculate_fxyz

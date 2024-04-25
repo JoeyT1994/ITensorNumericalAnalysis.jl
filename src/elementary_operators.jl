@@ -191,6 +191,27 @@ function identity_operator(s::IndsNetworkMap; kwargs...)
   return ITensorNetwork(Op("I"), operator_inds)
 end
 
+" Create an operator which is 0 for points in xs "
+function zero_point_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
+  ttn_op = OpSum()
+  # build I- ∑_p ∏(bit string p)
+  for p in xs
+    ind_to_ind_value_map = calculate_ind_values(s, p, dimension)
+    string_site = []
+    for v in dimension_vertices(s, dimension)
+      op = ind_to_ind_value_map[only(s[v])] == 1 ? "Dup" : "Ddn"
+      push!(string_site, (op, v))
+    end
+    add!(ttn_op, -1.0, (string_site...)...)
+  end
+  add!(ttn_op, 1.0, "I", first(dimension_vertices(s, dimension)))
+  return ttn(ttn_op, indsnetwork(s); algorithm="svd", truncate_kwargs...)
+end
+
+function zero_point_op(s::IndsNetworkMap, x::Number, dimension::Int; truncate_kwargs...)
+  return zero_point_op(s, [x], dimension; truncate_kwargs...)
+end
+
 function operator(fx::ITensorNetworkFunction)
   fx = copy(fx)
   operator = itensornetwork(fx)
