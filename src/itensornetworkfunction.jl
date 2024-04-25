@@ -1,7 +1,7 @@
 using Base: Base
 using ITensorNetworks:
   ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type, scalar
-using ITensors: ITensor, dim, contract, siteinds, onehot
+using ITensors: ITensor, dim, contract, siteinds, onehot, maxlinkdim
 using Graphs: Graphs
 
 default_contraction_alg() = "bp"

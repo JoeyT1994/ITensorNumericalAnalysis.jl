@@ -2,12 +2,11 @@ using Graphs: is_tree
 using NamedGraphs: undirected_graph
 using ITensors:
   OpSum,
-  @OpName_str,
-  @SiteType_str,
   SiteType,
   siteinds,
   noprime,
   op,
+  Op,
   truncate,
   replaceinds,
   delta,
@@ -16,33 +15,39 @@ using ITensors:
   sim,
   noprime!,
   contract
-using ITensorNetworks: IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn
-
+using ITensorNetworks:
+  IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn, union_all_inds
 default_boundary() = "Dirichlet"
 
-function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 2] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 2] = 1
-  return ITensor(o, s, s')
+## TODO: turn this into a proper system ala sites which can be externally overloaded
+
+function boundary_term(
+  s::IndsNetworkMap, boundary::String, dimension, isfwd::Bool, n::Int=0
+)
+  ttn_op = OpSum()
+  dim_vertices = dimension_vertices(s, dimension)
+  L = length(dim_vertices)
+
+  if boundary == "Neumann"
+    string_site = [
+      if j <= (L - n)
+        (isfwd ? "Dup" : "Ddn", vertex(s, dimension, j))
+      else
+        ("I", vertex(s, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  elseif boundary == "Periodic"
+    string_site = [
+      if j <= (L - n)
+        (isfwd ? "D-" : "D+", vertex(s, dimension, j))
+      else
+        ("I", vertex(s, dimension, j))
+      end for j in 1:L
+    ]
+    add!(ttn_op, 1.0, (string_site...)...)
+  end
+  return ttn_op
 end
 
 function forward_shift_opsum(
@@ -63,25 +68,7 @@ function forward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  if boundary == "Neumann"
-    string_site = [
-      if j <= (L - n)
-        ("Dup", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  elseif boundary == "Periodic"
-    string_site = [
-      if j <= (L - n)
-        ("D-", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  end
+  ttn_op += boundary_term(s, boundary, dimension, true, n)
 
   return ttn_op
 end
@@ -104,25 +91,7 @@ function backward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  if boundary == "Neumann"
-    string_site = [
-      if j <= (L - n)
-        ("Ddn", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  elseif boundary == "Periodic"
-    string_site = [
-      if j <= (L - n)
-        ("D+", vertex(s, dimension, j))
-      else
-        ("I", vertex(s, dimension, j))
-      end for j in 1:L
-    ]
-    add!(ttn_op, 1.0, (string_site...)...)
-  end
+  ttn_op += boundary_term(s, boundary, dimension, false, n)
 
   return ttn_op
 end
@@ -155,6 +124,7 @@ function stencil(
   truncate_op=true,
   kwargs...,
 )
+  # shifts = [ x+2Δh, x+Δh, x, x-Δh, x-2Δh]
   @assert length(shifts) == 5
   b = base(s)
   stencil_opsum = shifts[3] * no_shift_opsum(s)
@@ -212,9 +182,13 @@ function laplacian_operator(
   end
   return ∇
 end
+function laplacian_operator(s::IndsNetworkMap, boundary::String; kwargs...)
+  return laplacian_operator(s; left_boundary=boundary, right_boundary=boundary, kwargs...)
+end
 
 function identity_operator(s::IndsNetworkMap; kwargs...)
-  return stencil(s, [0.0, 1.0, 0.0], 0; kwargs...)
+  operator_inds = ITensorNetworks.union_all_inds(indsnetwork(s), prime(indsnetwork(s)))
+  return ITensorNetwork(Op("I"), operator_inds)
 end
 
 function operator(fx::ITensorNetworkFunction)
