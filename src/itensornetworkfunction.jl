@@ -80,10 +80,6 @@ function calculate_fxyz(
   alg=default_contraction_alg(),
   kwargs...,
 )
-  ## XXX: HACK UNTIL network fix
-  if maxlinkdim(fitn) == 1
-    alg = "exact"
-  end
   ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
   return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
