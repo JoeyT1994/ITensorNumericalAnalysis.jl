@@ -49,6 +49,8 @@ function exp_itensornetwork(
     )
   end
 
+  ψ[first(dimension_vertices(ψ, dimension))] *= c
+
   return ψ
 end
 
@@ -61,11 +63,8 @@ function cosh_itensornetwork(
   c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c, dimension)
-
-  ψ1[first(vertices(ψ1))] *= 0.5
-  ψ2[first(vertices(ψ1))] *= 0.5
+  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -79,11 +78,8 @@ function sinh_itensornetwork(
   c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c, dimension)
-
-  ψ1[first(vertices(ψ1))] *= 0.5
-  ψ2[first(vertices(ψ1))] *= -0.5
+  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -100,10 +96,12 @@ function tanh_itensornetwork(
 )
   ψ = const_itensornetwork(s)
   for n in 1:nterms
-    ψt = exp_itensornetwork(s; a=-2 * n * a, c, k=-2 * k * n, dimension)
-    ψt[first(vertices(ψt))] *= 2 * ((-1)^n)
+    ψt = exp_itensornetwork(s; a=-2 * n * a, k=-2 * k * n, dimension)
+    ψt[first(dimension_vertices(ψ, dimension))] *= 2 * ((-1)^n)
     ψ = ψ + ψt
   end
+
+  ψ[first(dimension_vertices(ψ, dimension))] *= c
 
   return ψ
 end
@@ -117,11 +115,8 @@ function cos_itensornetwork(
   c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=c, dimension)
-
-  ψ1[first(vertices(ψ1))] *= 0.5
-  ψ2[first(vertices(ψ1))] *= 0.5
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=0.5 * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -132,14 +127,11 @@ function sin_itensornetwork(
   s::IndsNetworkMap;
   k=default_k_value(),
   a=default_a_value(),
-  c = default_c_value(),
+  c=default_c_value(),
   dimension::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c =c,  dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c = c, dimension)
-
-  ψ1[first(vertices(ψ1))] *= -0.5 * im
-  ψ2[first(vertices(ψ1))] *= 0.5 * im
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=-0.5 * im * c, dimension)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * im * c, dimension)
 
   return ψ1 + ψ2
 end
@@ -147,9 +139,14 @@ end
 """Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i} on the graph structure specified
 by indsnetwork"""
 function polynomial_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector; dimension::Int=default_dimension()
+  s::IndsNetworkMap,
+  coeffs::Vector;
+  dimension::Int=default_dimension(),
+  k=default_k_value(),
+  c=default_c_value(),
 )
   n = length(coeffs)
+  coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
   #First treeify the index network (ignore edges that form loops)
   _s = indsnetwork(s)
   g = underlying_graph(_s)
@@ -188,6 +185,8 @@ function polynomial_itensornetwork(
     end
   end
 
+  ψ[first(dim_vertices)] *= c
+
   #Put the transfer tensors in, these are special tensors that
   # go on the digits (sites) that don't correspond to the desired dimension
   for v in setdiff(vertices(ψ), dim_vertices)
@@ -203,6 +202,23 @@ end
 
 function random_itensornetwork(s::IndsNetworkMap; kwargs...)
   return ITensorNetworkFunction(random_tensornetwork(indsnetwork(s); kwargs...), s)
+end
+
+"Create a product state of a given bit configuration"
+function delta_xyz(s::IndsNetworkMap, xs::Vector, dimensions::Vector{Int}; kwargs...)
+  ind_to_ind_value_map = calculate_ind_values(s, xs, dimensions)
+  tn = ITensorNetwork(v -> string(ind_to_ind_value_map[only(s[v])]), indsnetwork(s))
+  return ITensorNetworkFunction(tn, s)
+end
+
+function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
+  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
+end
+
+"Create a product state of a given bit configuration of a 1D function"
+function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
+  @assert dimension(s) == 1
+  return delta_xyz(s, [x], [1]; kwargs...)
 end
 
 const const_itn = const_itensornetwork

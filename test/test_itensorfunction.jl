@@ -5,9 +5,9 @@ using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
 using ITensors: siteinds
 using Dictionaries: Dictionary
-using SplitApplyCombine: group
-using Random: seed!
-using Distributions: Uniform
+using Random: Random
+
+Random.seed!(1234)
 
 @testset "test constructor from ITensorNetwork" begin
   L = 10
@@ -22,7 +22,10 @@ using Distributions: Uniform
   @test dimension_vertices(fψ, 1) == vertices(fψ)
   @test dimension(fψ) == 1
 
-  dim_vertices = collect(values(group(v -> first(v) < Int(0.5 * L), vertices(ψ))))
+  dim_vertices = [
+    filter(v -> first(v) < Int(0.5 * L), vertices(ψ)),
+    filter(v -> first(v) >= Int(0.5 * L), vertices(ψ)),
+  ]
   fψ = ITensorNetworkFunction(ψ, dim_vertices)
   @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
     Set(vertices(fψ))
@@ -56,15 +59,16 @@ end
     @testset "test $name in binary" begin
       Lx, Ly = 2, 3
       g = named_comb_tree((2, 3))
-      a = 1.2
-      k = 0.125
+      a = rand()
+      k = rand()
+      c = rand()
 
       s = continuous_siteinds(g)
 
       x = 0.625
-      ψ_fx = net_func(s; k, a)
+      ψ_fx = net_func(s; k, a, c)
       fx_x = calculate_fx(ψ_fx, x)
-      @test func(k * x + a) ≈ fx_x
+      @test c * func(k * x + a) ≈ fx_x
     end
   end
 
@@ -79,33 +83,34 @@ end
     @testset "test $name in trinary" begin
       Lx, Ly = 2, 3
       g = named_comb_tree((2, 3))
-      a = 1.2
-      k = 0.125
-      b = 3
+      a = rand()
+      k = rand()
+      c = rand()
 
       s = continuous_siteinds(g; base=3)
 
       x = (5.0 / 9.0)
-      ψ_fx = net_func(s; k, a)
+      ψ_fx = net_func(s; k, a, c)
       fx_x = calculate_fx(ψ_fx, x)
-      @test func(k * x + a) ≈ fx_x
+      @test c * func(k * x + a) ≈ fx_x
     end
   end
 
   @testset "test tanh" begin
     L = 10
     g = named_grid((L, 1))
-    a = 1.3
-    k = 0.15
+    a = rand()
+    k = rand()
+    c = rand()
     nterms = 50
 
     s = continuous_siteinds(g)
 
     x = 0.625
-    ψ_fx = tanh_itn(s; k, a, nterms)
+    ψ_fx = tanh_itn(s; k, a, c, nterms)
     fx_x = calculate_fx(ψ_fx, x)
 
-    @test tanh(k * x + a) ≈ fx_x
+    @test c * tanh(k * x + a) ≈ fx_x
   end
 
   @testset "test poly" begin
@@ -114,18 +119,19 @@ end
 
     ###Generate a series of random polynomials on random graphs. Evaluate them at random x values"""
     for deg in degrees
-      seed!(1234 * deg)
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
       g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
       s = continuous_siteinds(g)
+      k = rand()
+      c = rand()
 
-      coeffs = [rand(Uniform(-2, 2)) for i in 1:(deg + 1)]
+      coeffs = [rand() for i in 1:(deg + 1)]
 
       x = 0.875
-      ψ_fx = poly_itn(s, coeffs)
+      ψ_fx = poly_itn(s, coeffs; k, c)
       fx_x = calculate_fx(ψ_fx, x)
 
-      fx_exact = sum([coeffs[i] * (x^(i - 1)) for i in 1:(deg + 1)])
+      fx_exact = c * sum([coeffs[i] * ((k * x)^(i - 1)) for i in 1:(deg + 1)])
       @test fx_x ≈ fx_exact atol = 1e-4
     end
   end
@@ -162,15 +168,16 @@ end
 
   for (name, net_func, func) in funcs
     @testset "test $name" begin
-      a = 1.2
-      k = 0.125
+      a = rand()
+      k = rand()
+      c = rand()
 
-      ψ_fx = net_func(s; k, a, dimension=1)
-      ψ_fy = net_func(s; k, a, dimension=2)
+      ψ_fx = net_func(s; k, a, c, dimension=1)
+      ψ_fy = net_func(s; k, a, c, dimension=2)
 
       ψ_fxy = ψ_fx + ψ_fy
       fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])
-      @test func(k * x + a) + func(k * y + a) ≈ fxy_xy
+      @test c * func(k * x + a) + c * func(k * y + a) ≈ fxy_xy
     end
   end
 
@@ -178,17 +185,18 @@ end
   @testset "test tanh" begin
     L = 3
     g = named_grid((L, 2))
-    a = 1.3
-    k = 0.15
-    nterms = 10
+    a = rand()
+    k = rand()
+    c = rand()
+    nterms = 20
     s = continuous_siteinds(g; map_dimension=2)
 
     x, y = 0.625, 0.875
-    ψ_fx = tanh_itn(s; k, a, nterms, dimension=1)
-    ψ_fy = tanh_itn(s; k, a, nterms, dimension=2)
+    ψ_fx = tanh_itn(s; k, a, c, nterms, dimension=1)
+    ψ_fy = tanh_itn(s; k, a, c, nterms, dimension=2)
 
     ψ_fxy = ψ_fx + ψ_fy
-    fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])
-    @test tanh(k * x + a) + tanh(k * y + a) ≈ fxy_xy
+    fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2]; alg="exact")
+    @test c * tanh(k * x + a) + c * tanh(k * y + a) ≈ fxy_xy
   end
 end
