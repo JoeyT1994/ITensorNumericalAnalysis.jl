@@ -42,7 +42,7 @@ end
     ψ_fx = const_itn(s; c)
 
     x = 0.5
-    fx_x = calculate_fx(ψ_fx, x)
+    fx_x = calculate_fx(ψ_fx, x; alg="exact")
     @test fx_x ≈ c
   end
 
@@ -55,7 +55,7 @@ end
     ψ_fx = const_itn(s; c, linkdim=4)
 
     x = 0.5
-    fx_x = calculate_fx(ψ_fx, x)
+    fx_x = calculate_fx(ψ_fx, x; alg="exact")
     @test fx_x ≈ c
   end
   funcs = [
