@@ -42,12 +42,22 @@ end
     ψ_fx = const_itn(s; c)
 
     x = 0.5
-    ind_to_ind_value_map = calculate_ind_values(ψ_fx, x)
-
     fx_x = calculate_fx(ψ_fx, x)
     @test fx_x ≈ c
   end
 
+  @testset "test const w/ linkdims" begin
+    L = 3
+    g = named_grid((L, L))
+    s = continuous_siteinds(g)
+    c = 1.5
+
+    ψ_fx = const_itn(s; c, linkdim=4)
+
+    x = 0.5
+    fx_x = calculate_fx(ψ_fx, x)
+    @test fx_x ≈ c
+  end
   funcs = [
     ("cosh", cosh_itn, cosh),
     ("sinh", sinh_itn, sinh),
