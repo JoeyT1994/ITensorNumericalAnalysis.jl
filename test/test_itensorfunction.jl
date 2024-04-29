@@ -42,12 +42,16 @@ end
     ψ_fx = const_itn(s; c)
 
     x = 0.5
-    ind_to_ind_value_map = calculate_ind_values(ψ_fx, x)
+    fx_x = calculate_fx(ψ_fx, x; alg="exact")
+    @test fx_x ≈ c
 
-    fx_x = calculate_fx(ψ_fx, x)
+    # link dims section
+    ψ_fx = const_itn(s; c, linkdim=4)
+
+    x = 0.5
+    fx_x = calculate_fx(ψ_fx, x; alg="exact")
     @test fx_x ≈ c
   end
-
   funcs = [
     ("cosh", cosh_itn, cosh),
     ("sinh", sinh_itn, sinh),
