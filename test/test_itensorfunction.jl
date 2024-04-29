@@ -44,7 +44,7 @@ end
     x = 0.5
     fx_x = calculate_fx(ψ_fx, x; alg="exact")
     @test fx_x ≈ c
-    
+
     # link dims section
     ψ_fx = const_itn(s; c, linkdim=4)
 
