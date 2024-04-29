@@ -44,14 +44,8 @@ end
     x = 0.5
     fx_x = calculate_fx(ψ_fx, x; alg="exact")
     @test fx_x ≈ c
-  end
-
-  @testset "test const w/ linkdims" begin
-    L = 3
-    g = named_grid((L, L))
-    s = continuous_siteinds(g)
-    c = 1.5
-
+    
+    # link dims section
     ψ_fx = const_itn(s; c, linkdim=4)
 
     x = 0.5
