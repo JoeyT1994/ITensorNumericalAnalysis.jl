@@ -55,7 +55,7 @@ for (i, x) in enumerate(x_vals)
   vals2[i] = real(calculate_fxyz(ϕ_fxy, [x, y]; alg="exact"))
 end
 
-lp = lineplot(x_vals, vals2; name="cut x=$x")
+lp = lineplot(x_vals, vals2; name="cut y=$y")
 
 y_vals = grid_points(s, n_grid, 2)
 x = 0.5
@@ -65,6 +65,6 @@ for (i, y) in enumerate(y_vals)
 end
 
 println("Here is a cut of the function at x = $x or y = $y")
-show(lineplot!(lp, y_vals, vals3; name="cut y=$y"))
+show(lineplot!(lp, y_vals, vals3; name="cut x=$x"))
 
 @show vals2[1], vals2[end - 1], vals3[1], vals3[end - 1]
