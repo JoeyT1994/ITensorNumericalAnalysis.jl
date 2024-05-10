@@ -4,7 +4,7 @@ using ITensorNetworks:
 using ITensors: ITensor, dim, contract, siteinds, onehot, maxlinkdim
 using Graphs: Graphs
 
-default_contraction_alg() = "exact" #"bp"
+default_contraction_alg() = "bp"
 
 struct ITensorNetworkFunction{V,TN<:AbstractITensorNetwork{V},INM<:IndsNetworkMap} <:
        AbstractITensorNetwork{V}

@@ -14,6 +14,7 @@ using UnicodePlots
 seed!(1234)
 L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
+g = rename_vertices(v -> (v,1), g)
 
 s = continuous_siteinds(g; map_dimension=2)
 
@@ -34,7 +35,6 @@ final_energy, ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
 
 ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-10)
 
-#final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
 println(
   "Finished DMRG. Found solution of energy $final_energy with bond dimension $(maxlinkdim(ϕ_fxy))",
 )

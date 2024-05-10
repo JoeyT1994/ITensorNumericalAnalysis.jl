@@ -125,8 +125,7 @@ end
     ###Generate a series of random polynomials on random graphs. Evaluate them at random x values"""
     for deg in degrees
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
-      name_map = Dict(zip((vertices(g)), [(v, 1) for v in vertices(g)]))
-      g = rename_vertices(v -> name_map[v], g) ## HACK
+      g = rename_vertices(v -> (v,1), g)
       s = continuous_siteinds(g)
       k = rand()
       c = rand()
