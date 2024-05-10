@@ -98,6 +98,10 @@ function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
   return filter(v -> vertex_dimension(inm, v) == dimension, vertices(inm))
 end
 
+function dimension_vertices(inm::IndsNetworkMap, dimensions::Vector{Int})
+  return filter(v -> vertex_dimension(inm, v) in dimensions, vertices(inm))
+end
+
 function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)
   index = ind(inm, dimension, digit)
   return only(filter(v -> index ∈ inm[v], vertices(inm)))
