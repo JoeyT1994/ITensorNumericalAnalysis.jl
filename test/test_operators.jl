@@ -111,6 +111,7 @@ end
 @testset "test multiplication_operator_in_2D" begin
   L = 8
   g = NamedGraph(SimpleGraph(uniform_tree(L)))
+  g = rename_vertices(v -> (v, 1), g)
 
   s = continuous_siteinds(g; map_dimension=2)
 
