@@ -24,8 +24,8 @@ Random.seed!(1234)
   @test dimension(fψ) == 1
 
   dim_vertices = [
-                  collect(filter(v -> first(v) < Int(0.5 * L), vertices(ψ))),
-                  collect(filter(v -> first(v) >= Int(0.5 * L), vertices(ψ))),
+    collect(filter(v -> first(v) < Int(0.5 * L), vertices(ψ))),
+    collect(filter(v -> first(v) >= Int(0.5 * L), vertices(ψ))),
   ]
   fψ = ITensorNetworkFunction(ψ, dim_vertices)
   @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
@@ -126,7 +126,7 @@ end
     for deg in degrees
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
       name_map = Dict(zip((vertices(g)), [(v, 1) for v in vertices(g)]))
-      g = rename_vertices(v -> name_map[v], g ) ## HACK
+      g = rename_vertices(v -> name_map[v], g) ## HACK
       s = continuous_siteinds(g)
       k = rand()
       c = rand()
