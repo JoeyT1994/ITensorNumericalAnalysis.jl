@@ -91,7 +91,7 @@ function ITensors.inds(s::IndsNetwork, verts::Vector)
 end
 
 function ITensors.inds(s::IndsNetwork)
-  return inds(s, vertices(s))
+  return inds(s, collect(vertices(s)))
 end
 
 function base(s::IndsNetwork)

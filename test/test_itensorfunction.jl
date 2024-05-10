@@ -24,8 +24,8 @@ Random.seed!(1234)
   @test dimension(fψ) == 1
 
   dim_vertices = [
-    filter(v -> first(v) < Int(0.5 * L), vertices(ψ)),
-    filter(v -> first(v) >= Int(0.5 * L), vertices(ψ)),
+                  collect(filter(v -> first(v) < Int(0.5 * L), vertices(ψ))),
+                  collect(filter(v -> first(v) >= Int(0.5 * L), vertices(ψ))),
   ]
   fψ = ITensorNetworkFunction(ψ, dim_vertices)
   @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
@@ -125,7 +125,8 @@ end
     ###Generate a series of random polynomials on random graphs. Evaluate them at random x values"""
     for deg in degrees
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
-      g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
+      name_map = Dict(zip((vertices(g)), [(v, 1) for v in vertices(g)]))
+      g = rename_vertices(v -> name_map[v], g ) ## HACK
       s = continuous_siteinds(g)
       k = rand()
       c = rand()

@@ -29,12 +29,12 @@ println(
 )
 
 dmrg_kwargs = (nsweeps=15, normalize=true, maxdim=30, cutoff=1e-12, outputlevel=1, nsites=2)
-ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
+final_energy, ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
 ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), s)
 
 ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-10)
 
-final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
+#final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
 println(
   "Finished DMRG. Found solution of energy $final_energy with bond dimension $(maxlinkdim(ϕ_fxy))",
 )
