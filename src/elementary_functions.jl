@@ -1,13 +1,13 @@
 using Graphs: nv, vertices, edges, neighbors
 using NamedGraphs:
-  random_bfs_tree,
-  rem_edges,
-  add_edges,
-  undirected_graph,
   NamedEdge,
   AbstractGraph,
-  leaf_vertices,
   a_star
+using NamedGraphs.GraphsExtensions: random_bfs_tree,
+                                    rem_edges,
+                                    add_edges,
+                                    leaf_vertices,
+                                    undirected_graph
 using ITensors: dim, commoninds
 using ITensorNetworks: IndsNetwork, underlying_graph
 

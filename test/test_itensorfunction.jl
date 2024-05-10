@@ -2,7 +2,8 @@ using Test
 using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
-using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
+using NamedGraphs: NamedGraph, vertices, rename_vertices
+using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
 using ITensors: siteinds
 using Dictionaries: Dictionary
 using Random: Random

@@ -1,5 +1,5 @@
 using Graphs: is_tree
-using NamedGraphs: undirected_graph
+using NamedGraphs.GraphsExtensions: undirected_graph
 using ITensors:
   OpSum,
   SiteType,

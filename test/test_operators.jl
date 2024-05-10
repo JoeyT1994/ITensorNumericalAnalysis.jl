@@ -4,7 +4,8 @@ using ITensorNumericalAnalysis
 using ITensors: siteinds
 using ITensorNetworks: maxlinkdim
 using Graphs: SimpleGraph, uniform_tree
-using NamedGraphs: named_grid, named_comb_tree, NamedGraph, nv, vertices
+using NamedGraphs: NamedGraph, nv, vertices
+using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
 using ITensorNumericalAnalysis: itensornetwork, forward_shift_op, backward_shift_op
 using Dictionaries: Dictionary
 
