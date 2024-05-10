@@ -8,7 +8,7 @@ using Random: Random
 
 L = 12
 Random.seed!(1234)
-g = named_comb_tree((3,4))
+g = named_comb_tree((3, 4))
 s = continuous_siteinds(g; map_dimension=3)
 
 println(

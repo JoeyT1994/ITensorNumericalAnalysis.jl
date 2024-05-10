@@ -14,7 +14,7 @@ using UnicodePlots
 seed!(1234)
 L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
-g = rename_vertices(v -> (v,1), g)
+g = rename_vertices(v -> (v, 1), g)
 
 s = continuous_siteinds(g; map_dimension=2)
 
