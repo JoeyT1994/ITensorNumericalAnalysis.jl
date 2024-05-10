@@ -2,7 +2,8 @@ using Test
 using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
-using NamedGraphs: NamedGraph, named_grid, vertices, named_comb_tree, rename_vertices
+using NamedGraphs: NamedGraph, vertices, rename_vertices
+using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
 using ITensors: siteinds
 using Dictionaries: Dictionary
 using Random: Random
@@ -23,8 +24,8 @@ Random.seed!(1234)
   @test dimension(fψ) == 1
 
   dim_vertices = [
-    filter(v -> first(v) < Int(0.5 * L), vertices(ψ)),
-    filter(v -> first(v) >= Int(0.5 * L), vertices(ψ)),
+    collect(filter(v -> first(v) < Int(0.5 * L), vertices(ψ))),
+    collect(filter(v -> first(v) >= Int(0.5 * L), vertices(ψ))),
   ]
   fψ = ITensorNetworkFunction(ψ, dim_vertices)
   @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
@@ -124,7 +125,7 @@ end
     ###Generate a series of random polynomials on random graphs. Evaluate them at random x values"""
     for deg in degrees
       g = NamedGraph(SimpleGraph(uniform_tree(L)))
-      g = rename_vertices(g, Dict(zip(vertices(g), [(v, 1) for v in vertices(g)])))
+      g = rename_vertices(v -> (v, 1), g)
       s = continuous_siteinds(g)
       k = rand()
       c = rand()

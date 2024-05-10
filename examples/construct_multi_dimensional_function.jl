@@ -2,12 +2,13 @@ using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph
-using ITensors: siteinds
+using NamedGraphs.NamedGraphGenerators: named_comb_tree
+using ITensors: siteinds, maxlinkdim
 using Random: Random
 
 L = 12
 Random.seed!(1234)
-g = NamedGraph(SimpleGraph(uniform_tree(L)))
+g = named_comb_tree((3, 4))
 s = continuous_siteinds(g; map_dimension=3)
 
 println(

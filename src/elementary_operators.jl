@@ -1,5 +1,5 @@
 using Graphs: is_tree
-using NamedGraphs: undirected_graph
+using NamedGraphs.GraphsExtensions: undirected_graph
 using ITensors:
   OpSum,
   SiteType,
@@ -105,12 +105,12 @@ end
 
 function backward_shift_op(s::IndsNetworkMap; truncate_kwargs=(;), kwargs...)
   ttn_opsum = backward_shift_opsum(s; kwargs...)
-  return ttn(ttn_opsum, indsnetwork(s); algorithm="svd", truncate_kwargs...)
+  return ttn(ttn_opsum, indsnetwork(s); truncate_kwargs...)
 end
 
 function forward_shift_op(s::IndsNetworkMap; truncate_kwargs=(;), kwargs...)
   ttn_opsum = forward_shift_opsum(s; kwargs...)
-  return ttn(ttn_opsum, indsnetwork(s); algorithm="svd", truncate_kwargs...)
+  return ttn(ttn_opsum, indsnetwork(s); truncate_kwargs...)
 end
 
 function stencil(
@@ -144,7 +144,7 @@ function stencil(
     end
   end
 
-  stencil_op = ttn(stencil_opsum, indsnetwork(s); algorithm="svd", kwargs...)
+  stencil_op = ttn(stencil_opsum, indsnetwork(s); kwargs...)
 
   if scale
     for v in dimension_vertices(s, dimension)

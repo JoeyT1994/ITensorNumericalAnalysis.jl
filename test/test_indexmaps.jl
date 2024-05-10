@@ -1,7 +1,8 @@
 using Test
 using ITensorNumericalAnalysis
 
-using NamedGraphs: named_grid, vertices
+using NamedGraphs: vertices
+using NamedGraphs.NamedGraphGenerators: named_grid
 using ITensors: siteinds, inds
 using Dictionaries: Dictionary
 
