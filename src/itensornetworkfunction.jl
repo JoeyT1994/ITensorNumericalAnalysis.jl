@@ -78,9 +78,10 @@ function calculate_fxyz(
   xs::Vector,
   dimensions::Vector{Int};
   alg=default_contraction_alg(),
+  is_complex = false,
   kwargs...,
 )
-  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
+  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions; is_complex)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
   return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
 end

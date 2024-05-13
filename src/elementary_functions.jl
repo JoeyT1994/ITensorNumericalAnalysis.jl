@@ -12,13 +12,13 @@ default_nterms() = 20
 default_dimension() = 1
 
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
-function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1)
+function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1, is_complex=false)
   ψ = random_itensornetwork(s; link_space=linkdim)
   inv_L = Number(1.0 / nv(s))
   for v in vertices(ψ)
     sinds = inds(s, v)
     virt_inds = setdiff(inds(ψ[v]), sinds)
-    ψ[v] = (c / linkdim)^inv_L * c_tensor(only(sinds), virt_inds)
+    ψ[v] = (c / linkdim)^inv_L * c_tensor(sinds, virt_inds)
   end
 
   return ψ
@@ -31,13 +31,14 @@ function exp_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension(),
+  dimension::Int=default_dimension()
 )
   ψ = const_itensornetwork(s)
   Lx = length(dimension_vertices(ψ, dimension))
   for v in dimension_vertices(ψ, dimension)
-    sind = only(inds(s, v))
-    ψ[v] = ITensor(exp(a / Lx) * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v]))
+    sinds = inds(s, v)
+    ψ[v] = prod([ITensor(exp.(k * index_values_to_scalars(s, sind)), sind) for sind in sinds])
+    ψ[v] = ψ[v] * exp(a / Lx) 
   end
 
   ψ[first(dimension_vertices(ψ, dimension))] *= c
