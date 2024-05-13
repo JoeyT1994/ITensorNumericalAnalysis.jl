@@ -198,7 +198,7 @@ function operator(fx::ITensorNetworkFunction)
   for v in vertices(operator)
     sind = s[v]
     sindsim = sim(sind)
-    operator[v] = replaceinds!(operator[v], sind, sindsim)
+    operator[v] = replaceinds(operator[v], sind, sindsim)
     operator[v] = operator[v] * delta(vcat(sind, sindsim, sind'))
   end
   return operator

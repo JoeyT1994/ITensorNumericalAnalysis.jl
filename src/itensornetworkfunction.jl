@@ -1,6 +1,13 @@
 using Base: Base
 using ITensorNetworks:
-  ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type, scalar
+  ITensorNetworks,
+  ITensorNetwork,
+  AbstractITensorNetwork,
+  data_graph,
+  data_graph_type,
+  scalar,
+  inner,
+  TreeTensorNetwork
 using ITensors: ITensor, dim, contract, siteinds, onehot, maxlinkdim
 using Graphs: Graphs
 
@@ -71,6 +78,31 @@ function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
     end
   end
   return fitn
+end
+
+" Naive integration of a function in all dimensions ∫₀¹f({r})d{r} "
+function integrate(fitn::ITensorNetworkFunction; alg=default_contraction_alg(), kwargs...)
+  fitn = copy(fitn)
+  s = indsnetwork(indsnetworkmap(fitn))
+  for v in vertices(fitn)
+    indices = inds(s, v)
+    fitn[v] = fitn[v] * ITensor(eltype(fitn[v]), 0.5, indices...)
+  end
+  return scalar(itensornetwork(fitn); alg, kwargs...)
+end
+
+function integrate(
+  O::TreeTensorNetwork,
+  fitn::ITensorNetworkFunction;
+  alg=default_contraction_alg(),
+  kwargs...,
+)
+  s = indsnetwork(indsnetworkmap(fitn))
+  ∑ = ITensorNetwork(eltype(first(fitn)), v -> [0.5, 0.5], s)
+  return inner(∑, O, itensornetwork(fitn); alg, kwargs...)
+end
+function integrate(operator::ITensorNetwork, fitn::ITensorNetworkFunction; kwargs...)
+  return integrate(ttn(operator), fitn; kwargs...)
 end
 
 function calculate_fxyz(

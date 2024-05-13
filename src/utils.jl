@@ -53,6 +53,10 @@ function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
   return ITensor(o, s, s')
 end
 
+function ITensors.op(::OpName"Int", ::SiteType"Digit", s::Index)
+  return ITensor([1.0, 1.0], s') * ITensor(0.5, s)
+end
+
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
   inds = [Index(base, "$i") for i in 1:L]
