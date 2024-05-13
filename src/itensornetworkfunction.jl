@@ -91,18 +91,17 @@ function integrate(fitn::ITensorNetworkFunction; alg=default_contraction_alg(), 
   return scalar(itensornetwork(fitn); alg, kwargs...)
 end
 
+" Naive integration of a operator applied to a function in all dimensions ∫₀¹ (operator*f)({r})d{r} "
 function integrate(
-  O::TreeTensorNetwork,
+  operator::AbstractITensorNetwork,
   fitn::ITensorNetworkFunction;
   alg=default_contraction_alg(),
   kwargs...,
 )
   s = indsnetwork(indsnetworkmap(fitn))
+  # create basic integrator to apply to the operator|fitn> state
   ∑ = ITensorNetwork(eltype(first(fitn)), v -> [0.5, 0.5], s)
-  return inner(∑, O, itensornetwork(fitn); alg, kwargs...)
-end
-function integrate(operator::ITensorNetwork, fitn::ITensorNetworkFunction; kwargs...)
-  return integrate(ttn(operator), fitn; kwargs...)
+  return inner(∑, operator, itensornetwork(fitn); alg, kwargs...)
 end
 
 function calculate_fxyz(
