@@ -18,7 +18,7 @@ g = named_grid((L, 1))
 
 s = continuous_siteinds(g; map_dimension=2)
 
-ψ_fxy = const_itn(s; c=1, linkdim=2)
+ψ_fxy = sin_itn(s; k=10) #const_itn(s; c=1, linkdim=2)
 #ψ_sin = sin_itn(s)
 #ψ_fxy = delta_xyz(s, [0.0,0.5] )
 @show maxlinkdim(ψ_fxy)
@@ -37,13 +37,18 @@ Cop_y0 = const_plane_op(s, [0.0], 2)
 Cop_y1 = const_plane_op(s, [lastDigit], 2)
 @show maxlinkdim(Cop_x0), maxlinkdim(Cop_y0)
 
-maxdim = 10
+maxdim = 34
 cutoff = 0e-16 #0e-16
 @show cutoff
 ϕ_fxy = copy(ψ_fxy)
 ϕ_fxy = operate([Zero_X, Zero_Y], ϕ_fxy; cutoff, maxdim, normalize=false)
 plane = operate(
-  [Cop_x0], const_itn(s; c=x_bcs[1], linkdim=2); cutoff, maxdim, normalize=false
+  [Cop_x0],
+  const_itn(s; c=x_bcs[1], linkdim=2);
+  cutoff,
+  maxdim,
+  normalize=false,
+  #[Cop_x0], sin_itn(s;); cutoff, maxdim, normalize=false
 )
 ϕ_fxy += plane
 plane = operate(

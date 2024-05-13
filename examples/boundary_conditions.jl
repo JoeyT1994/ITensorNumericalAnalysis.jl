@@ -1,42 +1,54 @@
 using Test
 using ITensorNumericalAnalysis
 
-using Graphs: SimpleGraph, uniform_tree
-using NamedGraphs: NamedGraph, named_grid
-using ITensors: ITensors, Index, siteinds, dim, tags, replaceprime!, MPO, MPS, inner
-using ITensorNetworks: ITensorNetwork, dmrg, ttn, maxlinkdim
-using Dictionaries: Dictionary
+using NamedGraphs.NamedGraphGenerators: named_comb_tree
+using ITensors: ITensors, inner
+using ITensorNetworks: ITensorNetwork, ttn, maxlinkdim
 using Random: seed!
+using ITensors: Ops
 
 using UnicodePlots
 
 seed!(1234)
 L = 12
-g = NamedGraph(SimpleGraph(uniform_tree(L)))
-#g = named_grid((L,1))
+g = named_comb_tree((2, L ÷ 2))
+lastDigit = 1 - 1 / 2^(L ÷ 2)
 
 s = continuous_siteinds(g; map_dimension=2)
 
-ψ_fxy = const_itn(s; c=2, linkdim=2)
-#ψ_fxy = sin_itn(s)
-#ψ_fxy = delta_xyz(s, [0.0,0.5] )
+ψ_fxy = cos_itn(s; k=π)
+#ψ_fxy = const_itn(s; c=3, linkdim=3) # note if you use const, need big linkdim
 @show maxlinkdim(ψ_fxy)
 
-Zero_X = zero_point_op(s, [0, 1 - 1 / 2^(L ÷ 2)], 1)
-Zero_Y = zero_point_op(s, [0, 1 - 1 / 2^(L ÷ 2)], 2)
-Zero_X = truncate(Zero_X; cutoff=1e-14)
-Zero_Y = truncate(Zero_Y; cutoff=1e-14)
-@show maxlinkdim(Zero_X), maxlinkdim(Zero_Y)
+# make an operator that applies 0 to the planes in certain dimensions
+Zo = zero_point_op(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
+## for test later
+#for p1 in [0,lastDigit]
+#  for p2 in [0,lastDigit]
+#    p = ttn(itensornetwork(delta_xyz(s,[p1,p2])))
+#    @show p1,p2
+#    @show inner(p',Zo,p)
+#  end
+#end
+@show maxlinkdim(Zo)
 
 maxdim = 10
-cutoff = 0e-16 #0e-16
+cutoff = 0e-16
 @show cutoff
 ϕ_fxy = copy(ψ_fxy)
-ϕ_fxy = operate([Zero_X, Zero_Y], ϕ_fxy; cutoff, maxdim, normalize=true)
+ϕ_fxy = operate([Zo], ϕ_fxy; cutoff, maxdim, normalize=false)
 @show maxlinkdim(ϕ_fxy)
 
 n_grid = 100
-x_vals, y_vals = grid_points(s, n_grid, 1), grid_points(s, n_grid, 2)
+x_vals, y_vals = grid_points(s, n_grid, 1)[1:2:(end - 1)],
+grid_points(s, n_grid, 2)[1:2:(end - 1)]
+# fix for if we don't include all 1s
+if x_vals[end] != lastDigit
+  push!(x_vals, lastDigit)
+end
+if y_vals[end] != lastDigit
+  push!(y_vals, lastDigit)
+end
 vals = zeros((length(x_vals), length(y_vals)))
 for (i, x) in enumerate(x_vals)
   for (j, y) in enumerate(y_vals)
@@ -45,10 +57,8 @@ for (i, x) in enumerate(x_vals)
 end
 
 println("Here is the heatmap of the 2D function")
-show(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
+display(heatmap(vals; xfact=1 / 32, yfact=1 / 32, xoffset=0, yoffset=0, colormap=:inferno))
 
-n_grid = 100
-x_vals = grid_points(s, n_grid, 1)
 y = 0.5
 vals2 = zeros(length(x_vals))
 for (i, x) in enumerate(x_vals)
@@ -57,7 +67,6 @@ end
 
 lp = lineplot(x_vals, vals2; name="cut y=$y")
 
-y_vals = grid_points(s, n_grid, 2)
 x = 0.5
 vals3 = zeros(length(y_vals))
 for (i, y) in enumerate(y_vals)
@@ -65,6 +74,6 @@ for (i, y) in enumerate(y_vals)
 end
 
 println("Here is a cut of the function at x = $x or y = $y")
-show(lineplot!(lp, y_vals, vals3; name="cut x=$x"))
+display(lineplot!(lp, y_vals, vals3; name="cut x=$x"))
 
 @show vals2[1], vals2[end - 1], vals3[1], vals3[end - 1]

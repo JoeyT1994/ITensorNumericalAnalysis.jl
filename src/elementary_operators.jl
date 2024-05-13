@@ -193,90 +193,75 @@ function identity_operator(s::IndsNetworkMap; kwargs...)
 end
 
 " Create an operator bitstring corresponding to the number x"
-function point_to_opsum(s::IndsNetworkMap,x::Number,dimension::Int)
-    ttn_op = OpSum()
-    ind_to_ind_value_map = calculate_ind_values(s, x, dimension)
-    string_site = []
-    for v in dimension_vertices(s, dimension)
-      op = ind_to_ind_value_map[only(s[v])] == 1 ? "Dup" : "Ddn"
-      push!(string_site, (op, v))
-    end
-    add!(ttn_op, 1.0, (string_site...)...)
-    return ttn_op
+function point_to_opsum(s::IndsNetworkMap, x::Number, dimension::Int)
+  ttn_op = OpSum()
+  ind_to_ind_value_map = calculate_ind_values(s, x, dimension)
+  string_site = []
+  for v in dimension_vertices(s, dimension)
+    op = ind_to_ind_value_map[only(s[v])] == 1 ? "Dup" : "Ddn"
+    push!(string_site, (op, v))
+  end
+  add!(ttn_op, 1.0, (string_site...)...)
+  return ttn_op
 end
 " Create an operator which is 0 for points in xs "
-function zero_point_op(s::IndsNetworkMap, xs::Vector, dimensions::Vector; truncate_kwargs...)
+function zero_point_op(
+  s::IndsNetworkMap, xs::Vector, dimensions::Vector; truncate_kwargs...
+)
   udim = unique(dimensions)
-  @assert length(udim) <=2 # TODO: generalize 
+  @assert length(udim) <= 2 # TODO: generalize 
   ttn_op = OpSum()
   # build I- ∑_p ∏(bit string p)
   all_ops = []
-  for (p,dimension) in zip(xs,dimensions)
-    b_op = point_to_opsum(s,p,dimension)
-    ttn_op += -1.0*b_op
-    push!(all_ops, b_op) 
+  for (p, dimension) in zip(xs, dimensions)
+    b_op = point_to_opsum(s, p, dimension)
+    ttn_op += -1.0 * b_op
+    push!(all_ops, b_op)
   end
-  # HACK: this is better as a direct MPO construction but being lazy right now
-  # now + ∏ (dim1) ∏(dim2)
-  for i=1:length(all_ops)
-    for j=i+1:length(all_ops)
-      b_op1,b_op2 = all_ops[i],all_ops[j]
-      d1,d2 = dimensions[i],dimensions[j]
+
+  # if we have (I-∑P_x)(I-∑P_y) then
+  # we have an additional +P_x*P_y term
+  # this is equivelent to ∑ P_{all overlap spots}
+  for i in 1:length(all_ops)
+    for j in (i + 1):length(all_ops)
+      b_op1, b_op2 = all_ops[i], all_ops[j]
+      d1, d2 = dimensions[i], dimensions[j]
       (d1 == d2) && continue
-      ttn_op += Ops.expand(b_op1*b_op2)
-      @show Ops.expand(b_op1*b_op2)
+      ttn_op += Ops.expand(b_op1 * b_op2)
     end
   end
   add!(ttn_op, 1.0, "I", first(dimension_vertices(s, first(dimensions))))
-  #all_ops = []
-  #for d1 in udim
-  #  ttn_dim_op = OpSum() 
-  #  for (p,dimension) in zip(xs,dimensions)
-  #    (d1 != dimension) && continue
-  #    b_op = point_to_opsum(s,p,dimension)
-  #    ttn_dim_op += -1.0*b_op
-  #  end
-  #  add!(ttn_dim_op, 1.0, "I", first(dimension_vertices(s, d1)))
-  #  push!(all_ops,ttn_dim_op)
-  #end
-  #@assert length(all_ops) == 2
-  #ttn_op += Ops.expand(all_ops[1]*all_ops[2])
-  #add!(ttn_op, -1.0, "I", first(dimension_vertices(s, udim[1])),"I",first(dimension_vertices(s,udim[2])))
-  #add!(ttn_op, 1.0, "I", first(dimension_vertices(s, udim[1])),)
-  @show ttn_op
-
-
-  return ttn(ttn_op, indsnetwork(s); algorithm="svd", truncate_kwargs...)
+  return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
 end
 
 function zero_point_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
   return zero_point_op(s, xs, [dimension for _ in xs]; truncate_kwargs...)
 end
 
-
 function zero_point_op(s::IndsNetworkMap, x::Number, dimension::Int; truncate_kwargs...)
   return zero_point_op(s, [x], [dimension]; truncate_kwargs...)
 end
 
 """ Create an operator which projects into a constant plane """
-function const_plane_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
+function const_plane_op(
+  s::IndsNetworkMap, xs::Vector, dimensions::Vector; truncate_kwargs...
+)
   ttn_op = OpSum()
-  # build I- ∑_p ∏(bit string p)
-  for p in xs
-    ind_to_ind_value_map = calculate_ind_values(s, p, dimension)
-    string_site = []
-    for v in dimension_vertices(s, dimension)
-      op = ind_to_ind_value_map[only(s[v])] == 1 ? "Dup" : "Ddn"
-      push!(string_site, (op, v))
-    end
-    add!(ttn_op, 1.0, (string_site...)...)
+  # build ∑_p ∏(bit string p)
+  for (p, dimension) in zip(xs, dimensions)
+    b_op = point_to_opsum(s, p, dimension)
+    ttn_op += 1.0 * b_op
   end
   #add!(ttn_op, 1.0, "I", first(dimension_vertices(s, dimension)))
-  return ttn(ttn_op, indsnetwork(s); algorithm="svd", truncate_kwargs...)
+  return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
+end
+
+function const_plane_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
+  return const_plane_op(s, xs, [dimension for _ in length(xs)]; truncate_kwargs...)
 end
 
 function const_plane_op(s::IndsNetworkMap, x::Number, dimension::Int; truncate_kwargs...)
-  return const_plane_op(s, [x], dimension; truncate_kwargs...)
+  return const_plane_op(s, [x], [dimension]; truncate_kwargs...)
 end
 
 function operator(fx::ITensorNetworkFunction)
