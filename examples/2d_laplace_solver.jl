@@ -3,6 +3,7 @@ using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph
+using NamedGraphs.GraphsExtensions: rename_vertices
 using ITensors: ITensors, Index, siteinds, dim, tags, replaceprime!, MPO, MPS, inner
 using ITensorNetworks: ITensorNetwork, dmrg, ttn, maxlinkdim
 using Dictionaries: Dictionary
