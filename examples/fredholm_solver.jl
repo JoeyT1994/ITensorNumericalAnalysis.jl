@@ -32,31 +32,8 @@ seed!(1234)
 L = 60
 g = named_comb_tree((2, L ÷ 2))
 
-s = continuous_siteinds(g; map_dimension=2)
-
-println("########## Experiment 1 - integrate a simply function ##########")
-
-ψ_fxy = exp_itn(s; dimension=1) * exp_itn(s; dimension=2)
-
-ans = ITensorNumericalAnalysis.integrate(ψ_fxy)
-correct = (exp(1) - 1)^2
-println("The integral ∫₀¹ exp(x+y) dxdy numerically is $ans and should be $correct")
-@show ans - correct
-
-println("########## Experiment 2 - integrate an operator*function directly ##########")
-# Alternative interface if you have an operator|state> to integrate directly
-
-s = continuous_siteinds(g; map_dimension=1)
-
-ψ_fx = exp_itn(s; dimension=1)
-O = operator_proj(ψ_fx)
-correct = 1 / 2 * (-1 + exp(1)^2)
-ans = ITensorNumericalAnalysis.integrate(O, ψ_fx)
-println("The integral ∫₀¹ exp(x)*exp(x) dx numerically is $ans and should be $correct")
-@show ans - correct
-
 println(
-  "########## Experiment 3 - iteratively solve a inhomogeneous Fredholm equation of the second kind ##########",
+  "########## Iteratively solve a inhomogeneous Fredholm equation of the second kind ##########",
 )
 println("solve f(x) = eˣ + ∫₀¹ (xy) f(y) dy")
 # solution: f(x) = 3x/2 + eˣ
