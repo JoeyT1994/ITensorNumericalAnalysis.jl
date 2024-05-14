@@ -208,8 +208,7 @@ end
 function map_to_zero_operator(
   s::IndsNetworkMap, xs::Vector, dims::Vector=[1 for _ in xs]; truncate_kwargs...
 )
-  udim = unique(dims)
-  @assert length(udim) <= 2 # TODO: generalize 
+  @assert length(unique(dims)) <= 2 # TODO: generalize 
   ttn_op = OpSum()
   # build I- ∑_p ∏(bit string p)
   all_ops = []
@@ -256,10 +255,8 @@ function map_to_zeros(
   return operate(zero_op, f; cutoff, maxdim)
 end
 
-function map_to_zeros(
-  f::ITensorNetworkFunction, x::Number, dims::Vector=[1 for _ in xs]; kwargs...
-)
-  return map_to_zeros(f, [x], dims; kwargs...)
+function map_to_zeros(f::ITensorNetworkFunction, x::Number, dim::Int=1; kwargs...)
+  return map_to_zeros(f, [x], [dim]; kwargs...)
 end
 
 """ Create an operator which projects into a constant plane """

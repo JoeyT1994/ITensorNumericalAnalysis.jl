@@ -339,21 +339,18 @@ using Dictionaries: Dictionary
 
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
-        p = ttn(itensornetwork(delta_x(s, p1)))
-        @test inner(p', Zo, p) ≈ 0.0
+        p = (itensornetwork(delta_x(s, p1)))
+        # TODO: fix when bp is fixed
+        @test inner(p, Zo, p; alg="exact") ≈ 0.0
       end
     end
     @testset "boundary apply" begin
-      maxdim, cutoff = 10, 0e-16
-      #ϕ_fx = operate(Zo, ψ_fx; cutoff, maxdim, normalize=false)
+      maxdim, cutoff = 10, 1e-16
       ϕ_fx = map_to_zeros(ψ_fx, [0, lastDigit]; cutoff, maxdim)
-      for x in [0, lastDigit]
+      for x in xs
+        # TODO: fix when bp is fixed
         val = real(calculate_fx(ϕ_fx, x; alg="exact"))
-        @test val ≈ 0.0 atol = 1e-8
-      end
-      for x in xs[2:(end - 1)]
-        val = real(calculate_fx(ϕ_fx, x; alg="exact"))
-        @test !(val ≈ 0.0)
+        @test (x ∈ [0, lastDigit]) ? isapprox(val, 0.0; atol=1e-8) : !(val ≈ 0.0)
       end
     end
   end
@@ -368,14 +365,14 @@ using Dictionaries: Dictionary
     ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
     ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dimension=1)
     ψ_fy = cos_itn(s; dimension=2)
-    ψ_fxy = ψ_fx + ψ_fx
+    ψ_fxy = ψ_fx + ψ_fy
 
     Zo = map_to_zero_operator(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
         for p2 in [0, lastDigit]
-          p = ttn(itensornetwork(delta_xyz(s, [p1, p2])))
-          @test inner(p', Zo, p) ≈ 0.0
+          p = itensornetwork(delta_xyz(s, [p1, p2]))
+          @test inner(p, Zo, p; alg="exact") ≈ 0.0
         end
       end
     end
@@ -386,6 +383,7 @@ using Dictionaries: Dictionary
       for x in [0, lastDigit]
         vals = zeros(length(ys))
         for (i, y) in enumerate(ys)
+          # TODO: fix when bp is fixed
           vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]; alg="exact"))
         end
         @test all(isapprox.(vals, 0.0, atol=1e-8))
