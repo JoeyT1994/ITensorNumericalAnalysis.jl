@@ -191,14 +191,15 @@ function identity_operator(s::IndsNetworkMap; kwargs...)
   return ITensorNetwork(Op("I"), operator_inds)
 end
 
-function operator(fx::ITensorNetworkFunction)
+" Take |f> and create an operator |f><δ| "
+function operator_proj(fx::ITensorNetworkFunction)
   fx = copy(fx)
   operator = itensornetwork(fx)
   s = siteinds(operator)
   for v in vertices(operator)
     sind = s[v]
     sindsim = sim(sind)
-    operator[v] = replaceinds!(operator[v], sind, sindsim)
+    operator[v] = replaceinds(operator[v], sind, sindsim)
     operator[v] = operator[v] * delta(vcat(sind, sindsim, sind'))
   end
   return operator
