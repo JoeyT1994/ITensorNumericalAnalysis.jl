@@ -205,7 +205,9 @@ function point_to_opsum(s::IndsNetworkMap, x::Number, dim::Int)
 end
 
 " Create an operator which maps a function to 0 at all points in xs"
-function zero_point_op(s::IndsNetworkMap, xs::Vector, dims::Vector; truncate_kwargs...)
+function map_to_zero_operator(
+  s::IndsNetworkMap, xs::Vector, dims::Vector=[1 for _ in xs]; truncate_kwargs...
+)
   udim = unique(dims)
   @assert length(udim) <= 2 # TODO: generalize 
   ttn_op = OpSum()
@@ -232,12 +234,32 @@ function zero_point_op(s::IndsNetworkMap, xs::Vector, dims::Vector; truncate_kwa
   return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
 end
 
-function zero_point_op(s::IndsNetworkMap, xs::Vector, dim::Int=1; truncate_kwargs...)
-  return zero_point_op(s, xs, [dim for _ in xs]; truncate_kwargs...)
+function map_to_zero_operator(s::IndsNetworkMap, x::Number, dim::Int=1; truncate_kwargs...)
+  return map_to_zero_operator(s, [x], [dim]; truncate_kwargs...)
 end
 
-function zero_point_op(s::IndsNetworkMap, x::Number, dim::Int=1; truncate_kwargs...)
-  return zero_point_op(s, [x], [dim]; truncate_kwargs...)
+" Map the points xs in dimension dims of the function f to 0"
+function map_to_zeros(
+  f::ITensorNetworkFunction,
+  xs::Vector,
+  dims::Vector=[1 for _ in xs];
+  pre_truncate=false,
+  cutoff,
+  maxdim,
+  truncate_kwargs...,
+)
+  s = indsnetworkmap(f)
+  zero_op = map_to_zero_operator(s, xs, dims; truncate_kwargs...)
+  if pre_truncate
+    zero_op = truncate(zero_op, truncate_kwargs...)
+  end
+  return operate(zero_op, f; cutoff, maxdim)
+end
+
+function map_to_zeros(
+  f::ITensorNetworkFunction, x::Number, dims::Vector=[1 for _ in xs]; kwargs...
+)
+  return map_to_zeros(f, [x], dims; kwargs...)
 end
 
 """ Create an operator which projects into a constant plane """

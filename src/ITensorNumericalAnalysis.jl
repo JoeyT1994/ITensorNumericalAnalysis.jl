@@ -45,7 +45,8 @@ export const_itensornetwork,
   identity_operator,
   delta_x,
   delta_xyz,
-  zero_point_op,
+  map_to_zero_operator,
+  map_to_zeros,
   const_plane_op
 export const_itn,
   poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn

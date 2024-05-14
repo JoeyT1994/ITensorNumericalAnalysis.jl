@@ -20,15 +20,10 @@ s = continuous_siteinds(g; map_dimension=2)
 #ψ_fxy = const_itn(s; c=3, linkdim=3) # note if you use const, need big linkdim
 @show maxlinkdim(ψ_fxy)
 
-# make an operator that applies 0 to the planes in certain dimensions
-Zo = zero_point_op(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
-@show maxlinkdim(Zo)
-
-maxdim = 10
+maxdim = 20
 cutoff = 0e-16
 @show cutoff
-ϕ_fxy = copy(ψ_fxy)
-ϕ_fxy = operate([Zo], ϕ_fxy; cutoff, maxdim, normalize=false)
+ϕ_fxy = map_to_zeros(ψ_fxy, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2]; cutoff, maxdim)
 @show maxlinkdim(ϕ_fxy)
 
 n_grid = 100
