@@ -44,10 +44,10 @@ end
 @testset "test complex multi dimensional index map" begin
   L = 5
   g = named_grid((L, L))
-  s = continuous_siteinds(g; map_dimension = L, is_complex = true)
+  s = continuous_siteinds(g; map_dimension=L, is_complex=true)
   @test is_complex(s)
 
-  z1, z2 = 0.5 + 0.25*im, 0.75 + 0.125*im
+  z1, z2 = 0.5 + 0.25 * im, 0.75 + 0.125 * im
   ind_to_ind_value_map = calculate_ind_values(s, [z1, z2], [1, 2])
   xyz = calculate_xyz(s, ind_to_ind_value_map, [1, 2])
   @test first(xyz) == z1

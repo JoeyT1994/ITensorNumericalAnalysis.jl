@@ -199,7 +199,7 @@ function operator_proj(fx::ITensorNetworkFunction)
   for v in vertices(operator)
     sinds = inds(s, v)
     sindssim = sim.(sinds)
-    operator[v] = replaceinds!(operator[v], sinds, sindssim)
+    operator[v] = replaceinds(operator[v], sinds, sindssim)
     for (i, s) in enumerate(sinds)
       operator[v] = operator[v] * delta(s, s', sindssim[i])
     end
@@ -208,7 +208,7 @@ function operator_proj(fx::ITensorNetworkFunction)
 end
 
 function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
-  gx, fx = sim(copy(gx); sites = []), copy(fx)
+  gx, fx = sim(copy(gx); sites=[]), copy(fx)
   @assert vertices(gx) == vertices(fx)
   fxgx = copy(fx)
   s = siteinds(fxgx)

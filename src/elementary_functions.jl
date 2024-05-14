@@ -31,14 +31,16 @@ function exp_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension()
+  dimension::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   Lx = length(dimension_vertices(ψ, dimension))
   for v in dimension_vertices(ψ, dimension)
     sinds = inds(s, v)
     linds = setdiff(inds(ψ[v]), sinds)
-    ψ[v] = prod([ITensor(exp.(k * index_values_to_scalars(s, sind)), sind) for sind in sinds])
+    ψ[v] = prod([
+      ITensor(exp.(k * index_values_to_scalars(s, sind)), sind) for sind in sinds
+    ])
     ψ[v] = ψ[v] * exp(a / Lx) * delta(linds)
   end
 
@@ -158,7 +160,8 @@ function polynomial_itensornetwork(
       e = get_edge_toward_vertex(g_tree, v, source_vertex)
       betaindex = only(commoninds(ψ, e))
       alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
-      ψ[v] = Q_N_tensor(eltype, 
+      ψ[v] = Q_N_tensor(
+        eltype,
         length(neighbors(g_tree, v)),
         sinds,
         alphas,
@@ -168,7 +171,8 @@ function polynomial_itensornetwork(
     elseif v == source_vertex
       betaindex = Index(n, "DummyInd")
       alphas = setdiff(inds(ψ[v]), sinds)
-      ψv = Q_N_tensor(eltype, 
+      ψv = Q_N_tensor(
+        eltype,
         length(neighbors(g_tree, v)) + 1,
         sinds,
         alphas,

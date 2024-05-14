@@ -29,20 +29,33 @@ end
 
 #Constructors 
 function IndsNetworkMap(
-  s::IndsNetwork, real_dimension_vertices::Vector{Vector{V}}, imaginary_dimension_vertices::Vector{Vector{V}} =Vector{vertextype(s)}[[]]; is_complex = false, kwargs...
+  s::IndsNetwork,
+  real_dimension_vertices::Vector{Vector{V}},
+  imaginary_dimension_vertices::Vector{Vector{V}}=Vector{vertextype(s)}[[]];
+  is_complex=false,
+  kwargs...,
 ) where {V}
-  return IndsNetworkMap(s, IndexMap(s, real_dimension_vertices, imaginary_dimension_vertices; kwargs...))
+  return IndsNetworkMap(
+    s, IndexMap(s, real_dimension_vertices, imaginary_dimension_vertices; kwargs...)
+  )
 end
 
-function IndsNetworkMap(s::IndsNetwork, real_dimension_indices::Vector{Vector{Index}}, imaginary_dimension_indices::Vector{Vector{Index}} =Vector{Index}[[]]; kwargs...)
-  return IndsNetworkMap(s, IndexMap(real_dimension_indices, imaginary_dimension_indices; kwargs...))
+function IndsNetworkMap(
+  s::IndsNetwork,
+  real_dimension_indices::Vector{Vector{Index}},
+  imaginary_dimension_indices::Vector{Vector{Index}}=Vector{Index}[[]];
+  kwargs...,
+)
+  return IndsNetworkMap(
+    s, IndexMap(real_dimension_indices, imaginary_dimension_indices; kwargs...)
+  )
 end
 
 function IndsNetworkMap(s::IndsNetwork; kwargs...)
   return IndsNetworkMap(s, IndexMap(s; kwargs...))
 end
 
-function IndsNetworkMap(g::NamedGraph, args...; base::Int=2, is_complex = false, kwargs...)
+function IndsNetworkMap(g::NamedGraph, args...; base::Int=2, is_complex=false, kwargs...)
   s = digit_siteinds(g; base, is_complex)
   return IndsNetworkMap(s, args...; is_complex, kwargs...)
 end
@@ -67,7 +80,7 @@ for f in [
   :real_inds,
   :is_real,
   :is_imaginary,
-  :is_complex
+  :is_complex,
 ]
   @eval begin
     function $f(inm::IndsNetworkMap, args...; kwargs...)

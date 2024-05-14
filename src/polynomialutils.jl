@@ -41,7 +41,7 @@ end
 
 """Constructor for the tensor that sits on a vertex of degree N"""
 function Q_N_tensor(
-  eltype::Type, N::Int, sinds::Vector{Index}, αind::Vector{Index}, betaind::Index, xivals 
+  eltype::Type, N::Int, sinds::Vector{Index}, αind::Vector{Index}, betaind::Index, xivals
 )
   @assert length(αind) == N - 1
   n = dim(betaind) - 1
@@ -54,7 +54,7 @@ function Q_N_tensor(
   for i in CartesianIndices(Tuple(site_dims))
     xi = sum([xivals[j][k] for (j, k) in enumerate(Tuple(i))])
     for j in CartesianIndices(Tuple(link_dims))
-      alpha_array_inds, beta_array_ind = Tuple(j)[1:(N-1)], Tuple(j)[N]
+      alpha_array_inds, beta_array_ind = Tuple(j)[1:(N - 1)], Tuple(j)[N]
       f = f_alpha_beta(alpha_array_inds .- 1, beta_array_ind - 1)
       Q_N_array[(Tuple(i)..., Tuple(j)...)...] =
         _coeff(N, alpha_array_inds .- 1, beta_array_ind - 1) * ((xi)^f)

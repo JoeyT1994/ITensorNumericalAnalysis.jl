@@ -97,13 +97,16 @@ function base(s::IndsNetwork)
   return first(dims)
 end
 
-function digit_siteinds(g::AbstractGraph; base=2, is_complex = false)
+function digit_siteinds(g::AbstractGraph; base=2, is_complex=false)
   is = IndsNetwork(g)
   for v in vertices(g)
     if !is_complex
       is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
     else
-      is[v] = [Index(base, "Digit Re, V$(vertex_tag(v))"), Index(base, "Digit Im, V$(vertex_tag(v))")]
+      is[v] = [
+        Index(base, "Digit Re, V$(vertex_tag(v))"),
+        Index(base, "Digit Im, V$(vertex_tag(v))"),
+      ]
     end
   end
   return is
