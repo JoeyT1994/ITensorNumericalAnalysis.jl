@@ -242,16 +242,12 @@ function map_to_zeros(
   f::ITensorNetworkFunction,
   xs::Vector,
   dims::Vector=[1 for _ in xs];
-  pre_truncate=false,
   cutoff,
   maxdim,
   truncate_kwargs...,
 )
   s = indsnetworkmap(f)
   zero_op = map_to_zero_operator(s, xs, dims; truncate_kwargs...)
-  if pre_truncate
-    zero_op = truncate(zero_op, truncate_kwargs...)
-  end
   return operate(zero_op, f; cutoff, maxdim)
 end
 

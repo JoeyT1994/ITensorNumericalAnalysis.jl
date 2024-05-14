@@ -94,12 +94,12 @@ function vertex_digit(inm::IndsNetworkMap, v)
   return digit(inm, only(inds(inm, v)))
 end
 
-function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
-  return filter(v -> vertex_dimension(inm, v) == dimension, vertices(inm))
+function dimension_vertices(inm::IndsNetworkMap, dim::Int)
+  return dimension_vertices(inm, [dim])
 end
 
-function dimension_vertices(inm::IndsNetworkMap, dimensions::Vector{Int})
-  return filter(v -> vertex_dimension(inm, v) in dimensions, vertices(inm))
+function dimension_vertices(inm::IndsNetworkMap, dims::Vector{Int})
+  return filter(v -> vertex_dimension(inm, v) in dims, vertices(inm))
 end
 
 function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)
