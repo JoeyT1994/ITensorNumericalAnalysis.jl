@@ -27,7 +27,7 @@ seed!(42)
 
   @testset "simple integration 2D" begin
     L = 30
-    g = named_comb_tree((2, L ÷ 2))
+    g = named_comb_tree((3, L ÷ 3))
     s = continuous_siteinds(g; map_dimension=2)
     ψ_fxy = exp_itn(s; dimension=1) * exp_itn(s; dimension=2)
 
