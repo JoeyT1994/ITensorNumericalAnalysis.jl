@@ -22,14 +22,6 @@ s = continuous_siteinds(g; map_dimension=2)
 
 # make an operator that applies 0 to the planes in certain dimensions
 Zo = zero_point_op(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
-## for test later
-#for p1 in [0,lastDigit]
-#  for p2 in [0,lastDigit]
-#    p = ttn(itensornetwork(delta_xyz(s,[p1,p2])))
-#    @show p1,p2
-#    @show inner(p',Zo,p)
-#  end
-#end
 @show maxlinkdim(Zo)
 
 maxdim = 10
