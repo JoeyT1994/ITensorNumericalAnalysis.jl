@@ -76,4 +76,4 @@ end
 println("Here is a cut of the function at x = $x or y = $y")
 display(lineplot!(lp, y_vals, vals3; name="cut x=$x"))
 
-@show vals2[1], vals2[end - 1], vals3[1], vals3[end - 1]
+@show vals2[1], vals2[end], vals3[1], vals3[end]
