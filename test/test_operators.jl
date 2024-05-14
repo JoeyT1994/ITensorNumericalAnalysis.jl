@@ -11,7 +11,6 @@ using ITensorNumericalAnalysis: itensornetwork, forward_shift_op, backward_shift
 using Dictionaries: Dictionary
 
 @testset "Operators" begin
-
   @testset "test differentiation in 1D on MPS" begin
     g = named_grid((9, 1))
     L = nv(g)
@@ -339,19 +338,19 @@ using Dictionaries: Dictionary
     Zo = zero_point_op(s, [0, lastDigit], 1)
 
     @testset "corner boundary test" begin
-      for p1 in [0,lastDigit]
-        p = ttn(itensornetwork(delta_x(s,p1)))
-        @test inner(p',Zo,p) ≈ 0.0
+      for p1 in [0, lastDigit]
+        p = ttn(itensornetwork(delta_x(s, p1)))
+        @test inner(p', Zo, p) ≈ 0.0
       end
     end
     @testset "boundary apply" begin
       maxdim, cutoff = 10, 0e-16
       ϕ_fx = operate(Zo, ψ_fx; cutoff, maxdim, normalize=false)
-      for x in [0,lastDigit]
+      for x in [0, lastDigit]
         val = real(calculate_fx(ϕ_fx, x; alg="exact"))
         @test val ≈ 0.0 atol = 1e-8
       end
-      for x in xs[2:end-1]
+      for x in xs[2:(end - 1)]
         val = real(calculate_fx(ϕ_fx, x; alg="exact"))
         @test !(val ≈ 0.0)
       end
@@ -372,18 +371,18 @@ using Dictionaries: Dictionary
 
     Zo = zero_point_op(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
     @testset "corner boundary test" begin
-      for p1 in [0,lastDigit]
-        for p2 in [0,lastDigit]
-          p = ttn(itensornetwork(delta_xyz(s,[p1,p2])))
-          @test inner(p',Zo,p) ≈ 0.0
+      for p1 in [0, lastDigit]
+        for p2 in [0, lastDigit]
+          p = ttn(itensornetwork(delta_xyz(s, [p1, p2])))
+          @test inner(p', Zo, p) ≈ 0.0
         end
       end
     end
-    
+
     @testset "boundary apply" begin
       maxdim, cutoff = 10, 0e-16
       ϕ_fxy = operate([Zo], ψ_fxy; cutoff, maxdim, normalize=false)
-      for x in [0,lastDigit]
+      for x in [0, lastDigit]
         vals = zeros(length(ys))
         for (i, y) in enumerate(ys)
           vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]; alg="exact"))

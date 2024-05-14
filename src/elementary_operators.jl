@@ -193,28 +193,26 @@ function identity_operator(s::IndsNetworkMap; kwargs...)
 end
 
 " Create an operator bitstring corresponding to the number x"
-function point_to_opsum(s::IndsNetworkMap, x::Number, dimension::Int)
+function point_to_opsum(s::IndsNetworkMap, x::Number, dim::Int)
   ttn_op = OpSum()
-  ind_to_ind_value_map = calculate_ind_values(s, x, dimension)
-  string_site = []
-  for v in dimension_vertices(s, dimension)
-    op = ind_to_ind_value_map[only(s[v])] == 1 ? "Dup" : "Ddn"
-    push!(string_site, (op, v))
-  end
-  add!(ttn_op, 1.0, (string_site...)...)
+  ind_to_ind_value_map = calculate_ind_values(s, x, dim)
+  string_sites = [
+    (ind_to_ind_value_map[only(s[v])] == 1) ? ("Dup", v) : ("Ddn", v) for
+    v in dimension_vertices(s, dim)
+  ]
+  add!(ttn_op, 1.0, (string_sites...)...)
   return ttn_op
 end
-" Create an operator which is 0 for points in xs "
-function zero_point_op(
-  s::IndsNetworkMap, xs::Vector, dimensions::Vector; truncate_kwargs...
-)
-  udim = unique(dimensions)
+
+" Create an operator which maps a function to 0 at all points in xs"
+function zero_point_op(s::IndsNetworkMap, xs::Vector, dims::Vector; truncate_kwargs...)
+  udim = unique(dims)
   @assert length(udim) <= 2 # TODO: generalize 
   ttn_op = OpSum()
   # build I- ∑_p ∏(bit string p)
   all_ops = []
-  for (p, dimension) in zip(xs, dimensions)
-    b_op = point_to_opsum(s, p, dimension)
+  for (x, dim) in zip(xs, dims)
+    b_op = point_to_opsum(s, x, dim)
     ttn_op += -1.0 * b_op
     push!(all_ops, b_op)
   end
@@ -225,43 +223,41 @@ function zero_point_op(
   for i in 1:length(all_ops)
     for j in (i + 1):length(all_ops)
       b_op1, b_op2 = all_ops[i], all_ops[j]
-      d1, d2 = dimensions[i], dimensions[j]
+      d1, d2 = dims[i], dims[j]
       (d1 == d2) && continue
       ttn_op += Ops.expand(b_op1 * b_op2)
     end
   end
-  add!(ttn_op, 1.0, "I", first(dimension_vertices(s, first(dimensions))))
+  add!(ttn_op, 1.0, "I", first(dimension_vertices(s, first(dims))))
   return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
 end
 
-function zero_point_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
-  return zero_point_op(s, xs, [dimension for _ in xs]; truncate_kwargs...)
+function zero_point_op(s::IndsNetworkMap, xs::Vector, dim::Int=1; truncate_kwargs...)
+  return zero_point_op(s, xs, [dim for _ in xs]; truncate_kwargs...)
 end
 
-function zero_point_op(s::IndsNetworkMap, x::Number, dimension::Int; truncate_kwargs...)
-  return zero_point_op(s, [x], [dimension]; truncate_kwargs...)
+function zero_point_op(s::IndsNetworkMap, x::Number, dim::Int=1; truncate_kwargs...)
+  return zero_point_op(s, [x], [dim]; truncate_kwargs...)
 end
 
 """ Create an operator which projects into a constant plane """
-function const_plane_op(
-  s::IndsNetworkMap, xs::Vector, dimensions::Vector; truncate_kwargs...
-)
+function const_plane_op(s::IndsNetworkMap, xs::Vector, dims::Vector; truncate_kwargs...)
   ttn_op = OpSum()
   # build ∑_p ∏(bit string p)
-  for (p, dimension) in zip(xs, dimensions)
-    b_op = point_to_opsum(s, p, dimension)
+  for (x, dim) in zip(xs, dims)
+    b_op = point_to_opsum(s, x, dim)
     ttn_op += 1.0 * b_op
   end
   #add!(ttn_op, 1.0, "I", first(dimension_vertices(s, dimension)))
   return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
 end
 
-function const_plane_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
-  return const_plane_op(s, xs, [dimension for _ in xs]; truncate_kwargs...)
+function const_plane_op(s::IndsNetworkMap, xs::Vector, dim::Int; truncate_kwargs...)
+  return const_plane_op(s, xs, [dim for _ in xs]; truncate_kwargs...)
 end
 
-function const_plane_op(s::IndsNetworkMap, x::Number, dimension::Int; truncate_kwargs...)
-  return const_plane_op(s, [x], [dimension]; truncate_kwargs...)
+function const_plane_op(s::IndsNetworkMap, x::Number, dim::Int; truncate_kwargs...)
+  return const_plane_op(s, [x], [dim]; truncate_kwargs...)
 end
 
 function operator(fx::ITensorNetworkFunction)
@@ -271,7 +267,7 @@ function operator(fx::ITensorNetworkFunction)
   for v in vertices(operator)
     sind = s[v]
     sindsim = sim(sind)
-    operator[v] = replaceinds!(operator[v], sind, sindsim)
+    operator[v] = replaceinds(operator[v], sind, sindsim)
     operator[v] = operator[v] * delta(vcat(sind, sindsim, sind'))
   end
   return operator
