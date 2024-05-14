@@ -335,7 +335,7 @@ using Dictionaries: Dictionary
     xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
     ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
 
-    Zo = map_to_zero_operator(s, [0, lastDigit], 1)
+    Zo = map_to_zero_operator(s, [0, lastDigit])
 
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
@@ -345,7 +345,8 @@ using Dictionaries: Dictionary
     end
     @testset "boundary apply" begin
       maxdim, cutoff = 10, 0e-16
-      ϕ_fx = operate(Zo, ψ_fx; cutoff, maxdim, normalize=false)
+      #ϕ_fx = operate(Zo, ψ_fx; cutoff, maxdim, normalize=false)
+      ϕ_fx = map_to_zeros(ψ_fx, [0, lastDigit]; cutoff, maxdim)
       for x in [0, lastDigit]
         val = real(calculate_fx(ϕ_fx, x; alg="exact"))
         @test val ≈ 0.0 atol = 1e-8
