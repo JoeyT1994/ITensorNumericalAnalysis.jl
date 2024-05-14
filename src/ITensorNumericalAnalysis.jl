@@ -18,7 +18,12 @@ export IndexMap,
   calculate_ind_values,
   dimension,
   dimensions,
-  grid_points
+  grid_points,
+  is_real,
+  is_imaginary,
+  is_complex,
+  imaginary_inds,
+  real_inds
 export IndsNetworkMap,
   continuous_siteinds,
   indsnetwork,

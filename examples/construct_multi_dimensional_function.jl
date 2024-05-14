@@ -9,24 +9,24 @@ using Random: Random
 L = 12
 Random.seed!(1234)
 g = named_comb_tree((3, 4))
-s = continuous_siteinds(g; map_dimension=3)
+s = continuous_siteinds(g; map_dimension=3, is_complex = true)
 
 println(
-  "Constructing the 3D function f(x,y,z) = x³(y + y²) + cosh(πz) as a tensor network on a randomly chosen tree with $L vertices",
+  "Constructing the 3D complex function f(z1,z2,z3) = z1³(z2 + z2²) + cosh(πz3) as a tensor network on a randomly chosen tree with $L vertices",
 )
-ψ_fx = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension=1)
-ψ_fy = poly_itn(s, [0.0, 1.0, 1.0, 0.0]; dimension=2)
-ψ_fz = cosh_itn(s; k=Number(pi), dimension=3)
-ψxyz = ψ_fx * ψ_fy + ψ_fz
+ψ_fz1 = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension=1)
+ψ_fz2 = poly_itn(s, [0.0, 1.0, 1.0]; dimension=2)
+ψ_fz3 = cosh_itn(s; k=Number(pi), dimension=3)
+ψz1z2z3 = ψ_fz1*ψ_fz2 + ψ_fz3
 
-ψxyz = truncate(ψxyz; cutoff=1e-12)
-println("Maximum bond dimension of the network is $(maxlinkdim(ψxyz))")
+ψz1z2z3 = truncate(ψz1z2z3; cutoff=1e-12)
+println("Maximum bond dimension of the network is $(maxlinkdim(ψz1z2z3))")
 
-x, y, z = 0.125, 0.625, 0.5
-fxyz_xyz = calculate_fxyz(ψxyz, [x, y, z])
+z1, z2, z3 = 0.125 + 0.5*im, 0.625 + 0.875*im, 0.5
+fz1z2z3_z1z2z3 = calculate_fxyz(ψz1z2z3, [z1, z2, z3]; alg = "exact")
 println(
-  "Tensor network evaluates the function as $fxyz_xyz at the co-ordinate: (x,y,z) = ($x, $y, $z)",
+  "Tensor network evaluates the function as $fz1z2z3_z1z2z3 at the co-ordinate: (z1,z2,z3) = ($z1, $z2, $z3)",
 )
 println(
-  "Actual value of the function is $(x^3 * (y  + y^2) + cosh(pi * z)) at the co-ordinate: (x,y,z) = ($x, $y, $z)",
+  "Actual value of the function is $(z1^3 * (z2  + z2^2) + cosh(pi * z3)) at the co-ordinate: (z1,z2,z3) =($z1, $z2, $z3)",
 )
