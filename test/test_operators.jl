@@ -335,7 +335,7 @@ using Dictionaries: Dictionary
     xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
     ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
 
-    Zo = zero_point_op(s, [0, lastDigit], 1)
+    Zo = map_to_zero_operator(s, [0, lastDigit], 1)
 
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
@@ -369,7 +369,7 @@ using Dictionaries: Dictionary
     ψ_fy = cos_itn(s; dimension=2)
     ψ_fxy = ψ_fx + ψ_fx
 
-    Zo = zero_point_op(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
+    Zo = map_to_zero_operator(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
         for p2 in [0, lastDigit]
