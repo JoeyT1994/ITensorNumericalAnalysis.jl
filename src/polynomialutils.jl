@@ -15,30 +15,6 @@ function _coeff(N::Int, α::Tuple, beta)
   end
 end
 
-# """Constructor for the tensor that sits on a vertex of degree N"""
-# function Q_N_tensor(
-#   N::Int, sind::Index, αind::Vector{Index}, betaind::Index, xivals::Vector
-# )
-#   @assert length(αind) == N - 1
-#   @assert length(xivals) == dim(sind)
-#   n = dim(betaind) - 1
-#   @assert all(x -> x == n + 1, dim.(αind))
-
-#   link_dims = [n + 1 for i in 1:N]
-#   dims = vcat([dim(real_sind), dim(imag_sind)], link_dims)
-#   Q_N_array = zeros(Tuple(dims))
-#   for (i, xi) in enumerate(real_xivals)
-#     for k in 0:((n + 1)^(N) - 1)
-#       is = Base.digits(k; base=n + 1, pad=N)
-#       f = f_alpha_beta(is[1:(N - 1)], last(is))
-#       Q_N_array[(i, Tuple(is + ones(Int, (N)))...)...] =
-#         _coeff(N, is[1:(N - 1)], last(is)) * ((xi)^f)
-#     end
-#   end
-
-#   return ITensor(Q_N_array, siteind, αind, betaind)
-# end
-
 """Constructor for the tensor that sits on a vertex of degree N"""
 function Q_N_tensor(
   eltype::Type, N::Int, sinds::Vector{Index}, αind::Vector{Index}, betaind::Index, xivals

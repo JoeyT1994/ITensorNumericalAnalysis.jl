@@ -139,6 +139,7 @@ function polynomial_itensornetwork(
   dimension::Int=default_dimension(),
   k=default_k_value(),
   c=default_c_value(),
+  truncate_state=true,
 )
   n = length(coeffs)
   coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
@@ -195,7 +196,8 @@ function polynomial_itensornetwork(
     ψ[v] = transfer_tensor(sinds, betaindex, alphas)
   end
 
-  return ψ
+  truncate_state && return truncate(ψ; cutoff=1e-16)
+  !truncate_state && return ψ
 end
 
 function random_itensornetwork(s::IndsNetworkMap; kwargs...)

@@ -154,8 +154,8 @@ function calculate_xyz(imap::IndexMap, ind_to_ind_value_map, dimensions::Vector{
       0.0
     else
       sum([
-      index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in imag_indices
-    ])
+        index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in imag_indices
+      ])
     end
     push!(out, real + imag)
   end

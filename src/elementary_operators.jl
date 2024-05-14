@@ -126,6 +126,7 @@ function stencil(
 )
   # shifts = [ x+2Δh, x+Δh, x, x-Δh, x-2Δh]
   @assert length(shifts) == 5
+  @assert is_real(s)
   b = base(s)
   stencil_opsum = shifts[3] * no_shift_opsum(s)
   for i in [1, 2]
