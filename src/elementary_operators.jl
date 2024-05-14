@@ -191,7 +191,8 @@ function identity_operator(s::IndsNetworkMap; kwargs...)
   return ITensorNetwork(Op("I"), operator_inds)
 end
 
-function operator(fx::ITensorNetworkFunction)
+" Take |f> and create an operator |f><δ| "
+function operator_proj(fx::ITensorNetworkFunction)
   fx = copy(fx)
   operator = itensornetwork(fx)
   s = siteinds(operator)
