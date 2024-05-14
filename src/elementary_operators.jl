@@ -257,7 +257,7 @@ function const_plane_op(
 end
 
 function const_plane_op(s::IndsNetworkMap, xs::Vector, dimension::Int; truncate_kwargs...)
-  return const_plane_op(s, xs, [dimension for _ in length(xs)]; truncate_kwargs...)
+  return const_plane_op(s, xs, [dimension for _ in xs]; truncate_kwargs...)
 end
 
 function const_plane_op(s::IndsNetworkMap, x::Number, dimension::Int; truncate_kwargs...)
