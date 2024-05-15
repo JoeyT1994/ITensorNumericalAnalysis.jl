@@ -159,7 +159,7 @@ function grid_points(imap::IndexMap, N::Int, dimension::Int)
   L = length(dimension_inds(imap, dimension))
   a = round(base^L / N)
   grid_points = [i * (a / base^L) for i in 0:(N + 1)]
-  return filter(x -> x <= 1, grid_points)
+  return filter(x -> x < 1, grid_points)
 end
 
 " Obtain all grid points of a given dimension"

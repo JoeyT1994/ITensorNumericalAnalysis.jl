@@ -41,11 +41,10 @@ function exp_itensornetwork(
 )
   ψ = const_itensornetwork(s)
   Lx = length(dimension_vertices(ψ, dimension))
-  c_inv = c^Number(1.0 / Lx)
   for v in dimension_vertices(ψ, dimension)
     sind = only(inds(s, v))
     ψ[v] = ITensor(
-      exp(a / Lx) * c_inv * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v])
+      exp(a / Lx) * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v])
     )
   end
 
