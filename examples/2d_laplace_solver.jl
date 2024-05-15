@@ -53,7 +53,7 @@ for (i, x) in enumerate(x_vals)
 end
 
 println("Here is the heatmap of the 2D function")
-show(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
+display(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
 
 n_grid = 100
 x_vals = grid_points(s, n_grid, 1)
@@ -64,4 +64,4 @@ for (i, x) in enumerate(x_vals)
 end
 
 println("Here is a cut of the function at y = $y")
-show(lineplot(x_vals, vals))
+display(lineplot(x_vals, vals))

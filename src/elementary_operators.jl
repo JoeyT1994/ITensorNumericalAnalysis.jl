@@ -275,7 +275,9 @@ function const_plane_op(s::IndsNetworkMap, x::Number, dim::Int; truncate_kwargs.
   return const_plane_op(s, [x], [dim]; truncate_kwargs...)
 end
 
-function operator(fx::ITensorNetworkFunction)
+
+" Take |f> and create an operator |f><δ| "
+function operator_proj(fx::ITensorNetworkFunction)
   fx = copy(fx)
   operator = itensornetwork(fx)
   s = siteinds(operator)
