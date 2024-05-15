@@ -10,7 +10,7 @@ using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
 using ITensorNumericalAnalysis: itensornetwork, forward_shift_op, backward_shift_op
 using Dictionaries: Dictionary
 
-@testset "Operators" begin
+@testset "test operators" begin
   @testset "test differentiation in 1D on MPS" begin
     g = named_grid((9, 1))
     L = nv(g)
@@ -340,16 +340,14 @@ using Dictionaries: Dictionary
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
         p = (itensornetwork(delta_x(s, p1)))
-        # TODO: fix when bp is fixed
-        @test inner(p, Zo, p; alg="exact") ≈ 0.0
+        @test inner(p, Zo, p) ≈ 0.0
       end
     end
     @testset "boundary apply" begin
       maxdim, cutoff = 10, 1e-16
       ϕ_fx = map_to_zeros(ψ_fx, [0, lastDigit]; cutoff, maxdim)
       for x in xs
-        # TODO: fix when bp is fixed
-        val = real(calculate_fx(ϕ_fx, x; alg="exact"))
+        val = real(calculate_fx(ϕ_fx, x))
         @test (x ∈ [0, lastDigit]) ? isapprox(val, 0.0; atol=1e-8) : !(val ≈ 0.0)
       end
     end
@@ -372,7 +370,7 @@ using Dictionaries: Dictionary
       for p1 in [0, lastDigit]
         for p2 in [0, lastDigit]
           p = itensornetwork(delta_xyz(s, [p1, p2]))
-          @test inner(p, Zo, p; alg="exact") ≈ 0.0
+          @test inner(p, Zo, p) ≈ 0.0
         end
       end
     end
@@ -383,8 +381,7 @@ using Dictionaries: Dictionary
       for x in [0, lastDigit]
         vals = zeros(length(ys))
         for (i, y) in enumerate(ys)
-          # TODO: fix when bp is fixed
-          vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]; alg="exact"))
+          vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]))
         end
         @test all(isapprox.(vals, 0.0, atol=1e-8))
       end
