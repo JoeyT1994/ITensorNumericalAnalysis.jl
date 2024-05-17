@@ -204,33 +204,85 @@ function point_to_opsum(s::IndsNetworkMap, x::Number, dim::Int)
   return ttn_op
 end
 
+
+" Function to manipulate delta functions into an operator. Defaults to map_to_zero behavior"
+function delta_kernel(
+  s::IndsNetworkMap,
+  points::Vector{<:Vector},
+  dimsl::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  remove_overlap = true,
+  coeff = nothing,
+  include_identity = true,
+  promote_operator = true,
+  truncate_kwargs...
+  )
+  if isnothing(coeff) 
+    coeff = -1 # assume we are making map_to_zero
+  end
+  
+  ψ = coeff*delta_xyz(s,points,dimsl; truncate_kwargs...)
+  
+  if include_identity
+    ψ  = const_itn(s)+ψ
+  end
+
+  if remove_overlap && length(points)>1
+    overlap_points, overlap_dims = Vector{Vector}(),Vector{Vector}()
+    # determine intersection of any points, 
+    # and remove them with the opposite sign
+    for i=1:length(points)
+      p1,d1 = points[i],dimsl[i]
+      for j=i+1:length(points)
+        p2,d2 = points[j],dimsl[j]
+
+        # same dimensions, and no point overlap,
+        # can safely ignore
+        (all(d1 .≈ d2) && !all(p1 .≈ p2)) && continue
+
+        # check if dims are the same. 
+        # If they are, check the corresponding dim
+        ps_ = [p1;p2]
+        ds_ = [d1 ; d2]
+        order = sortperm(ds_)
+        ps, ds = [ps_[order[1]]], [ds_[order[1]]]
+        for k=2:length(ds_)
+          if (ds_[order[k]]!=ds_[order[k-1]]) 
+            push!(ps,ps_[order[k]])
+            push!(ds,ds_[order[k]])
+            continue
+          end
+          # found two matching elements
+          if ps_[k] ≈ ps_[k-1]
+            continue # added previously
+          else # there's no overap here, continue
+            ps,ds = [],[]
+            break
+          end
+        end
+        #(length(Set(ds)) != length(ds)) && continue
+        (length(ds) == 0) && continue
+        push!(overlap_points,Vector(ps))
+        push!(overlap_dims,Vector(ds))
+      end
+    end
+    if length(overlap_points) !=0
+      ψ = ψ + -coeff*delta_xyz(s,overlap_points,overlap_dims; truncate_kwargs...)
+    end
+  end
+
+  return promote_operator ? operator_proj(ψ) : ttn(itensornetwork(ψ))
+  
+
+end
+
+
 " Create an operator which maps a function to 0 at all points in xs"
 function map_to_zero_operator(
   s::IndsNetworkMap, xs::Vector, dims::Vector=[1 for _ in xs]; truncate_kwargs...
 )
-  @assert length(unique(dims)) <= 2 # TODO: generalize 
-  ttn_op = OpSum()
-  # build I- ∑_p ∏(bit string p)
-  all_ops = []
-  for (x, dim) in zip(xs, dims)
-    b_op = point_to_opsum(s, x, dim)
-    ttn_op += -1.0 * b_op
-    push!(all_ops, b_op)
-  end
-
-  # if we have (I-∑P_x)(I-∑P_y) then
-  # we have an additional +P_x*P_y term
-  # this is equivelent to ∑ P_{all overlap spots}
-  for i in 1:length(all_ops)
-    for j in (i + 1):length(all_ops)
-      b_op1, b_op2 = all_ops[i], all_ops[j]
-      d1, d2 = dims[i], dims[j]
-      (d1 == d2) && continue
-      ttn_op += Ops.expand(b_op1 * b_op2)
-    end
-  end
-  add!(ttn_op, 1.0, "I", first(dimension_vertices(s, first(dims))))
-  return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
+  return delta_kernel(s,[[x] for x in xs],[[dim] for dim in dims];
+                      remove_overlap=true,coeff=-1,
+                      include_identity=true,promote_operator=true)
 end
 
 function map_to_zero_operator(s::IndsNetworkMap, x::Number, dim::Int=1; truncate_kwargs...)
@@ -257,14 +309,9 @@ end
 
 """ Create an operator which projects into a constant plane """
 function const_plane_op(s::IndsNetworkMap, xs::Vector, dims::Vector; truncate_kwargs...)
-  ttn_op = OpSum()
-  # build ∑_p ∏(bit string p)
-  for (x, dim) in zip(xs, dims)
-    b_op = point_to_opsum(s, x, dim)
-    ttn_op += 1.0 * b_op
-  end
-  #add!(ttn_op, 1.0, "I", first(dimension_vertices(s, dimension)))
-  return ttn(ttn_op, indsnetwork(s); truncate_kwargs...)
+  return delta_kernel(s,[[x] for x in xs],[[dim] for dim in dims];
+                      remove_overlap=true,coeff=1,
+                      include_identity=false,promote_operator=true)
 end
 
 function const_plane_op(s::IndsNetworkMap, xs::Vector, dim::Int; truncate_kwargs...)

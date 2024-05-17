@@ -226,6 +226,7 @@ function delta_xyz(
   dimsl::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
   kwargs...,
 )
+  @assert length(points) != 0
   ψ = reduce(+, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, dimsl)])
   return ψ
 end
