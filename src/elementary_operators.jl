@@ -284,6 +284,7 @@ function map_to_zero_operator(
     coeff=-1,
     include_identity=true,
     promote_operator=true,
+    truncate_kwargs...,
   )
 end
 
@@ -296,13 +297,12 @@ function map_to_zeros(
   f::ITensorNetworkFunction,
   xs::Vector,
   dims::Vector=[1 for _ in xs];
-  cutoff,
-  maxdim,
-  truncate_kwargs...,
+  truncate_kwargs=(;), # for map_operator
+  kwargs..., # for operate
 )
   s = indsnetworkmap(f)
   zero_op = map_to_zero_operator(s, xs, dims; truncate_kwargs...)
-  return operate(zero_op, f; cutoff, maxdim)
+  return operate(zero_op, f; kwargs...)
 end
 
 function map_to_zeros(f::ITensorNetworkFunction, x::Number, dim::Int=1; kwargs...)
