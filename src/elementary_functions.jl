@@ -195,21 +195,39 @@ function random_itensornetwork(s::IndsNetworkMap; kwargs...)
   return ITensorNetworkFunction(random_tensornetwork(indsnetwork(s); kwargs...), s)
 end
 
-"Create a product state of a given bit configuration"
-function delta_xyz(s::IndsNetworkMap, xs::Vector, dimensions::Vector{Int}; kwargs...)
-  ind_to_ind_value_map = calculate_ind_values(s, xs, dimensions)
-  tn = ITensorNetwork(v -> string(ind_to_ind_value_map[only(s[v])]), indsnetwork(s))
+"Create a product state of a given bit configuration. Will make planes if all dims not specificed"
+function delta_xyz(
+  s::IndsNetworkMap,
+  xs::Vector{<:Number},
+  dims::Vector{Int}=[i for i in 1:length(xs)];
+  kwargs...,
+)
+  ivmap = calculate_ind_values(s, xs, dims)
+  tn = ITensorNetwork(
+    v -> only(s[v]) in keys(ivmap) ? string(ivmap[only(s[v])]) : ones(dim(only(s[v]))),
+    indsnetwork(s),
+  )
   return ITensorNetworkFunction(tn, s)
 end
 
-function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
-  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
-end
+#function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
+#  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
+#end
 
 "Create a product state of a given bit configuration of a 1D function"
 function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
   @assert dimension(s) == 1
   return delta_xyz(s, [x], [1]; kwargs...)
+end
+
+function delta_xyz(
+  s::IndsNetworkMap,
+  points::Vector{<:Vector},
+  dimsl::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  kwargs...,
+)
+  ψ = reduce(+, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, dimsl)])
+  return ψ
 end
 
 const const_itn = const_itensornetwork
