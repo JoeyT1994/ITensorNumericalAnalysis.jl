@@ -2,12 +2,13 @@ using Test
 using ITensorNumericalAnalysis
 
 using ITensors: siteinds
-using ITensorNetworks: maxlinkdim, ttn, inner
+using ITensorNetworks: ITensorNetwork, maxlinkdim, ttn, inner
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, nv, vertices
 using NamedGraphs.GraphsExtensions: rename_vertices
 using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
-using ITensorNumericalAnalysis: itensornetwork, forward_shift_op, backward_shift_op
+using ITensorNumericalAnalysis:
+  itensornetwork, forward_shift_op, backward_shift_op, delta_kernel
 using Dictionaries: Dictionary
 
 @testset "test operators" begin
@@ -384,6 +385,149 @@ using Dictionaries: Dictionary
           vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]))
         end
         @test all(isapprox.(vals, 0.0, atol=1e-8))
+      end
+    end
+  end
+  @testset "test delta-kernel " begin
+    @testset "test delta-kernel in 1D" begin
+      g = named_comb_tree((2, 3))
+      L = nv(g)
+      delta = 2.0^(-1.0 * L)
+      lastDigit = 1 - delta
+      s = continuous_siteinds(g)
+
+      xs = [0.0, delta, 0.25, 0.625, 0.875, 1.0 - delta]
+      ψ_fx = delta_kernel(
+        s, [[0.5]]; coeff=-1, include_identity=true, promote_operator=false
+      )
+      # default output as ttn, revert
+      ψ_fx = ITensorNetworkFunction(ITensorNetwork(ψ_fx))
+      @test calculate_fxyz(ψ_fx, [0.5]) ≈ 0
+      for x in xs
+        @test calculate_fxyz(ψ_fx, [x]) ≈ 1
+      end
+    end
+    @testset "test delta-kernel in 2D" begin
+      g = named_comb_tree((2, 3))
+      L = nv(g)
+      delta = 2.0^(-1.0 * (L ÷ 2))
+      lastDigit = 1 - delta
+      s = continuous_siteinds(g; map_dimension=2)
+
+      xs = [0.0, delta, 0.25, 0.625, 0.875, 1.0 - delta]
+      @testset "insersecting lines" begin
+        ψ_f = delta_kernel(
+          s,
+          [[0.5], [0.5]],
+          [[1], [2]];
+          coeff=-1,
+          include_identity=true,
+          promote_operator=false,
+        )
+        # default output as ttn, revert
+        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        @test calculate_fxyz(ψ_f, [0.5, 0.5]) ≈ 0
+        for x in xs
+          @test calculate_fxyz(ψ_f, [x, 0.5]) ≈ 0
+          @test calculate_fxyz(ψ_f, [0.5, x], [1, 2]) ≈ 0
+
+          @test calculate_fxyz(ψ_f, [x, delta], [1, 2]) ≈ 1
+          @test calculate_fxyz(ψ_f, [delta, x], [1, 2]) ≈ 1
+        end
+      end
+      @testset "line and point" begin
+        ψ_f = delta_kernel(
+          s,
+          [[0.5], [0.5, 0.1]],
+          [[1], [1, 2]];
+          coeff=-1,
+          include_identity=true,
+          promote_operator=false,
+        )
+        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        @test calculate_fxyz(ψ_f, [0.5, 0.5]) ≈ 0
+        @test calculate_fxyz(ψ_f, [0.5, 0.1]) ≈ 0
+        for x in xs
+          @test calculate_fxyz(ψ_f, [0.5, x], [1, 2]) ≈ 0
+
+          @test calculate_fxyz(ψ_f, [x, delta], [1, 2]) ≈ 1
+          @test calculate_fxyz(ψ_f, [delta, x], [1, 2]) ≈ 1
+        end
+      end
+    end
+
+    @testset "test delta-kernel in 3D" begin
+      g = named_comb_tree((3, 2))
+      L = nv(g)
+      delta = 2.0^(-1.0 * (L ÷ 3))
+      lastDigit = 1 - delta
+      s = continuous_siteinds(g; map_dimension=3)
+
+      xs = [0.0, delta, 1.0 - delta]
+      zs = [0, delta, 0.5, 1.0 - delta]
+      @testset "insersecting planes" begin
+        ψ_f = delta_kernel(
+          s,
+          [[0.5], [0.5]],
+          [[1], [2]];
+          coeff=-1,
+          include_identity=true,
+          promote_operator=false,
+        )
+        # default output as ttn, revert
+        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        for z in zs
+          @test calculate_fxyz(ψ_f, [0.5, 0.5, z]) ≈ 0
+          for x in xs
+            @test calculate_fxyz(ψ_f, [x, 0.5, z]) ≈ 0
+            @test calculate_fxyz(ψ_f, [0.5, x, z], [1, 2, 3]) ≈ 0
+
+            @test calculate_fxyz(ψ_f, [x, delta, z], [1, 2, 3]) ≈ 1
+            @test calculate_fxyz(ψ_f, [delta, x, z], [1, 2, 3]) ≈ 1
+          end
+        end
+      end
+      @testset "plane and line" begin
+        ψ_f = delta_kernel(
+          s,
+          [[0.5], [0.5, 0]],
+          [[1], [1, 2]];
+          coeff=-1,
+          include_identity=true,
+          promote_operator=false,
+        )
+        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        for z in zs
+          @test calculate_fxyz(ψ_f, [0.5, 0.5, z]) ≈ 0
+          @test calculate_fxyz(ψ_f, [0.5, 0, z]) ≈ 0
+          for x in xs
+            @test calculate_fxyz(ψ_f, [0.5, x, z], [1, 2, 3]) ≈ 0
+
+            @test calculate_fxyz(ψ_f, [x, delta, z], [1, 2, 3]) ≈ 1
+            @test calculate_fxyz(ψ_f, [delta, x, z], [1, 2, 3]) ≈ 1
+          end
+        end
+      end
+      @testset "two lines (w/ point overlap at endpoint)" begin
+        ψ_f = delta_kernel(
+          s,
+          [[0.5, 0], [0, 0.5]],
+          [[2, 3], [1, 2]];
+          coeff=-1,
+          include_identity=true,
+          promote_operator=false,
+        )
+        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        @test calculate_fxyz(ψ_f, [0.0, 0.5, 0.5]) ≈ 0
+        for z in [0]
+          @test calculate_fxyz(ψ_f, [0.0, 0.5, z]) ≈ 0
+          for x in xs
+            @test calculate_fxyz(ψ_f, [x, 0.5, z], [1, 2, 3]) ≈ 0
+
+            @test calculate_fxyz(ψ_f, [x, delta, z], [1, 2, 3]) ≈ 1
+            @test calculate_fxyz(ψ_f, [delta, x, z], [1, 2, 3]) ≈ 1
+          end
+        end
       end
     end
   end
