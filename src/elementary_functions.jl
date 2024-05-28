@@ -195,15 +195,19 @@ function random_itensornetwork(s::IndsNetworkMap; kwargs...)
   return ITensorNetworkFunction(random_tensornetwork(indsnetwork(s); kwargs...), s)
 end
 
-"Create a product state of a given bit configuration"
-function delta_xyz(s::IndsNetworkMap, xs::Vector, dimensions::Vector{Int}; kwargs...)
-  ind_to_ind_value_map = calculate_ind_values(s, xs, dimensions)
-  tn = ITensorNetwork(v -> string(ind_to_ind_value_map[only(s[v])]), indsnetwork(s))
+"Create a product state of a given bit configuration. Will make planes if all dims not specificed"
+function delta_xyz(
+  s::IndsNetworkMap,
+  xs::Vector{<:Number},
+  dims::Vector{Int}=[i for i in 1:length(xs)];
+  kwargs...,
+)
+  ivmap = calculate_ind_values(s, xs, dims)
+  tn = ITensorNetwork(
+    v -> only(s[v]) in keys(ivmap) ? string(ivmap[only(s[v])]) : ones(dim(only(s[v]))),
+    indsnetwork(s),
+  )
   return ITensorNetworkFunction(tn, s)
-end
-
-function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
-  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
 end
 
 "Create a product state of a given bit configuration of a 1D function"
@@ -212,6 +216,82 @@ function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
   return delta_xyz(s, [x], [1]; kwargs...)
 end
 
+function delta_xyz(
+  s::IndsNetworkMap,
+  points::Vector{<:Vector},
+  points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  kwargs...,
+)
+  @assert length(points) != 0
+  @assert length(points) == length(points_dims)
+  ψ = reduce(
+    +, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
+  )
+  return ψ
+end
+
+" Function to manipulate delta functions. Defaults to map_to_zero behavior"
+function delta_kernel(
+  s::IndsNetworkMap,
+  points::Vector{<:Vector},
+  points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  remove_overlap=true,
+  coeff::Number=-1,
+  include_identity=true,
+  truncate_kwargs...,
+)
+  ψ = coeff * delta_xyz(s, points, points_dims; truncate_kwargs...)
+
+  if include_identity
+    ψ = const_itn(s) + ψ
+  end
+
+  if remove_overlap && length(points) > 1
+    overlap_points, overlap_dims = Vector{Vector}(), Vector{Vector}()
+    # determine intersection of any points, 
+    # and remove them with the opposite sign
+    for i in 1:length(points)
+      p1, d1 = points[i], points_dims[i]
+      for j in (i + 1):length(points)
+        p2, d2 = points[j], points_dims[j]
+
+        # same dimensions, and no point overlap,
+        # can safely ignore
+        (all(d1 .≈ d2) && !all(p1 .≈ p2)) && continue
+
+        # check if dims are the same. 
+        # If they are, check the corresponding dim
+        ps_ = [p1; p2]
+        ds_ = [d1; d2]
+        order = sortperm(ds_)
+        ps, ds = [ps_[order[1]]], [ds_[order[1]]]
+        for k in 2:length(ds_)
+          if (ds_[order[k]] != ds_[order[k - 1]])
+            push!(ps, ps_[order[k]])
+            push!(ds, ds_[order[k]])
+            continue
+          end
+          # found two matching elements
+          if ps_[k] ≈ ps_[k - 1]
+            continue # added previously
+          else # there's no overap here, continue
+            ps, ds = [], []
+            break
+          end
+        end
+        #(length(Set(ds)) != length(ds)) && continue
+        (length(ds) == 0) && continue
+        push!(overlap_points, Vector(ps))
+        push!(overlap_dims, Vector(ds))
+      end
+    end
+    if length(overlap_points) != 0
+      ψ = ψ + -coeff * delta_xyz(s, overlap_points, overlap_dims; truncate_kwargs...)
+    end
+  end
+
+  return ψ
+end
 const const_itn = const_itensornetwork
 const poly_itn = polynomial_itensornetwork
 const cosh_itn = cosh_itensornetwork

@@ -7,6 +7,7 @@ using ITensors:
   noprime,
   op,
   Op,
+  Ops,
   truncate,
   replaceinds,
   delta,
@@ -189,6 +190,56 @@ end
 function identity_operator(s::IndsNetworkMap; kwargs...)
   operator_inds = ITensorNetworks.union_all_inds(indsnetwork(s), prime(indsnetwork(s)))
   return ITensorNetwork(Op("I"), operator_inds)
+end
+
+" Create an operator bitstring corresponding to the number x"
+function point_to_opsum(s::IndsNetworkMap, x::Number, dim::Int)
+  ttn_op = OpSum()
+  ind_to_ind_value_map = calculate_ind_values(s, x, dim)
+  string_sites = [
+    (ind_to_ind_value_map[only(s[v])] == 1) ? ("Dup", v) : ("Ddn", v) for
+    v in dimension_vertices(s, dim)
+  ]
+  add!(ttn_op, 1.0, (string_sites...)...)
+  return ttn_op
+end
+
+" Create an operator which maps a function to 0 at all points in xs"
+function map_to_zero_operator(
+  s::IndsNetworkMap, xs::Vector, dims::Vector=[1 for _ in xs]; truncate_kwargs...
+)
+  return operator_proj(
+    delta_kernel(
+      s,
+      [[x] for x in xs],
+      [[dim] for dim in dims];
+      remove_overlap=true,
+      coeff=-1,
+      include_identity=true,
+      truncate_kwargs...,
+    ),
+  )
+end
+
+function map_to_zero_operator(s::IndsNetworkMap, x::Number, dim::Int=1; truncate_kwargs...)
+  return map_to_zero_operator(s, [x], [dim]; truncate_kwargs...)
+end
+
+" Map the points xs in dimension dims of the function f to 0"
+function map_to_zeros(
+  f::ITensorNetworkFunction,
+  xs::Vector,
+  dims::Vector=[1 for _ in xs];
+  truncate_kwargs=(;), # for map_operator
+  kwargs..., # for operate
+)
+  s = indsnetworkmap(f)
+  zero_op = map_to_zero_operator(s, xs, dims; truncate_kwargs...)
+  return operate(zero_op, f; kwargs...)
+end
+
+function map_to_zeros(f::ITensorNetworkFunction, x::Number, dim::Int=1; kwargs...)
+  return map_to_zeros(f, [x], [dim]; kwargs...)
 end
 
 " Take |f> and create an operator |f><δ| "

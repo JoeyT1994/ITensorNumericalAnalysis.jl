@@ -2,11 +2,13 @@ using Test
 using ITensorNumericalAnalysis
 
 using ITensors: siteinds
-using ITensorNetworks: maxlinkdim
+using ITensorNetworks: ITensorNetwork, maxlinkdim, ttn, inner
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, nv, vertices
+using NamedGraphs.GraphsExtensions: rename_vertices
 using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
-using ITensorNumericalAnalysis: itensornetwork, forward_shift_op, backward_shift_op
+using ITensorNumericalAnalysis:
+  itensornetwork, forward_shift_op, backward_shift_op, delta_kernel
 using Dictionaries: Dictionary
 
 @testset "test operators" begin
@@ -320,6 +322,172 @@ using Dictionaries: Dictionary
           calculate_fxyz(ψ_fxy, [x, 1.0 - delta]) atol = 1e-8
         @test calculate_fxyz(ψ_fxy_mshift_neumann, [x, y]) ≈ calculate_fxyz(ψ_fxy, [x, 0.0]) atol =
           1e-8
+      end
+    end
+  end
+
+  @testset "test boundary operator in 1D on Tree" begin
+    g = named_comb_tree((2, 3))
+    L = nv(g)
+    delta = 2.0^(-1.0 * L)
+    lastDigit = 1 - delta
+    s = continuous_siteinds(g)
+
+    xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
+    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
+
+    Zo = map_to_zero_operator(s, [0, lastDigit])
+
+    @testset "corner boundary test" begin
+      for p1 in [0, lastDigit]
+        p = (itensornetwork(delta_x(s, p1)))
+        @test inner(p, Zo, p) ≈ 0.0
+      end
+    end
+    @testset "boundary apply" begin
+      maxdim, cutoff = 10, 1e-16
+      ϕ_fx = map_to_zeros(ψ_fx, [0, lastDigit]; cutoff, maxdim)
+      for x in xs
+        val = real(calculate_fx(ϕ_fx, x))
+        @test (x ∈ [0, lastDigit]) ? isapprox(val, 0.0; atol=1e-8) : !(val ≈ 0.0)
+      end
+    end
+  end
+
+  @testset "test boundary operator in 2D on Tree" begin
+    g = named_comb_tree((3, 3))
+    s = continuous_siteinds(g; map_dimension=2)
+    L = length(dimension_inds(s, 2))
+    delta = 2.0^(-1.0 * L)
+    lastDigit = 1 - delta
+
+    ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
+    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dimension=1)
+    ψ_fy = cos_itn(s; dimension=2)
+    ψ_fxy = ψ_fx + ψ_fy
+
+    Zo = map_to_zero_operator(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
+    @testset "corner boundary test" begin
+      for p1 in [0, lastDigit]
+        for p2 in [0, lastDigit]
+          p = itensornetwork(delta_xyz(s, [p1, p2]))
+          @test inner(p, Zo, p) ≈ 0.0
+        end
+      end
+    end
+
+    @testset "boundary apply" begin
+      maxdim, cutoff = 10, 0e-16
+      ϕ_fxy = operate([Zo], ψ_fxy; cutoff, maxdim, normalize=false)
+      for x in [0, lastDigit]
+        vals = zeros(length(ys))
+        for (i, y) in enumerate(ys)
+          vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]))
+        end
+        @test all(isapprox.(vals, 0.0, atol=1e-8))
+      end
+    end
+  end
+  @testset "test delta-kernel " begin
+    @testset "test delta-kernel in 1D" begin
+      g = named_comb_tree((2, 3))
+      L = nv(g)
+      delta = 2.0^(-1.0 * L)
+      lastDigit = 1 - delta
+      s = continuous_siteinds(g)
+
+      xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
+      ψ_fx = delta_kernel(s, [[0.5]]; coeff=-1, include_identity=true)
+      @test calculate_fxyz(ψ_fx, [0.5]) ≈ 0
+      for x in xs
+        @test calculate_fxyz(ψ_fx, [x]) ≈ 1
+      end
+    end
+    @testset "test delta-kernel in 2D" begin
+      g = named_comb_tree((2, 3))
+      L = nv(g)
+      delta = 2.0^(-1.0 * (L ÷ 2))
+      lastDigit = 1 - delta
+      s = continuous_siteinds(g; map_dimension=2)
+
+      xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
+      @testset "insersecting lines" begin
+        ψ_f = delta_kernel(s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
+        @test calculate_fxyz(ψ_f, [0.5, 0.5]) ≈ 0
+        for x in xs
+          @test calculate_fxyz(ψ_f, [x, 0.5]) ≈ 0
+          @test calculate_fxyz(ψ_f, [0.5, x], [1, 2]) ≈ 0
+
+          @test calculate_fxyz(ψ_f, [x, delta], [1, 2]) ≈ 1
+          @test calculate_fxyz(ψ_f, [delta, x], [1, 2]) ≈ 1
+        end
+      end
+      @testset "line and point" begin
+        ψ_f = delta_kernel(
+          s, [[0.5], [0.5, 0.1]], [[1], [1, 2]]; coeff=-1, include_identity=true
+        )
+        @test calculate_fxyz(ψ_f, [0.5, 0.5]) ≈ 0
+        @test calculate_fxyz(ψ_f, [0.5, 0.1]) ≈ 0
+        for x in xs
+          @test calculate_fxyz(ψ_f, [0.5, x], [1, 2]) ≈ 0
+
+          @test calculate_fxyz(ψ_f, [x, delta], [1, 2]) ≈ 1
+          @test calculate_fxyz(ψ_f, [delta, x], [1, 2]) ≈ 1
+        end
+      end
+    end
+
+    @testset "test delta-kernel in 3D" begin
+      g = named_comb_tree((3, 2))
+      L = nv(g)
+      delta = 2.0^(-1.0 * (L ÷ 3))
+      lastDigit = 1 - delta
+      s = continuous_siteinds(g; map_dimension=3)
+
+      xs = [0.0, delta, lastDigit]
+      zs = [0, delta, 0.5, lastDigit]
+      @testset "insersecting planes" begin
+        ψ_f = delta_kernel(s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
+        for z in zs
+          @test calculate_fxyz(ψ_f, [0.5, 0.5, z]) ≈ 0
+          for x in xs
+            @test calculate_fxyz(ψ_f, [x, 0.5, z]) ≈ 0
+            @test calculate_fxyz(ψ_f, [0.5, x, z], [1, 2, 3]) ≈ 0
+
+            @test calculate_fxyz(ψ_f, [x, delta, z], [1, 2, 3]) ≈ 1
+            @test calculate_fxyz(ψ_f, [delta, x, z], [1, 2, 3]) ≈ 1
+          end
+        end
+      end
+      @testset "plane and line" begin
+        ψ_f = delta_kernel(
+          s, [[0.5], [0.5, 0]], [[1], [1, 2]]; coeff=-1, include_identity=true
+        )
+        for z in zs
+          @test calculate_fxyz(ψ_f, [0.5, 0.5, z]) ≈ 0
+          @test calculate_fxyz(ψ_f, [0.5, 0, z]) ≈ 0
+          for x in xs
+            @test calculate_fxyz(ψ_f, [0.5, x, z], [1, 2, 3]) ≈ 0
+
+            @test calculate_fxyz(ψ_f, [x, delta, z], [1, 2, 3]) ≈ 1
+            @test calculate_fxyz(ψ_f, [delta, x, z], [1, 2, 3]) ≈ 1
+          end
+        end
+      end
+      @testset "two lines (w/ point overlap at endpoint)" begin
+        ψ_f = delta_kernel(
+          s, [[0.5, 0], [0, 0.5]], [[2, 3], [1, 2]]; coeff=-1, include_identity=true
+        )
+        @test calculate_fxyz(ψ_f, [0.0, 0.5, 0.5]) ≈ 0
+        for z in [0]
+          @test calculate_fxyz(ψ_f, [0.0, 0.5, z]) ≈ 0
+          for x in xs
+            @test calculate_fxyz(ψ_f, [x, 0.5, z], [1, 2, 3]) ≈ 0
+
+            @test calculate_fxyz(ψ_f, [x, delta, z], [1, 2, 3]) ≈ 1
+            @test calculate_fxyz(ψ_f, [delta, x, z], [1, 2, 3]) ≈ 1
+          end
+        end
       end
     end
   end
