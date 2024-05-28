@@ -20,8 +20,8 @@ s = continuous_siteinds(g; map_dimension=2)
 #ψ_fxy = const_itn(s; c=3, linkdim=3) # note if you use const, need big linkdim
 @show maxlinkdim(ψ_fxy)
 
-maxdim = 20
-cutoff = 0e-16
+maxdim = 10
+cutoff = 1e-6
 @show cutoff
 ϕ_fxy = map_to_zeros(ψ_fxy, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2]; cutoff, maxdim)
 @show maxlinkdim(ϕ_fxy)
