@@ -398,7 +398,6 @@ using Dictionaries: Dictionary
 
       xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
       ψ_fx = delta_kernel(s, [[0.5]]; coeff=-1, include_identity=true)
-      # default output as ttn, revert
       @test calculate_fxyz(ψ_fx, [0.5]) ≈ 0
       for x in xs
         @test calculate_fxyz(ψ_fx, [x]) ≈ 1
