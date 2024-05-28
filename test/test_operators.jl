@@ -397,11 +397,8 @@ using Dictionaries: Dictionary
       s = continuous_siteinds(g)
 
       xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
-      ψ_fx = delta_kernel(
-        s, [[0.5]]; coeff=-1, include_identity=true, promote_operator=false
-      )
+      ψ_fx = delta_kernel(s, [[0.5]]; coeff=-1, include_identity=true)
       # default output as ttn, revert
-      ψ_fx = ITensorNetworkFunction(ITensorNetwork(ψ_fx))
       @test calculate_fxyz(ψ_fx, [0.5]) ≈ 0
       for x in xs
         @test calculate_fxyz(ψ_fx, [x]) ≈ 1
@@ -416,16 +413,7 @@ using Dictionaries: Dictionary
 
       xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
       @testset "insersecting lines" begin
-        ψ_f = delta_kernel(
-          s,
-          [[0.5], [0.5]],
-          [[1], [2]];
-          coeff=-1,
-          include_identity=true,
-          promote_operator=false,
-        )
-        # default output as ttn, revert
-        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        ψ_f = delta_kernel(s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
         @test calculate_fxyz(ψ_f, [0.5, 0.5]) ≈ 0
         for x in xs
           @test calculate_fxyz(ψ_f, [x, 0.5]) ≈ 0
@@ -437,14 +425,8 @@ using Dictionaries: Dictionary
       end
       @testset "line and point" begin
         ψ_f = delta_kernel(
-          s,
-          [[0.5], [0.5, 0.1]],
-          [[1], [1, 2]];
-          coeff=-1,
-          include_identity=true,
-          promote_operator=false,
+          s, [[0.5], [0.5, 0.1]], [[1], [1, 2]]; coeff=-1, include_identity=true
         )
-        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
         @test calculate_fxyz(ψ_f, [0.5, 0.5]) ≈ 0
         @test calculate_fxyz(ψ_f, [0.5, 0.1]) ≈ 0
         for x in xs
@@ -466,16 +448,7 @@ using Dictionaries: Dictionary
       xs = [0.0, delta, lastDigit]
       zs = [0, delta, 0.5, lastDigit]
       @testset "insersecting planes" begin
-        ψ_f = delta_kernel(
-          s,
-          [[0.5], [0.5]],
-          [[1], [2]];
-          coeff=-1,
-          include_identity=true,
-          promote_operator=false,
-        )
-        # default output as ttn, revert
-        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
+        ψ_f = delta_kernel(s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
         for z in zs
           @test calculate_fxyz(ψ_f, [0.5, 0.5, z]) ≈ 0
           for x in xs
@@ -489,14 +462,8 @@ using Dictionaries: Dictionary
       end
       @testset "plane and line" begin
         ψ_f = delta_kernel(
-          s,
-          [[0.5], [0.5, 0]],
-          [[1], [1, 2]];
-          coeff=-1,
-          include_identity=true,
-          promote_operator=false,
+          s, [[0.5], [0.5, 0]], [[1], [1, 2]]; coeff=-1, include_identity=true
         )
-        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
         for z in zs
           @test calculate_fxyz(ψ_f, [0.5, 0.5, z]) ≈ 0
           @test calculate_fxyz(ψ_f, [0.5, 0, z]) ≈ 0
@@ -510,14 +477,8 @@ using Dictionaries: Dictionary
       end
       @testset "two lines (w/ point overlap at endpoint)" begin
         ψ_f = delta_kernel(
-          s,
-          [[0.5, 0], [0, 0.5]],
-          [[2, 3], [1, 2]];
-          coeff=-1,
-          include_identity=true,
-          promote_operator=false,
+          s, [[0.5, 0], [0, 0.5]], [[2, 3], [1, 2]]; coeff=-1, include_identity=true
         )
-        ψ_f = ITensorNetworkFunction(ITensorNetwork(ψ_f), s)
         @test calculate_fxyz(ψ_f, [0.0, 0.5, 0.5]) ≈ 0
         for z in [0]
           @test calculate_fxyz(ψ_f, [0.0, 0.5, z]) ≈ 0
