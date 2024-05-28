@@ -21,8 +21,6 @@ export IndexMap,
   dimensions,
   grid_points,
   is_real,
-  is_imaginary,
-  is_complex,
   imaginary_inds,
   real_inds
 export IndsNetworkMap,

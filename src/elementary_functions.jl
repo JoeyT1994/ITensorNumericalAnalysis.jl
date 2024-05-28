@@ -14,11 +14,11 @@ default_dimension() = 1
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
 function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1)
   ψ = random_itensornetwork(s; link_space=linkdim)
-  inv_L = Number(1.0 / nv(s))
+  c = c < 0 ? (Complex(c) / linkdim)^Number(1.0 / nv(s)) : (c / linkdim)^Number(1.0 / nv(s))
   for v in vertices(ψ)
     sinds = inds(s, v)
     virt_inds = setdiff(inds(ψ[v]), sinds)
-    ψ[v] = (c / linkdim)^inv_L * c_tensor(sinds, virt_inds)
+    ψ[v] = c * c_tensor(sinds, virt_inds)
   end
 
   return ψ
@@ -139,9 +139,10 @@ function polynomial_itensornetwork(
   dimension::Int=default_dimension(),
   k=default_k_value(),
   c=default_c_value(),
-  truncate_state=true,
 )
   n = length(coeffs)
+  n == 1 && return const_itn(s; c=first(coeffs))
+
   coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
   #First treeify the index network (ignore edges that form loops)
   _s = indsnetwork(s)
@@ -167,7 +168,7 @@ function polynomial_itensornetwork(
         sinds,
         alphas,
         betaindex,
-        [index_values_to_scalars(s_tree, sind) for sind in sinds],
+        index_values_to_scalars.((s_tree,), sinds),
       )
     elseif v == source_vertex
       betaindex = Index(n, "DummyInd")
@@ -178,7 +179,7 @@ function polynomial_itensornetwork(
         sinds,
         alphas,
         betaindex,
-        [index_values_to_scalars(s_tree, sind) for sind in sinds],
+        index_values_to_scalars.((s_tree,), sinds),
       )
       ψ[v] = ψv * ITensor(coeffs, betaindex)
     end
@@ -196,8 +197,7 @@ function polynomial_itensornetwork(
     ψ[v] = transfer_tensor(sinds, betaindex, alphas)
   end
 
-  truncate_state && return truncate(ψ; cutoff=1e-16)
-  !truncate_state && return ψ
+  return ψ
 end
 
 function random_itensornetwork(s::IndsNetworkMap; kwargs...)

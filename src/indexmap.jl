@@ -7,12 +7,12 @@ using NamedGraphs: vertextype
 struct IndexMap{VB,VD,VC}
   index_digit::VB
   index_dimension::VD
-  index_imaginary::VC
+  index_real::VC
 end
 
 index_digit(imap::IndexMap) = imap.index_digit
 index_dimension(imap::IndexMap) = imap.index_dimension
-index_imaginary(imap::IndexMap) = imap.index_imaginary
+index_real(imap::IndexMap) = imap.index_real
 
 function default_digit_map(indices::Vector{Index}; map_dimension::Int=1)
   return Dictionary(
@@ -66,12 +66,12 @@ function IndexMap(
 ) where {I<:Index}
   index_digit = Dictionary()
   index_dimension = Dictionary()
-  index_imaginary = Dictionary()
+  index_real = Dictionary()
   for (dimension, indices) in enumerate(real_dimension_indices)
     for (digit, ind) in enumerate(indices)
       set!(index_digit, ind, digit)
       set!(index_dimension, ind, dimension)
-      set!(index_imaginary, ind, false)
+      set!(index_real, ind, true)
     end
   end
 
@@ -79,16 +79,16 @@ function IndexMap(
     for (digit, ind) in enumerate(indices)
       set!(index_digit, ind, digit)
       set!(index_dimension, ind, dimension)
-      set!(index_imaginary, ind, true)
+      set!(index_real, ind, false)
     end
   end
 
-  return IndexMap(index_digit, index_dimension, index_imaginary)
+  return IndexMap(index_digit, index_dimension, index_real)
 end
 
 function Base.copy(imap::IndexMap)
   return IndexMap(
-    copy(index_digit(imap)), copy(index_dimension(imap)), copy(index_imaginary(imap))
+    copy(index_digit(imap)), copy(index_dimension(imap)), copy(index_real(imap))
   )
 end
 
@@ -97,10 +97,8 @@ dimension(imap::IndexMap, ind::Index) = index_dimension(imap)[ind]
 dimensions(imap::IndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(imap::IndexMap, ind::Index) = index_digit(imap)[ind]
 digits(imap::IndexMap, inds::Vector{Index}) = digit.(inds)
-is_imaginary(imap::IndexMap, ind::Index) = index_imaginary(imap)[ind]
-is_real(imap::IndexMap, ind::Index) = !is_imaginary(imap, ind)
-is_real(imap::IndexMap) = all(i -> is_real(imap, i), keys(index_imaginary(imap)))
-is_complex(imap::IndexMap) = !is_real(imap)
+is_real(imap::IndexMap, ind::Index) = index_real(imap)[ind]
+is_real(imap::IndexMap) = all(i -> is_real(imap, i), keys(index_real(imap)))
 function index_value_to_scalar(imap::IndexMap, ind::Index, value::Int)
   out = (value) / (dim(ind)^digit(imap, ind))
   out = is_real(imap, ind) ? out : 1.0 * im * out
@@ -174,10 +172,11 @@ function calculate_x(imap::IndexMap, ind_to_ind_value_map; kwargs...)
   return calculate_x(imap, ind_to_ind_value_map, 1; kwargs...)
 end
 
-function set_ind_values(
-  imap::IndexMap, sorted_inds::Vector, ind_to_ind_value_map::Dictionary, x::Number
+"""Given a series of sorted indices (from most significant to least and in the same dimension), set their values 
+in the corresponding dictionary to produce the number x in [0,1]"""
+function set_ind_values!(
+  ind_to_ind_value_map::Dictionary, imap::IndexMap, sorted_inds::Vector, x::Number
 )
-  ind_to_ind_value_map = copy(ind_to_ind_value_map)
   x_rn = copy(x)
   for ind in sorted_inds
     ind_val = dim(ind) - 1
@@ -192,7 +191,6 @@ function set_ind_values(
       end
     end
   end
-  return ind_to_ind_value_map
 end
 
 function calculate_ind_values(
@@ -206,14 +204,10 @@ function calculate_ind_values(
     imag_indices = imaginary_inds(imap, [dimension])
 
     sorted_real_inds = sort(real_indices; by=real_indices -> digit(imap, real_indices))
-    ind_to_ind_value_map = set_ind_values(
-      imap, sorted_real_inds, ind_to_ind_value_map, real(x)
-    )
+    set_ind_values!(ind_to_ind_value_map, imap, sorted_real_inds, real(x))
     if !isempty(imag_indices)
       sorted_imag_inds = sort(imag_indices; by=imag_indices -> digit(imap, imag_indices))
-      ind_to_ind_value_map = set_ind_values(
-        imap, sorted_imag_inds, ind_to_ind_value_map, imag(x)
-      )
+      set_ind_values!(ind_to_ind_value_map, imap, sorted_imag_inds, imag(x))
     end
     if print_x
       x_bitstring = calculate_x(imap, ind_to_ind_value_map, dimension)

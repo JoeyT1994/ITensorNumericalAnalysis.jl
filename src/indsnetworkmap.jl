@@ -79,8 +79,6 @@ for f in [
   :imaginary_inds,
   :real_inds,
   :is_real,
-  :is_imaginary,
-  :is_complex,
 ]
   @eval begin
     function $f(inm::IndsNetworkMap, args...; kwargs...)
