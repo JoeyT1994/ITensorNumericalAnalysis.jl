@@ -126,6 +126,7 @@ function stencil(
 )
   # shifts = [ x+2Δh, x+Δh, x, x-Δh, x-2Δh]
   @assert length(shifts) == 5
+  @assert is_real(s)
   b = base(s)
   stencil_opsum = shifts[3] * no_shift_opsum(s)
   for i in [1, 2]
@@ -197,22 +198,31 @@ function operator_proj(fx::ITensorNetworkFunction)
   operator = itensornetwork(fx)
   s = siteinds(operator)
   for v in vertices(operator)
-    sind = s[v]
-    sindsim = sim(sind)
-    operator[v] = replaceinds(operator[v], sind, sindsim)
-    operator[v] = operator[v] * delta(vcat(sind, sindsim, sind'))
+    sinds = inds(s, v)
+    sindssim = sim.(sinds)
+    operator[v] = replaceinds(operator[v], sinds, sindssim)
+    for (i, s) in enumerate(sinds)
+      operator[v] = operator[v] * delta(s, s', sindssim[i])
+    end
   end
   return operator
 end
 
 function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
+  gx, fx = sim(copy(gx); sites=[]), copy(fx)
   @assert vertices(gx) == vertices(fx)
-  fx, fxgx = copy(fx), copy(gx)
+  fxgx = copy(fx)
   s = siteinds(fxgx)
   for v in vertices(fxgx)
-    ssim = sim(s[v])
-    temp_tensor = replaceinds(fx[v], s[v], ssim)
-    fxgx[v] = noprime!(fxgx[v] * delta(s[v], s[v]', ssim) * temp_tensor)
+    @assert siteinds(fx, v) == siteinds(gx, v)
+    sinds = siteinds(fxgx, v)
+    sindssim = sim.(sinds)
+    for (i, s) in enumerate(sinds)
+      ssim = sindssim[i]
+      fxgx[v] = fxgx[v] * delta(s, s', ssim)
+    end
+    temp_tensor = replaceinds(gx[v], sinds, sindssim)
+    fxgx[v] = noprime!(fxgx[v] * temp_tensor)
   end
 
   return combine_linkinds(fxgx)

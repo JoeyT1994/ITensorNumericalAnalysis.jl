@@ -1,6 +1,6 @@
 using Base: Base
 using Graphs: Graphs
-using NamedGraphs: NamedGraphs
+using NamedGraphs: NamedGraphs, NamedGraph
 using ITensors: ITensors
 using ITensorNetworks:
   ITensorNetworks, AbstractIndsNetwork, IndsNetwork, data_graph, underlying_graph
@@ -29,22 +29,35 @@ end
 
 #Constructors 
 function IndsNetworkMap(
-  s::IndsNetwork, dimension_vertices::Vector{Vector{V}}; kwargs...
+  s::IndsNetwork,
+  real_dimension_vertices::Vector{Vector{V}},
+  imaginary_dimension_vertices::Vector{Vector{V}}=Vector{vertextype(s)}[[]];
+  is_complex=false,
+  kwargs...,
 ) where {V}
-  return IndsNetworkMap(s, IndexMap(s, dimension_vertices; kwargs...))
+  return IndsNetworkMap(
+    s, IndexMap(s, real_dimension_vertices, imaginary_dimension_vertices; kwargs...)
+  )
 end
 
-function IndsNetworkMap(s::IndsNetwork, dimension_indices::Vector{Vector{Index}})
-  return IndsNetworkMap(s, IndexMap(dimension_indices; kwargs...))
+function IndsNetworkMap(
+  s::IndsNetwork,
+  real_dimension_indices::Vector{Vector{Index}},
+  imaginary_dimension_indices::Vector{Vector{Index}}=Vector{Index}[[]];
+  kwargs...,
+)
+  return IndsNetworkMap(
+    s, IndexMap(real_dimension_indices, imaginary_dimension_indices; kwargs...)
+  )
 end
 
 function IndsNetworkMap(s::IndsNetwork; kwargs...)
   return IndsNetworkMap(s, IndexMap(s; kwargs...))
 end
 
-function IndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
-  s = digit_siteinds(g; base)
-  return IndsNetworkMap(s, args...; kwargs...)
+function IndsNetworkMap(g::NamedGraph, args...; base::Int=2, is_complex=false, kwargs...)
+  s = digit_siteinds(g; base, is_complex)
+  return IndsNetworkMap(s, args...; is_complex, kwargs...)
 end
 
 const continuous_siteinds = IndsNetworkMap
@@ -63,6 +76,9 @@ for f in [
   :grid_points,
   :index_value_to_scalar,
   :index_values_to_scalars,
+  :imaginary_inds,
+  :real_inds,
+  :is_real,
 ]
   @eval begin
     function $f(inm::IndsNetworkMap, args...; kwargs...)
@@ -90,12 +106,20 @@ function vertex_dimension(inm::IndsNetworkMap, v)
   return dimension(inm, only(inds(inm, v)))
 end
 
+function vertex_dimensions(inm::IndsNetworkMap, v)
+  return [dimension(inm, i) for i in inds(inm, v)]
+end
+
+function vertex_digits(inm::IndsNetworkMap, v)
+  return [digit(inm, i) for i in inds(inm, v)]
+end
+
 function vertex_digit(inm::IndsNetworkMap, v)
   return digit(inm, only(inds(inm, v)))
 end
 
 function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
-  return filter(v -> vertex_dimension(inm, v) == dimension, vertices(inm))
+  return filter(v -> all(d -> d == dimension, vertex_dimensions(inm, v)), vertices(inm))
 end
 
 function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)
