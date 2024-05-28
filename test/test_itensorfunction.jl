@@ -142,6 +142,7 @@ Random.seed!(1234)
       end
     end
   end
+end
 
 @testset "test complex multi-dimensional elementary function construction" begin
   #Constant function but represented in three dimension
@@ -149,9 +150,9 @@ Random.seed!(1234)
     g = named_grid((3, 3))
     s = continuous_siteinds(g; map_dimension=3, is_complex=true)
 
-      c = 1.5
+    c = 1.5
 
-      ψ_fxyz = const_itn(s; c)
+    ψ_fxyz = const_itn(s; c)
 
     z1, z2, z3 = 0.5 + 0.1 * im, 0.25 + 0.25 * im, 0.0 + 0.5 * im
 
@@ -172,14 +173,14 @@ Random.seed!(1234)
   s = continuous_siteinds(g; map_dimension=2, is_complex=true)
   z1, z2 = 0.625 + 0.125 * im, 0.25 + 0.0 * im
 
-    for (name, net_func, func) in funcs
-      @testset "test $name" begin
-        a = rand()
-        k = rand()
-        c = rand()
+  for (name, net_func, func) in funcs
+    @testset "test $name" begin
+      a = rand()
+      k = rand()
+      c = rand()
 
-        ψ_fx = net_func(s; k, a, c, dimension=1)
-        ψ_fy = net_func(s; k, a, c, dimension=2)
+      ψ_fx = net_func(s; k, a, c, dimension=1)
+      ψ_fy = net_func(s; k, a, c, dimension=2)
 
       ψ_fxy = ψ_fx + ψ_fy
       fxy_xy = calculate_fxyz(ψ_fxy, [z1, z2], [1, 2])
