@@ -333,7 +333,7 @@ using Dictionaries: Dictionary
     lastDigit = 1 - delta
     s = continuous_siteinds(g)
 
-    xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
+    xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
     ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
 
     Zo = map_to_zero_operator(s, [0, lastDigit])
@@ -361,7 +361,7 @@ using Dictionaries: Dictionary
     delta = 2.0^(-1.0 * L)
     lastDigit = 1 - delta
 
-    ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
+    ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
     ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dimension=1)
     ψ_fy = cos_itn(s; dimension=2)
     ψ_fxy = ψ_fx + ψ_fy
@@ -396,7 +396,7 @@ using Dictionaries: Dictionary
       lastDigit = 1 - delta
       s = continuous_siteinds(g)
 
-      xs = [0.0, delta, 0.25, 0.625, 0.875, 1.0 - delta]
+      xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
       ψ_fx = delta_kernel(
         s, [[0.5]]; coeff=-1, include_identity=true, promote_operator=false
       )
@@ -414,7 +414,7 @@ using Dictionaries: Dictionary
       lastDigit = 1 - delta
       s = continuous_siteinds(g; map_dimension=2)
 
-      xs = [0.0, delta, 0.25, 0.625, 0.875, 1.0 - delta]
+      xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
       @testset "insersecting lines" begin
         ψ_f = delta_kernel(
           s,
@@ -463,8 +463,8 @@ using Dictionaries: Dictionary
       lastDigit = 1 - delta
       s = continuous_siteinds(g; map_dimension=3)
 
-      xs = [0.0, delta, 1.0 - delta]
-      zs = [0, delta, 0.5, 1.0 - delta]
+      xs = [0.0, delta, lastDigit]
+      zs = [0, delta, 0.5, lastDigit]
       @testset "insersecting planes" begin
         ψ_f = delta_kernel(
           s,

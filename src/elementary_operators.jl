@@ -208,18 +208,14 @@ end
 function delta_kernel(
   s::IndsNetworkMap,
   points::Vector{<:Vector},
-  dimsl::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
   remove_overlap=true,
-  coeff=nothing,
+  coeff::Number=-1,
   include_identity=true,
   promote_operator=true,
   truncate_kwargs...,
 )
-  if isnothing(coeff)
-    coeff = -1 # assume we are making map_to_zero
-  end
-
-  ψ = coeff * delta_xyz(s, points, dimsl; truncate_kwargs...)
+  ψ = coeff * delta_xyz(s, points, points_dims; truncate_kwargs...)
 
   if include_identity
     ψ = const_itn(s) + ψ
@@ -230,9 +226,9 @@ function delta_kernel(
     # determine intersection of any points, 
     # and remove them with the opposite sign
     for i in 1:length(points)
-      p1, d1 = points[i], dimsl[i]
+      p1, d1 = points[i], points_dims[i]
       for j in (i + 1):length(points)
-        p2, d2 = points[j], dimsl[j]
+        p2, d2 = points[j], points_dims[j]
 
         # same dimensions, and no point overlap,
         # can safely ignore
@@ -307,27 +303,6 @@ end
 
 function map_to_zeros(f::ITensorNetworkFunction, x::Number, dim::Int=1; kwargs...)
   return map_to_zeros(f, [x], [dim]; kwargs...)
-end
-
-""" Create an operator which projects into a constant plane """
-function const_plane_op(s::IndsNetworkMap, xs::Vector, dims::Vector; truncate_kwargs...)
-  return delta_kernel(
-    s,
-    [[x] for x in xs],
-    [[dim] for dim in dims];
-    remove_overlap=true,
-    coeff=1,
-    include_identity=false,
-    promote_operator=true,
-  )
-end
-
-function const_plane_op(s::IndsNetworkMap, xs::Vector, dim::Int; truncate_kwargs...)
-  return const_plane_op(s, xs, [dim for _ in xs]; truncate_kwargs...)
-end
-
-function const_plane_op(s::IndsNetworkMap, x::Number, dim::Int; truncate_kwargs...)
-  return const_plane_op(s, [x], [dim]; truncate_kwargs...)
 end
 
 " Take |f> and create an operator |f><δ| "

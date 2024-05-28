@@ -210,10 +210,6 @@ function delta_xyz(
   return ITensorNetworkFunction(tn, s)
 end
 
-#function delta_xyz(s::IndsNetworkMap, xs::Vector; kwargs...)
-#  return delta_xyz(s, xs, [i for i in 1:length(xs)]; kwargs...)
-#end
-
 "Create a product state of a given bit configuration of a 1D function"
 function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
   @assert dimension(s) == 1
@@ -223,11 +219,14 @@ end
 function delta_xyz(
   s::IndsNetworkMap,
   points::Vector{<:Vector},
-  dimsl::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
   kwargs...,
 )
   @assert length(points) != 0
-  ψ = reduce(+, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, dimsl)])
+  @assert length(points) == length(points_dims)
+  ψ = reduce(
+    +, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
+  )
   return ψ
 end
 
