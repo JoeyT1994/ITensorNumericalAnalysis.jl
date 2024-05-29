@@ -4,6 +4,7 @@ using NamedGraphs.GraphsExtensions:
   random_bfs_tree, rem_edges, add_edges, leaf_vertices, undirected_graph
 using ITensors: dim, commoninds
 using ITensorNetworks: IndsNetwork, underlying_graph
+using Random: AbstractRNG
 
 default_c_value() = 1.0
 default_a_value() = 0.0
@@ -189,6 +190,16 @@ function polynomial_itensornetwork(
   end
 
   return ψ
+end
+
+function random_itensornetwork(rng::AbstractRNG, eltype::Type, s::IndsNetworkMap; kwargs...)
+  return ITensorNetworkFunction(
+    random_tensornetwork(rng, eltype, indsnetwork(s); kwargs...), s
+  )
+end
+
+function random_itensornetwork(rng::AbstractRNG, s::IndsNetworkMap; kwargs...)
+  return ITensorNetworkFunction(random_tensornetwork(rng, indsnetwork(s); kwargs...), s)
 end
 
 function random_itensornetwork(s::IndsNetworkMap; kwargs...)
