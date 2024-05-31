@@ -207,7 +207,7 @@ function random_itensornetwork(s::IndsNetworkMap; kwargs...)
 end
 
 "Create a product state of a given bit configuration. Will make planes if all dims not specificed"
-function delta_xyz(
+function delta_p(
   s::IndsNetworkMap,
   xs::Vector{<:Number},
   dims::Vector{Int}=[i for i in 1:length(xs)];
@@ -222,12 +222,12 @@ function delta_xyz(
 end
 
 "Create a product state of a given bit configuration of a 1D function"
-function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
+function delta_p(s::IndsNetworkMap, x::Number, kwargs...)
   @assert dimension(s) == 1
-  return delta_xyz(s, [x], [1]; kwargs...)
+  return delta_p(s, [x], [1]; kwargs...)
 end
 
-function delta_xyz(
+function delta_p(
   s::IndsNetworkMap,
   points::Vector{<:Vector},
   points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
@@ -236,7 +236,7 @@ function delta_xyz(
   @assert length(points) != 0
   @assert length(points) == length(points_dims)
   ψ = reduce(
-    +, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
+    +, [delta_p(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
   )
   return ψ
 end
@@ -251,7 +251,7 @@ function delta_kernel(
   include_identity=true,
   truncate_kwargs...,
 )
-  ψ = coeff * delta_xyz(s, points, points_dims; truncate_kwargs...)
+  ψ = coeff * delta_p(s, points, points_dims; truncate_kwargs...)
 
   if include_identity
     ψ = const_itn(s) + ψ
@@ -297,7 +297,7 @@ function delta_kernel(
       end
     end
     if length(overlap_points) != 0
-      ψ = ψ + -coeff * delta_xyz(s, overlap_points, overlap_dims; truncate_kwargs...)
+      ψ = ψ + -coeff * delta_p(s, overlap_points, overlap_dims; truncate_kwargs...)
     end
   end
 

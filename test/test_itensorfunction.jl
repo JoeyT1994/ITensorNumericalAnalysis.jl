@@ -206,7 +206,7 @@ Random.seed!(1234)
       @test c * tanh(k * x + a) + c * tanh(k * y + a) ≈ fxy_xy
     end
   end
-  @testset "test delta_xyz" begin
+  @testset "test delta_p" begin
     L = 10
     g = named_grid((L, 1))
     s = continuous_siteinds(g; map_dimension=2)
@@ -215,13 +215,13 @@ Random.seed!(1234)
     lastDigit = 1 - delta
     xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
     @testset "test single point" begin
-      ψ = delta_xyz(s, [x0, y0])
+      ψ = delta_p(s, [x0, y0])
       @test evaluate(ψ, [x0, y0], [1, 2]) ≈ 1
       # test another point
       @test evaluate(ψ, [y0, x0], [1, 2]) ≈ 0
     end
     @testset "test plane" begin
-      ψ = delta_xyz(s, [y0], [2])
+      ψ = delta_p(s, [y0], [2])
 
       # should be 1 in the plane
       for x in xs
@@ -234,7 +234,7 @@ Random.seed!(1234)
     end
     @testset "test sums of points" begin
       points = [[x0, y0], [y0, x0]]
-      ψ = delta_xyz(s, points)
+      ψ = delta_p(s, points)
       @test evaluate(ψ, [x0, y0], [1, 2]) ≈ 1
       @test evaluate(ψ, [y0, x0], [1, 2]) ≈ 1
       # test other points
@@ -246,7 +246,7 @@ Random.seed!(1234)
       p0 = 0.5
       points = [[x0, y0], [p0]]
       dims = [[1, 2], [2]]
-      ψ = delta_xyz(s, points, dims)
+      ψ = delta_p(s, points, dims)
       @test evaluate(ψ, [x0, y0], [1, 2]) ≈ 1
       for x in xs
         @test evaluate(ψ, [x, p0], [1, 2]) ≈ 1

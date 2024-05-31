@@ -337,7 +337,7 @@ using Dictionaries: Dictionary
 
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
-        p = (itensornetwork(delta_x(s, p1)))
+        p = (itensornetwork(delta_p(s, p1)))
         @test inner(p, Zo, p) ≈ 0.0
       end
     end
@@ -367,7 +367,7 @@ using Dictionaries: Dictionary
     @testset "corner boundary test" begin
       for p1 in [0, lastDigit]
         for p2 in [0, lastDigit]
-          p = itensornetwork(delta_xyz(s, [p1, p2]))
+          p = itensornetwork(delta_p(s, [p1, p2]))
           @test inner(p, Zo, p) ≈ 0.0
         end
       end
