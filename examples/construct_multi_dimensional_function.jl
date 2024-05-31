@@ -14,9 +14,9 @@ s = continuous_siteinds(g; map_dimension=3)
 println(
   "Constructing the 3D function f(x,y,z) = x³(y + y²) + cosh(πz) as a tensor network on a randomly chosen tree with $L vertices",
 )
-ψ_fx = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension=1)
-ψ_fy = poly_itn(s, [0.0, 1.0, 1.0, 0.0]; dimension=2)
-ψ_fz = cosh_itn(s; k=Number(pi), dimension=3)
+ψ_fx = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dim=1)
+ψ_fy = poly_itn(s, [0.0, 1.0, 1.0, 0.0]; dim=2)
+ψ_fz = cosh_itn(s; k=Number(pi), dim=3)
 ψxyz = ψ_fx * ψ_fy + ψ_fz
 
 ψxyz = truncate(ψxyz; cutoff=1e-12)

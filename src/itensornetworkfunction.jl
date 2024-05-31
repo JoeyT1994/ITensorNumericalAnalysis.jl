@@ -83,11 +83,11 @@ end
 function calculate_fxyz(
   fitn::ITensorNetworkFunction,
   xs::Vector,
-  dimensions::Vector{Int};
+  dims::Vector{Int};
   alg=default_contraction_alg(),
   kwargs...,
 )
-  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
+  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dims)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
   return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
 end

@@ -47,13 +47,13 @@ println("solve f(x) = eˣ + ∫₀¹ (xy) f(y) dy")
 s = continuous_siteinds(g; map_dimension=2)
 ψ = const_itn(s) # f(x) = 1_x⊗1_y
 # make g(x,y) = x*y
-g = poly_itn(s, [0, 1]; dimension=1) * poly_itn(s, [0, 1]; dimension=2)
+g = poly_itn(s, [0, 1]; dim=1) * poly_itn(s, [0, 1]; dim=2)
 
 sU = union_all_inds(s.indsnetwork, s.indsnetwork')
 ∫_odd = ITensorNetwork(v -> v ∈ dimension_vertices(s, 1) ? Op("I") : Op("HalfInt"), sU)
 ∫_even = ITensorNetwork(v -> v ∈ dimension_vertices(s, 1) ? Op("HalfInt") : Op("I"), sU)
-const_exp_odd = exp_itn(s; dimension=1)
-const_exp_even = exp_itn(s; dimension=2)
+const_exp_odd = exp_itn(s; dim=1)
+const_exp_even = exp_itn(s; dim=2)
 
 niter = 20
 for iter in 1:niter

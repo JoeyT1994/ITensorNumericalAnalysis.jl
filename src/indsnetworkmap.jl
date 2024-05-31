@@ -102,7 +102,7 @@ function dimension_vertices(inm::IndsNetworkMap, dims::Vector{Int})
   return filter(v -> vertex_dimension(inm, v) in dims, vertices(inm))
 end
 
-function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)
-  index = ind(inm, dimension, digit)
+function vertex(inm::IndsNetworkMap, dim::Int, digit::Int)
+  index = ind(inm, dim, digit)
   return only(filter(v -> index ∈ inm[v], vertices(inm)))
 end

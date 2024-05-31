@@ -68,14 +68,14 @@ using Dictionaries: Dictionary
 
     s = continuous_siteinds(g; map_dimension=3)
 
-    ψ_fx = poly_itn(s, [0.0, -1.0, 1.0]; dimension=1)
-    ψ_gy = sin_itn(s; k=Number(pi), dimension=2)
-    ψ_hz = sin_itn(s; k=Number(pi), dimension=3)
+    ψ_fx = poly_itn(s, [0.0, -1.0, 1.0]; dim=1)
+    ψ_gy = sin_itn(s; k=Number(pi), dim=2)
+    ψ_hz = sin_itn(s; k=Number(pi), dim=3)
     @assert dimension(ψ_fx) == dimension(ψ_gy) == dimension(ψ_hz) == 3
 
     ψ_fxgyhz = ψ_fx * ψ_gy * ψ_hz
 
-    ∂_∂y = first_derivative_operator(s; dimension=2, cutoff=1e-10)
+    ∂_∂y = first_derivative_operator(s; dim=2, cutoff=1e-10)
 
     ∂_∂y_ψ_fxgyhz = operate([∂_∂y], ψ_fxgyhz; cutoff=1e-10)
 
@@ -118,8 +118,8 @@ using Dictionaries: Dictionary
 
     s = continuous_siteinds(g; map_dimension=2)
 
-    ψ_fx = cos_itn(s; k=0.25 * Number(pi), dimension=1)
-    ψ_gy = sin_itn(s; k=0.5 * Number(pi), dimension=2)
+    ψ_fx = cos_itn(s; k=0.25 * Number(pi), dim=1)
+    ψ_gy = sin_itn(s; k=0.5 * Number(pi), dim=2)
     @assert dimension(ψ_fx) == dimension(ψ_gy) == 2
 
     ψ_fxgy = ψ_fx * ψ_gy
@@ -267,27 +267,27 @@ using Dictionaries: Dictionary
     delta = 2.0^(-1.0 * L)
     x = 0.5
     ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dimension=1)
-    ψ_fy = cos_itn(s; dimension=2)
+    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dim=1)
+    ψ_fy = cos_itn(s; dim=2)
     ψ_fxy = ψ_fx + ψ_fx
 
     forward_shift_dirichlet = forward_shift_op(
-      s; boundary="Dirichlet", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+      s; boundary="Dirichlet", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
     backward_shift_dirichlet = backward_shift_op(
-      s; boundary="Dirichlet", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+      s; boundary="Dirichlet", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
     forward_shift_pbc = forward_shift_op(
-      s; boundary="Periodic", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+      s; boundary="Periodic", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
     backward_shift_pbc = backward_shift_op(
-      s; boundary="Periodic", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+      s; boundary="Periodic", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
     forward_shift_neumann = forward_shift_op(
-      s; boundary="Neumann", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+      s; boundary="Neumann", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
     backward_shift_neumann = backward_shift_op(
-      s; boundary="Neumann", dimension=2, truncate_kwargs=(; cutoff=1e-10)
+      s; boundary="Neumann", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
 
     ψ_fxy_pshift_dirichlet = operate(forward_shift_dirichlet, ψ_fxy; cutoff=1e-12)
@@ -362,8 +362,8 @@ using Dictionaries: Dictionary
     lastDigit = 1 - delta
 
     ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dimension=1)
-    ψ_fy = cos_itn(s; dimension=2)
+    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dim=1)
+    ψ_fy = cos_itn(s; dim=2)
     ψ_fxy = ψ_fx + ψ_fy
 
     Zo = map_to_zero_operator(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])

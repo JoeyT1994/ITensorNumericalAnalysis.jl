@@ -178,8 +178,8 @@ Random.seed!(1234)
         k = rand()
         c = rand()
 
-        ψ_fx = net_func(s; k, a, c, dimension=1)
-        ψ_fy = net_func(s; k, a, c, dimension=2)
+        ψ_fx = net_func(s; k, a, c, dim=1)
+        ψ_fy = net_func(s; k, a, c, dim=2)
 
         ψ_fxy = ψ_fx + ψ_fy
         fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2])
@@ -198,8 +198,8 @@ Random.seed!(1234)
       s = continuous_siteinds(g; map_dimension=2)
 
       x, y = 0.625, 0.875
-      ψ_fx = tanh_itn(s; k, a, c, nterms, dimension=1)
-      ψ_fy = tanh_itn(s; k, a, c, nterms, dimension=2)
+      ψ_fx = tanh_itn(s; k, a, c, nterms, dim=1)
+      ψ_fy = tanh_itn(s; k, a, c, nterms, dim=2)
 
       ψ_fxy = ψ_fx + ψ_fy
       fxy_xy = calculate_fxyz(ψ_fxy, [x, y], [1, 2]; alg="exact")
