@@ -71,6 +71,9 @@ end
 function dimension_inds(imap::IndexMap, dim::Int)
   return collect(filter(i -> index_dimension(imap)[i] == dim, keys(index_dimension(imap))))
 end
+function dimension_indices(imap::IndexMap, dim::Int)
+  return filter(ind -> dimension(imap, ind) == dim, inds(imap))
+end
 function ind(imap::IndexMap, dim::Int, digit::Int)
   return only(
     filter(
