@@ -48,7 +48,7 @@ x_vals, y_vals = grid_points(s, n_grid, 1), grid_points(s, n_grid, 2)
 vals = zeros((length(x_vals), length(y_vals)))
 for (i, x) in enumerate(x_vals)
   for (j, y) in enumerate(y_vals)
-    vals[i, j] = real(calculate_fxyz(ϕ_fxy, [x, y]))
+    vals[i, j] = real(evaluate(ϕ_fxy, [x, y]))
   end
 end
 
@@ -60,7 +60,7 @@ x_vals = grid_points(s, n_grid, 1)
 y = 0.5
 vals = zeros(length(x_vals))
 for (i, x) in enumerate(x_vals)
-  vals[i] = real(calculate_fxyz(ϕ_fxy, [x, y]))
+  vals[i] = real(evaluate(ϕ_fxy, [x, y]))
 end
 
 println("Here is a cut of the function at y = $y")

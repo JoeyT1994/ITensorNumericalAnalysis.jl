@@ -22,28 +22,26 @@ default_boundary() = "Dirichlet"
 
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
 
-function boundary_term(
-  s::IndsNetworkMap, boundary::String, dimension, isfwd::Bool, n::Int=0
-)
+function boundary_term(s::IndsNetworkMap, boundary::String, dim, isfwd::Bool, n::Int=0)
   ttn_op = OpSum()
-  dim_vertices = dimension_vertices(s, dimension)
+  dim_vertices = dimension_vertices(s, dim)
   L = length(dim_vertices)
 
   if boundary == "Neumann"
     string_site = [
       if j <= (L - n)
-        (isfwd ? "Dup" : "Ddn", vertex(s, dimension, j))
+        (isfwd ? "Dup" : "Ddn", vertex(s, dim, j))
       else
-        ("I", vertex(s, dimension, j))
+        ("I", vertex(s, dim, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
   elseif boundary == "Periodic"
     string_site = [
       if j <= (L - n)
-        (isfwd ? "D-" : "D+", vertex(s, dimension, j))
+        (isfwd ? "D-" : "D+", vertex(s, dim, j))
       else
-        ("I", vertex(s, dimension, j))
+        ("I", vertex(s, dim, j))
       end for j in 1:L
     ]
     add!(ttn_op, 1.0, (string_site...)...)
@@ -52,47 +50,47 @@ function boundary_term(
 end
 
 function forward_shift_opsum(
-  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int=0
+  s::IndsNetworkMap; dim=default_dimension(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
   ttn_op = OpSum()
-  dim_vertices = dimension_vertices(s, dimension)
+  dim_vertices = dimension_vertices(s, dim)
   L = length(dim_vertices)
 
-  string_site = [("D+", vertex(s, dimension, L - n))]
-  add!(ttn_op, 1.0, "D+", vertex(s, dimension, L - n))
+  string_site = [("D+", vertex(s, dim, L - n))]
+  add!(ttn_op, 1.0, "D+", vertex(s, dim, L - n))
   for i in (L - n):-1:2
     pop!(string_site)
-    push!(string_site, ("D-", vertex(s, dimension, i)))
-    push!(string_site, ("D+", vertex(s, dimension, i - 1)))
+    push!(string_site, ("D-", vertex(s, dim, i)))
+    push!(string_site, ("D+", vertex(s, dim, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  ttn_op += boundary_term(s, boundary, dimension, true, n)
+  ttn_op += boundary_term(s, boundary, dim, true, n)
 
   return ttn_op
 end
 
 function backward_shift_opsum(
-  s::IndsNetworkMap; dimension=default_dimension(), boundary=default_boundary(), n::Int=0
+  s::IndsNetworkMap; dim=default_dimension(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
   ttn_op = OpSum()
-  dim_vertices = dimension_vertices(s, dimension)
+  dim_vertices = dimension_vertices(s, dim)
   L = length(dim_vertices)
 
-  string_site = [("D-", vertex(s, dimension, L - n))]
-  add!(ttn_op, 1.0, "D-", vertex(s, dimension, L - n))
+  string_site = [("D-", vertex(s, dim, L - n))]
+  add!(ttn_op, 1.0, "D-", vertex(s, dim, L - n))
   for i in (L - n):-1:2
     pop!(string_site)
-    push!(string_site, ("D+", vertex(s, dimension, i)))
-    push!(string_site, ("D-", vertex(s, dimension, i - 1)))
+    push!(string_site, ("D+", vertex(s, dim, i)))
+    push!(string_site, ("D-", vertex(s, dim, i - 1)))
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  ttn_op += boundary_term(s, boundary, dimension, false, n)
+  ttn_op += boundary_term(s, boundary, dim, false, n)
 
   return ttn_op
 end
@@ -118,7 +116,7 @@ function stencil(
   s::IndsNetworkMap,
   shifts::Vector,
   delta_power::Int;
-  dimension=default_dimension(),
+  dim=default_dimension(),
   left_boundary=default_boundary(),
   right_boundary=default_boundary(),
   scale=true,
@@ -132,23 +130,21 @@ function stencil(
   for i in [1, 2]
     n = i == 1 ? 1 : 0
     if !iszero(shifts[i])
-      stencil_opsum +=
-        shifts[i] * forward_shift_opsum(s; dimension, boundary=right_boundary, n)
+      stencil_opsum += shifts[i] * forward_shift_opsum(s; dim, boundary=right_boundary, n)
     end
   end
 
   for i in [4, 5]
     n = i == 5 ? 1 : 0
     if !iszero(shifts[i])
-      stencil_opsum +=
-        shifts[i] * backward_shift_opsum(s; dimension, boundary=left_boundary, n)
+      stencil_opsum += shifts[i] * backward_shift_opsum(s; dim, boundary=left_boundary, n)
     end
   end
 
   stencil_op = ttn(stencil_opsum, indsnetwork(s); kwargs...)
 
   if scale
-    for v in dimension_vertices(s, dimension)
+    for v in dimension_vertices(s, dim)
       stencil_op[v] = (b^delta_power) * stencil_op[v]
     end
   end
@@ -172,14 +168,12 @@ function fourth_derivative_operator(s::IndsNetworkMap; kwargs...)
   return stencil(s, [1.0, -4.0, 6.0, -4.0, 1.0], 4; kwargs...)
 end
 
-function laplacian_operator(
-  s::IndsNetworkMap; dimensions=[i for i in 1:dimension(s)], kwargs...
-)
-  remaining_dims = copy(dimensions)
-  ∇ = second_derivative_operator(s; dimension=first(remaining_dims), kwargs...)
+function laplacian_operator(s::IndsNetworkMap; dims=[i for i in 1:dimension(s)], kwargs...)
+  remaining_dims = copy(dims)
+  ∇ = second_derivative_operator(s; dim=first(remaining_dims), kwargs...)
   popfirst!(remaining_dims)
   for rd in remaining_dims
-    ∇ += second_derivative_operator(s; dimension=rd, kwargs...)
+    ∇ += second_derivative_operator(s; dim=rd, kwargs...)
   end
   return ∇
 end
