@@ -80,7 +80,9 @@ function ind(imap::IndexMap, dim::Int, digit::Int)
   )
 end
 
-function calculate_xyz(imap::IndexMap, ind_to_ind_value_map, dims::Vector{Int})
+function calculate_p(
+  imap::IndexMap, ind_to_ind_value_map, dims::Vector{Int}=[i for i in 1:dimension(imap)]
+)
   out = Number[]
   for d in dims
     indices = dimension_inds(imap, d)
@@ -92,14 +94,8 @@ function calculate_xyz(imap::IndexMap, ind_to_ind_value_map, dims::Vector{Int})
   return out
 end
 
-function calculate_xyz(imap::IndexMap, ind_to_ind_value_map)
-  return calculate_xyz(imap, ind_to_ind_value_map, [i for i in 1:dimension(imap)])
-end
-function calculate_x(imap::IndexMap, ind_to_ind_value_map, dim::Int)
-  return only(calculate_xyz(imap, ind_to_ind_value_map, [dim]))
-end
-function calculate_x(imap::IndexMap, ind_to_ind_value_map)
-  return calculate_x(imap, ind_to_ind_value_map, 1)
+function calculate_p(imap::IndexMap, ind_to_ind_value_map, dim::Int)
+  return calculate_p(imap, ind_to_ind_value_map, [dim])
 end
 
 function calculate_ind_values(imap::IndexMap, xs::Vector, dims::Vector{Int}; print_x=false)
@@ -125,7 +121,7 @@ function calculate_ind_values(imap::IndexMap, xs::Vector, dims::Vector{Int}; pri
     end
 
     if print_x
-      x_bitstring = calculate_x(imap, ind_to_ind_value_map, d)
+      x_bitstring = only(calculate_p(imap, ind_to_ind_value_map, d))
       println(
         "Dimension $dimension. Actual value of x is $x but bitstring rep. is $x_bitstring"
       )
