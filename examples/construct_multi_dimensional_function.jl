@@ -23,7 +23,7 @@ println(
 println("Maximum bond dimension of the network is $(maxlinkdim(ψxyz))")
 
 x, y, z = 0.125, 0.625, 0.5
-fxyz_xyz = calculate_fxyz(ψxyz, [x, y, z])
+fxyz_xyz = evaluate(ψxyz, [x, y, z])
 println(
   "Tensor network evaluates the function as $fxyz_xyz at the co-ordinate: (x,y,z) = ($x, $y, $z)",
 )

@@ -80,10 +80,10 @@ function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
   return fitn
 end
 
-function calculate_fxyz(
+function evaluate(
   fitn::ITensorNetworkFunction,
   xs::Vector,
-  dims::Vector{Int};
+  dims::Vector{<:Int}=[i for i in 1:length(xs)];
   alg=default_contraction_alg(),
   kwargs...,
 )
@@ -92,13 +92,9 @@ function calculate_fxyz(
   return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
 end
 
-function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector; kwargs...)
-  return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)]; kwargs...)
-end
-
-function calculate_fx(fitn::ITensorNetworkFunction, x::Number; kwargs...)
+function evaluate(fitn::ITensorNetworkFunction, x::Number; kwargs...)
   @assert dimension(fitn) == 1
-  return calculate_fxyz(fitn, [x], [1]; kwargs...)
+  return evaluate(fitn, [x], [1]; kwargs...)
 end
 
 function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)

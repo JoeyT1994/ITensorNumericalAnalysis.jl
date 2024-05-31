@@ -14,8 +14,8 @@ export ITensorNetworkFunction, itensornetwork, dimension_vertices
 export IndexMap,
   default_dimension_map,
   dimension_inds,
-  calculate_xyz,
   calculate_x,
+  calculate_xyz,
   calculate_ind_values,
   dimension,
   dimensions,
@@ -51,7 +51,7 @@ export const_itensornetwork,
   const_plane_op
 export const_itn,
   poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
-export calculate_fx, calculate_fxyz
+export evaluate
 export operate, operator_proj, multiply
 
 end

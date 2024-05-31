@@ -71,7 +71,7 @@ x_vals = grid_points(s, n_grid, 1)
 y = 0.5 # arbitrary
 cutvals = zeros(length(x_vals))
 for (i, x) in enumerate(x_vals)
-  cutvals[i] = real(calculate_fxyz(ψ, [x, y]; alg="bp")) # alg="exact" if you encounter NaNs
+  cutvals[i] = real(evaluate(ψ, [x, y]; alg="bp")) # alg="exact" if you encounter NaNs
 end
 
 correct = (3 / 2 * x_vals) .+ exp.(x_vals)
