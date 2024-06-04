@@ -17,7 +17,7 @@ seed!(42)
     g = named_comb_tree((2, L ÷ 2))
     s = continuous_siteinds(g; map_dimension=1)
 
-    ψ_fx = exp_itn(s; dimension=1)
+    ψ_fx = exp_itn(s; dim=1)
     O = operator_proj(ψ_fx)
     correct = 1 / 2 * (-1 + exp(1)^2)
     ans = ITensorNumericalAnalysis.integrate(O, ψ_fx)
@@ -29,7 +29,7 @@ seed!(42)
     L = 30
     g = named_comb_tree((3, L ÷ 3))
     s = continuous_siteinds(g; map_dimension=2)
-    ψ_fxy = exp_itn(s; dimension=1) * exp_itn(s; dimension=2)
+    ψ_fxy = exp_itn(s; dim=1) * exp_itn(s; dim=2)
 
     ans = ITensorNumericalAnalysis.integrate(ψ_fxy)
     correct = (exp(1) - 1)^2

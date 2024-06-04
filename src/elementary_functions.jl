@@ -4,6 +4,7 @@ using NamedGraphs.GraphsExtensions:
   random_bfs_tree, rem_edges, add_edges, leaf_vertices, undirected_graph
 using ITensors: dim, commoninds
 using ITensorNetworks: IndsNetwork, underlying_graph
+using Random: AbstractRNG
 
 default_c_value() = 1.0
 default_a_value() = 0.0
@@ -31,16 +32,16 @@ function exp_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
-  Lx = length(dimension_vertices(ψ, dimension))
-  for v in dimension_vertices(ψ, dimension)
+  Lx = length(dimension_vertices(ψ, dim))
+  for v in dimension_vertices(ψ, dim)
     sind = only(inds(s, v))
     ψ[v] = ITensor(exp(a / Lx) * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v]))
   end
 
-  ψ[first(dimension_vertices(ψ, dimension))] *= c
+  ψ[first(dimension_vertices(ψ, dim))] *= c
 
   return ψ
 end
@@ -52,10 +53,10 @@ function cosh_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dimension)
+  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dim)
 
   return ψ1 + ψ2
 end
@@ -67,10 +68,10 @@ function sinh_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dimension)
+  ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dim)
 
   return ψ1 + ψ2
 end
@@ -83,16 +84,16 @@ function tanh_itensornetwork(
   a=default_a_value(),
   c=default_c_value(),
   nterms::Int=default_nterms(),
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
 )
   ψ = const_itensornetwork(s)
   for n in 1:nterms
-    ψt = exp_itensornetwork(s; a=-2 * n * a, k=-2 * k * n, dimension)
-    ψt[first(dimension_vertices(ψ, dimension))] *= 2 * ((-1)^n)
+    ψt = exp_itensornetwork(s; a=-2 * n * a, k=-2 * k * n, dim)
+    ψt[first(dimension_vertices(ψ, dim))] *= 2 * ((-1)^n)
     ψ = ψ + ψt
   end
 
-  ψ[first(dimension_vertices(ψ, dimension))] *= c
+  ψ[first(dimension_vertices(ψ, dim))] *= c
 
   return ψ
 end
@@ -104,10 +105,10 @@ function cos_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=0.5 * c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * c, dimension)
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * c, dim)
 
   return ψ1 + ψ2
 end
@@ -119,10 +120,10 @@ function sin_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
 )
-  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=-0.5 * im * c, dimension)
-  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * im * c, dimension)
+  ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=-0.5 * im * c, dim)
+  ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * im * c, dim)
 
   return ψ1 + ψ2
 end
@@ -132,7 +133,7 @@ by indsnetwork"""
 function polynomial_itensornetwork(
   s::IndsNetworkMap,
   coeffs::Vector;
-  dimension::Int=default_dimension(),
+  dim::Int=default_dimension(),
   k=default_k_value(),
   c=default_c_value(),
 )
@@ -146,7 +147,7 @@ function polynomial_itensornetwork(
   s_tree = IndsNetworkMap(s_tree, indexmap(s))
 
   ψ = const_itensornetwork(s_tree; linkdim=n)
-  dim_vertices = dimension_vertices(ψ, dimension)
+  dim_vertices = dimension_vertices(ψ, dim)
   source_vertex = first(dim_vertices)
 
   for v in dim_vertices
@@ -191,12 +192,22 @@ function polynomial_itensornetwork(
   return ψ
 end
 
+function random_itensornetwork(rng::AbstractRNG, eltype::Type, s::IndsNetworkMap; kwargs...)
+  return ITensorNetworkFunction(
+    random_tensornetwork(rng, eltype, indsnetwork(s); kwargs...), s
+  )
+end
+
+function random_itensornetwork(rng::AbstractRNG, s::IndsNetworkMap; kwargs...)
+  return ITensorNetworkFunction(random_tensornetwork(rng, indsnetwork(s); kwargs...), s)
+end
+
 function random_itensornetwork(s::IndsNetworkMap; kwargs...)
   return ITensorNetworkFunction(random_tensornetwork(indsnetwork(s); kwargs...), s)
 end
 
 "Create a product state of a given bit configuration. Will make planes if all dims not specificed"
-function delta_xyz(
+function delta_p(
   s::IndsNetworkMap,
   xs::Vector{<:Number},
   dims::Vector{Int}=[i for i in 1:length(xs)];
@@ -211,12 +222,12 @@ function delta_xyz(
 end
 
 "Create a product state of a given bit configuration of a 1D function"
-function delta_x(s::IndsNetworkMap, x::Number, kwargs...)
+function delta_p(s::IndsNetworkMap, x::Number, kwargs...)
   @assert dimension(s) == 1
-  return delta_xyz(s, [x], [1]; kwargs...)
+  return delta_p(s, [x], [1]; kwargs...)
 end
 
-function delta_xyz(
+function delta_p(
   s::IndsNetworkMap,
   points::Vector{<:Vector},
   points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
@@ -225,7 +236,7 @@ function delta_xyz(
   @assert length(points) != 0
   @assert length(points) == length(points_dims)
   ψ = reduce(
-    +, [delta_xyz(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
+    +, [delta_p(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
   )
   return ψ
 end
@@ -240,7 +251,7 @@ function delta_kernel(
   include_identity=true,
   truncate_kwargs...,
 )
-  ψ = coeff * delta_xyz(s, points, points_dims; truncate_kwargs...)
+  ψ = coeff * delta_p(s, points, points_dims; truncate_kwargs...)
 
   if include_identity
     ψ = const_itn(s) + ψ
@@ -286,7 +297,7 @@ function delta_kernel(
       end
     end
     if length(overlap_points) != 0
-      ψ = ψ + -coeff * delta_xyz(s, overlap_points, overlap_dims; truncate_kwargs...)
+      ψ = ψ + -coeff * delta_p(s, overlap_points, overlap_dims; truncate_kwargs...)
     end
   end
 

@@ -50,8 +50,7 @@ for f in [
   :digit,
   :digits,
   :calculate_ind_values,
-  :calculate_x,
-  :calculate_xyz,
+  :calculate_p,
   :grid_points,
   :vertices_dimensions,
   :vertices_digits,
@@ -80,25 +79,21 @@ function project(fitn::ITensorNetworkFunction, ind_to_ind_value_map)
   return fitn
 end
 
-function calculate_fxyz(
+function evaluate(
   fitn::ITensorNetworkFunction,
   xs::Vector,
-  dimensions::Vector{Int};
+  dims::Vector{<:Int}=[i for i in 1:length(xs)];
   alg=default_contraction_alg(),
   kwargs...,
 )
-  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dimensions)
+  ind_to_ind_value_map = calculate_ind_values(fitn, xs, dims)
   fitn_xyz = project(fitn, ind_to_ind_value_map)
   return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
 end
 
-function calculate_fxyz(fitn::ITensorNetworkFunction, xs::Vector; kwargs...)
-  return calculate_fxyz(fitn, xs, [i for i in 1:length(xs)]; kwargs...)
-end
-
-function calculate_fx(fitn::ITensorNetworkFunction, x::Number; kwargs...)
+function evaluate(fitn::ITensorNetworkFunction, x::Number; kwargs...)
   @assert dimension(fitn) == 1
-  return calculate_fxyz(fitn, [x], [1]; kwargs...)
+  return evaluate(fitn, [x], [1]; kwargs...)
 end
 
 function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)
