@@ -5,6 +5,7 @@ using NamedGraphs: vertices
 using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
 using ITensors: siteinds, inds
 using Dictionaries: Dictionary
+using Random: Random
 
 @testset "indexmap tests" begin
   @testset "test single dimensional index map" begin
@@ -86,9 +87,12 @@ using Dictionaries: Dictionary
     right = (b - test3[end])
     @test internal >= left && internal >= right
 
-    #test the rand() function to see if it succeeds
-    rand_gridpoint1 = rand_p(s)
-    rand_gridpoint2 = rand_p(s, 1)
+    #test the rand_p() function to see if it succeeds
+    rng = Random.Xoshiro(42)
+    rand_gridpoint1 = rand_p(rng, s)
+    rand_gridpoint2 = rand_p(rng, s, 1)
+    default_rng_gridpoint1 = rand_p(s)
+    default_rng_gridpoint2 = rand_p(s,1)
 
     #fourth set -- very large L
     L = 140
