@@ -87,10 +87,12 @@ using Random: Random
     right = (b - test3[end])
     @test internal >= left && internal >= right
 
-    #test the rand() function to see if it succeeds
+    #test the rand_p() function to see if it succeeds
     rng = Random.Xoshiro(42)
     rand_gridpoint1 = rand_p(rng, s)
     rand_gridpoint2 = rand_p(rng, s, 1)
+    default_rng_gridpoint1 = rand_p(s)
+    default_rng_gridpoint2 = rand_p(s,1)
 
     #fourth set -- very large L
     L = 140
