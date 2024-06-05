@@ -4,6 +4,7 @@ using NamedGraphs: NamedGraphs
 using ITensors: ITensors
 using ITensorNetworks:
   ITensorNetworks, AbstractIndsNetwork, IndsNetwork, data_graph, underlying_graph
+using Random: AbstractRNG
 
 struct IndsNetworkMap{V,I,IN<:IndsNetwork{V,I},IM} <: AbstractIndsNetwork{V,I}
   indsnetwork::IN
@@ -67,6 +68,14 @@ for f in [
   @eval begin
     function $f(inm::IndsNetworkMap, args...; kwargs...)
       return $f(indexmap(inm), args...; kwargs...)
+    end
+  end
+end
+# Forward RNG functionality
+for f in [:rand_p]
+  @eval begin
+    function $f(rng::AbstractRNG, inm::IndsNetworkMap, args...; kwargs...)
+      return $f(rng, indexmap(inm), args...; kwargs...)
     end
   end
 end

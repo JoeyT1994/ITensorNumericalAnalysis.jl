@@ -2,7 +2,7 @@ using Base: Base
 using Dictionaries: Dictionary, set!
 using ITensors: ITensors, Index, dim
 using ITensorNetworks: IndsNetwork, vertex_data
-using Random: rand
+using Random: Random, rand, AbstractRNG
 
 struct IndexMap{VB,VD}
   index_digit::VB
@@ -244,14 +244,16 @@ end
 """ 
   Picks a random grid point from `imap` given a dimension
 """
-function rand_p(imap::IndexMap, d::Integer)
+function rand_p(rng::AbstractRNG, imap::IndexMap, d::Integer)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
   base = dims[d]
   L = length(dimension_inds(imap, d))
-  return rand(0:(base^L - 1)) / base^L
+  return rand(rng, 0:(base^L - 1)) / base^L
 end
 
-function rand_p(imap::IndexMap)
-  return [rand_p(imap, i) for i in 1:dimension(imap)]
+function rand_p(rng::AbstractRNG, imap::IndexMap)
+  return [rand_p(rng, imap, i) for i in 1:dimension(imap)]
 end
+
+rand_p(imap::IndexMap, args...) = rand_p(Random.default_rng(), imap, args...)
