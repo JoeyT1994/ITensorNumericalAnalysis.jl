@@ -92,7 +92,7 @@ using Random: Random
     rand_gridpoint1 = rand_p(rng, s)
     rand_gridpoint2 = rand_p(rng, s, 1)
     default_rng_gridpoint1 = rand_p(s)
-    default_rng_gridpoint2 = rand_p(s,1)
+    default_rng_gridpoint2 = rand_p(s, 1)
 
     #fourth set -- very large L
     L = 140
