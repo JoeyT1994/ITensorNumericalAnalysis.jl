@@ -2,8 +2,6 @@ using ApproxFun:
   Interval, Fourier, Chebyshev, Fun, ProductFun, coefficients, chop, ncoefficients
 using Interpolations: LinearInterpolation, Line
 
-default_dimension() = 1
-
 """ Helper function for fourier_itensornetwork and fourier_2D_itensornetwork """
 function fourier_term(s::IndsNetworkMap, j::Integer, d::Integer)
   if j == 1
@@ -20,7 +18,7 @@ end
 function fourier_itensornetwork(
   s::IndsNetworkMap,
   coeffs::Vector{Float64};
-  dim::Int=default_dimension(),
+  dim::Int=1,
   min_threshold=1e-15,
 )
   n = length(coeffs)
@@ -63,7 +61,7 @@ end
 """ Build the function f(x) = ∑_{k=1}^n coeffs[k] * T_k(x) 
     where T_k(x) is the k-th Chebyshev polynomial """
 function chebyshev_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector{Float64}; dim::Int=default_dimension()
+  s::IndsNetworkMap, coeffs::Vector{Float64}; dim::Int=1
 )
   n = length(coeffs)
   if n <= 0
