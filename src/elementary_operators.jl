@@ -15,9 +15,16 @@ using ITensors:
   prime,
   sim,
   noprime!,
-  contract
+  contract,
+  replaceinds
 using ITensorNetworks:
-  IndsNetwork, ITensorNetwork, TreeTensorNetwork, combine_linkinds, ttn, union_all_inds
+  IndsNetwork,
+  ITensorNetwork,
+  TreeTensorNetwork,
+  combine_linkinds,
+  ttn,
+  union_all_inds,
+  map_inds
 default_boundary() = "Dirichlet"
 
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
@@ -250,14 +257,17 @@ function operator_proj(fx::ITensorNetworkFunction)
   return operator
 end
 
+#gx and fx need to live in different virtual spaces (can't share linkinds)
 function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
-  @assert vertices(gx) == vertices(fx)
   fx, fxgx = copy(fx), copy(gx)
+  fx = map_inds(prime, fx; sites=[])
+  @assert vertices(gx) == vertices(fx)
   s = siteinds(fxgx)
   for v in vertices(fxgx)
     ssim = sim(s[v])
     temp_tensor = replaceinds(fx[v], s[v], ssim)
-    fxgx[v] = noprime!(fxgx[v] * delta(s[v], s[v]', ssim) * temp_tensor)
+    fxgx[v] = fxgx[v] * delta(s[v], s[v]', ssim) * temp_tensor
+    fxgx[v] = replaceinds(fxgx[v], s[v]', s[v])
   end
 
   return combine_linkinds(fxgx)
