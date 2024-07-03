@@ -144,6 +144,26 @@ using Dictionaries: Dictionary
     end
   end
 
+  @testset "test operator_proj in 1D" begin
+    g = named_comb_tree((4, 3))
+    L = nv(g)
+    s = continuous_siteinds(g)
+
+    ψ_gx = sin_itn(s; k=0.5 * Number(pi))
+    ψ_fx = cos_itn(s; k=0.25 * Number(pi))
+    O = operator_proj(ψ_fx)
+
+    ψ_fxgx = operate(O, ψ_gx; cutoff=1e-14)
+    ψ_sq = operate(O, ψ_fx; cutoff=1e-14)
+    xs = [0.025, 0.1, 0.25, 0.625, 0.875]
+    for x in xs
+      ψ_fxgx_x = real(evaluate(ψ_fxgx, x))
+      @test ψ_fxgx_x ≈ sin(0.5 * pi * x) * cos(0.25 * pi * x) atol = 1e-3
+      ψ_sq_x = real(evaluate(ψ_sq, x))
+      @test ψ_sq_x ≈ cos(0.25 * pi * x) * cos(0.25 * pi * x) atol = 1e-3
+    end
+  end
+
   @testset "test shift operators in 1D on Tree" begin
     g = named_comb_tree((2, 3))
     L = nv(g)
