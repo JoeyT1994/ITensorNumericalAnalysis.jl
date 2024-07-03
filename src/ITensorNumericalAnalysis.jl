@@ -1,7 +1,8 @@
 module ITensorNumericalAnalysis
 
 include("utils.jl")
-include("indexmap.jl")
+include("IndexMaps/abstractindexmap.jl")
+include("IndexMaps/realindexmap.jl")
 include("indsnetworkmap.jl")
 include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
@@ -11,7 +12,8 @@ include("integration.jl")
 
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
-export IndexMap,
+export AbstractIndexMap,
+  RealIndexMap,
   default_dimension_map,
   dimension_inds,
   calculate_p,
@@ -23,6 +25,7 @@ export IndsNetworkMap,
   continuous_siteinds,
   indsnetwork,
   indexmap,
+  indexmaptype,
   vertex_dimension,
   vertex_digit,
   vertices_dimensions,

@@ -35,11 +35,11 @@ function ITensorNetworkFunction(
   itn::AbstractITensorNetwork, dimension_vertices::Vector{Vector{V}}
 ) where {V}
   s = siteinds(itn)
-  return ITensorNetworkFunction(itn, IndsNetworkMap(s, dimension_vertices))
+  return ITensorNetworkFunction(itn, RealIndsNetworkMap(s, dimension_vertices))
 end
 
 function ITensorNetworkFunction(itn::AbstractITensorNetwork)
-  return ITensorNetworkFunction(itn, IndsNetworkMap(siteinds(itn)))
+  return ITensorNetworkFunction(itn, RealIndsNetworkMap(siteinds(itn)))
 end
 
 #Forward functionality from indsnetworkmap
