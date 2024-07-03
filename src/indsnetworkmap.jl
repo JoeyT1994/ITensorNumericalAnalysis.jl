@@ -5,7 +5,8 @@ using ITensors: ITensors
 using ITensorNetworks:
   ITensorNetworks, AbstractIndsNetwork, IndsNetwork, data_graph, underlying_graph
 
-struct IndsNetworkMap{V,I,IN<:IndsNetwork{V,I},IM} <: AbstractIndsNetwork{V,I}
+struct IndsNetworkMap{V,I,IN<:IndsNetwork{V,I},IM<:AbstractIndexMap} <:
+       AbstractIndsNetwork{V,I}
   indsnetwork::IN
   indexmap::IM
 end
@@ -15,6 +16,7 @@ indexmap(inm::IndsNetworkMap) = inm.indexmap
 
 indtype(inm::IndsNetworkMap) = indtype(typeof(indsnetwork(inm)))
 indtype(::Type{<:IndsNetworkMap{V,I,IN,IM}}) where {V,I,IN,IM} = I
+indexmaptype(inm::IndsNetworkMap) = typeof(indexmap(inm))
 ITensorNetworks.data_graph(inm::IndsNetworkMap) = data_graph(indsnetwork(inm))
 function ITensorNetworks.underlying_graph(inm::IndsNetworkMap)
   return underlying_graph(data_graph(indsnetwork(inm)))
@@ -28,26 +30,17 @@ function Base.copy(inm::IndsNetworkMap)
 end
 
 #Constructors 
-function IndsNetworkMap(
-  s::IndsNetwork, dimension_vertices::Vector{Vector{V}}; kwargs...
-) where {V}
-  return IndsNetworkMap(s, IndexMap(s, dimension_vertices; kwargs...))
+function RealIndsNetworkMap(s::IndsNetwork, args...; kwargs...)
+  return IndsNetworkMap(s, RealIndexMap(s, args...; kwargs...))
 end
 
-function IndsNetworkMap(s::IndsNetwork, dimension_indices::Vector{Vector{Index}})
-  return IndsNetworkMap(s, IndexMap(dimension_indices; kwargs...))
-end
-
-function IndsNetworkMap(s::IndsNetwork; kwargs...)
-  return IndsNetworkMap(s, IndexMap(s; kwargs...))
-end
-
-function IndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
+function RealIndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
   s = digit_siteinds(g; base)
-  return IndsNetworkMap(s, args...; kwargs...)
+  return RealIndsNetworkMap(s, args...; kwargs...)
 end
 
-const continuous_siteinds = IndsNetworkMap
+const continuous_siteinds = RealIndsNetworkMap
+const real_continuous_siteinds = RealIndsNetworkMap
 
 #Forward functionality from indexmap
 for f in [

@@ -1,7 +1,8 @@
 module ITensorNumericalAnalysis
 
 include("utils.jl")
-include("indexmap.jl")
+include("IndexMaps/abstractindexmap.jl")
+include("IndexMaps/realindexmap.jl")
 include("indsnetworkmap.jl")
 include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
