@@ -12,7 +12,8 @@ include("integration.jl")
 
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
-export IndexMap,
+export AbstractIndexMap,
+  RealIndexMap,
   default_dimension_map,
   dimension_inds,
   calculate_p,
@@ -24,6 +25,7 @@ export IndsNetworkMap,
   continuous_siteinds,
   indsnetwork,
   indexmap,
+  indexmaptype,
   vertex_dimension,
   vertex_digit,
   vertices_dimensions,

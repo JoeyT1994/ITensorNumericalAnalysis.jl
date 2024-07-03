@@ -37,11 +37,7 @@ function RealIndexMap(s::IndsNetwork; map_dimension::Int=1)
 end
 
 function RealIndexMap(s::IndsNetwork, dimension_vertices::Vector{Vector{V}}) where {V}
-  dimension_indices = Vector{Index}[]
-  for vertices in dimension_vertices
-    indices = inds(s, vertices)
-    push!(dimension_indices, indices)
-  end
+  dimension_indices = Vector{Index}[inds(s, vertices) for vertices in dimension_vertices]
   return RealIndexMap(dimension_indices)
 end
 

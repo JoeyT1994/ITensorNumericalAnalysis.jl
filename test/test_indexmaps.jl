@@ -15,6 +15,8 @@ using Dictionaries: Dictionary
     s = continuous_siteinds(g)
 
     @test dimension(s) == 1
+    @test isa(indexmap(s), RealIndexMap)
+    @test indexmaptype(s) <: AbstractIndexMap
 
     x = 0.625
     ind_to_ind_value_map = calculate_ind_values(s, x)

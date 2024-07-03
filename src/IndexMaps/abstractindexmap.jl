@@ -62,14 +62,11 @@ function calculate_p(imap::AbstractIndexMap, ind_to_ind_value_map, dim::Int)
   return calculate_p(imap, ind_to_ind_value_map, [dim])
 end
 
-function calculate_ind_values(imap::AbstractIndexMap, x::Number, dim::Int; kwargs...)
+function calculate_ind_values(imap::AbstractIndexMap, x::Number, dim::Int=1; kwargs...)
   return calculate_ind_values(imap, [x], [dim]; kwargs...)
 end
 function calculate_ind_values(imap::AbstractIndexMap, xs::Vector; kwargs...)
   return calculate_ind_values(imap, xs, [i for i in 1:length(xs)]; kwargs...)
-end
-function calculate_ind_values(imap::AbstractIndexMap, x::Number; kwargs...)
-  return calculate_ind_values(imap, [x], [1]; kwargs...)
 end
 
 function grid_points(imap::AbstractIndexMap, d::Int)
