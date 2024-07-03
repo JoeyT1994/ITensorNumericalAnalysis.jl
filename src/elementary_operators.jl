@@ -190,7 +190,7 @@ end
 
 function identity_operator(s::IndsNetworkMap; kwargs...)
   operator_inds = ITensorNetworks.union_all_inds(indsnetwork(s), prime(indsnetwork(s)))
-  return ITensorNetwork(Op("I"), operator_inds)
+  return ITensorNetwork(Op("I"), operator_inds; kwargs...)
 end
 
 " Create an operator bitstring corresponding to the number x"
