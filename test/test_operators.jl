@@ -104,10 +104,13 @@ using Dictionaries: Dictionary
     ψ_fx = cos_itn(s; k=0.25 * Number(pi))
 
     ψ_fxgx = ψ_gx * ψ_fx
+    ψ_sq = ψ_fx * ψ_fx
     xs = [0.025, 0.1, 0.25, 0.625, 0.875]
     for x in xs
       ψ_fxgx_x = real(evaluate(ψ_fxgx, x))
       @test ψ_fxgx_x ≈ sin(0.5 * pi * x) * cos(0.25 * pi * x) atol = 1e-3
+      ψ_sq_x = real(evaluate(ψ_sq, x))
+      @test ψ_sq_x ≈ cos(0.25 * pi * x) * cos(0.25 * pi * x) atol = 1e-3
     end
   end
 
@@ -123,6 +126,7 @@ using Dictionaries: Dictionary
     @assert dimension(ψ_fx) == dimension(ψ_gy) == 2
 
     ψ_fxgy = ψ_fx * ψ_gy
+    ψ_sq = ψ_gy * ψ_gy
 
     xs = [0.125, 0.25, 0.625, 0.875]
     ys = [0.125, 0.25, 0.625, 0.875]
@@ -134,6 +138,8 @@ using Dictionaries: Dictionary
         @test ψ_gy_y ≈ sin(0.5 * pi * y)
         ψ_fxgy_xy = real(evaluate(ψ_fxgy, [x, y]))
         @test ψ_fxgy_xy ≈ cos(0.25 * pi * x) * sin(0.5 * pi * y) atol = 1e-3
+        ψ_sq_xy = real(evaluate(ψ_sq, [x, y]))
+        @test ψ_sq_xy ≈ (sin(0.5 * pi * y))^2 atol = 1e-3
       end
     end
   end

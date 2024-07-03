@@ -75,9 +75,6 @@ Random.seed!(1234)
         ψ_fx = net_func(s; k, a, c)
         fx_x = evaluate(ψ_fx, x)
         @test c * func(k * x + a) ≈ fx_x
-
-        fx_x_sq = evaluate(ψ_fx * ψ_fx, x)
-        @test c * c * func(k * x + a) * func(k * x + a) ≈ fx_x_sq
       end
     end
 
