@@ -57,7 +57,7 @@ function boundary_term(s::IndsNetworkMap, boundary::String, dim, isfwd::Bool, n:
 end
 
 function forward_shift_opsum(
-  s::IndsNetworkMap; dim=default_dimension(), boundary=default_boundary(), n::Int=0
+  s::IndsNetworkMap; dim=default_dim(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
@@ -80,7 +80,7 @@ function forward_shift_opsum(
 end
 
 function backward_shift_opsum(
-  s::IndsNetworkMap; dim=default_dimension(), boundary=default_boundary(), n::Int=0
+  s::IndsNetworkMap; dim=default_dim(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
@@ -123,7 +123,7 @@ function stencil(
   s::IndsNetworkMap,
   shifts::Vector,
   delta_power::Int;
-  dim=default_dimension(),
+  dim=default_dim(),
   left_boundary=default_boundary(),
   right_boundary=default_boundary(),
   scale=true,
@@ -257,17 +257,21 @@ function operator_proj(fx::ITensorNetworkFunction)
   return operator
 end
 
-#gx and fx need to live in different virtual spaces (can't share linkinds)
 function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
-  fx, fxgx = copy(fx), copy(gx)
-  fx = map_inds(prime, fx; sites=[])
+  gx, fx = sim(copy(gx); sites=[]), copy(fx)
   @assert vertices(gx) == vertices(fx)
+  fxgx = copy(fx)
   s = siteinds(fxgx)
   for v in vertices(fxgx)
-    ssim = sim(s[v])
-    temp_tensor = replaceinds(fx[v], s[v], ssim)
-    fxgx[v] = fxgx[v] * delta(s[v], s[v]', ssim) * temp_tensor
-    fxgx[v] = replaceinds(fxgx[v], s[v]', s[v])
+    @assert siteinds(fx, v) == siteinds(gx, v)
+    sinds = siteinds(fxgx, v)
+    sindssim = sim.(sinds)
+    for (i, s) in enumerate(sinds)
+      ssim = sindssim[i]
+      fxgx[v] = fxgx[v] * delta(s, s', ssim)
+    end
+    temp_tensor = replaceinds(gx[v], sinds, sindssim)
+    fxgx[v] = noprime!(fxgx[v] * temp_tensor)
   end
 
   return combine_linkinds(fxgx)
