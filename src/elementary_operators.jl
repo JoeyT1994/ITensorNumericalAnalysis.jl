@@ -266,10 +266,7 @@ function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
     @assert siteinds(fx, v) == siteinds(gx, v)
     sinds = siteinds(fxgx, v)
     sindssim = sim.(sinds)
-    for (i, s) in enumerate(sinds)
-      ssim = sindssim[i]
-      fxgx[v] = fxgx[v] * delta(s, s', ssim)
-    end
+    fxgx[v] *= prod([delta(s, s', ssim) for (s, ssim) in zip(sinds, sindssim)])
     temp_tensor = replaceinds(gx[v], sinds, sindssim)
     fxgx[v] = noprime!(fxgx[v] * temp_tensor)
   end

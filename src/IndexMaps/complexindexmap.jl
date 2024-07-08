@@ -38,18 +38,23 @@ function ITensors.inds(imap::ComplexIndexMap)
   @assert keys(index_dimension(imap)) == keys(index_digit(imap)) == keys(index_real(imap))
   return collect(keys(index_dimension(imap)))
 end
-function ind(imap::ComplexIndexMap, dim::Int, digit::Int, ind_type::String="Real")
+function ind(imap::ComplexIndexMap, dim::Int, digit::Int, real_ind::Bool=true)
   return only(
     filter(
       i ->
         index_dimension(imap)[i] == dim &&
           index_digit(imap)[i] == digit &&
-          ((ind_type == "Real") == is_real(imap, i)),
+          (real_ind == is_real(imap, i)),
       inds(imap),
     ),
   )
 end
 
+"""
+Indices that reflect real valued digits should have the "Real" tag in IndsNetwork,
+whilst imaginary valued digits should have the "Imag" tag. The complex_continuous_siteinds(...)
+constructor will do this by default
+"""
 function ComplexIndexMap(
   s::IndsNetwork,
   real_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s),

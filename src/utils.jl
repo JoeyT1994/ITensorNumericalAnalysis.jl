@@ -76,9 +76,7 @@ end
 function c_tensor(phys_inds::Vector, virt_inds::Vector)
   @assert allequal(dim.(virt_inds))
   T = delta(Int64, virt_inds)
-  for ind in phys_inds
-    T = T * ITensor(1, ind)
-  end
+  T = T * ITensor(1, phys_inds...)
   return T
 end
 
@@ -99,59 +97,4 @@ function base(s::IndsNetwork)
   dims = dim.(indices)
   @assert all(d -> d == first(dims), dims)
   return first(dims)
-end
-
-function digit_siteinds(
-  g::AbstractGraph,
-  dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g);
-  base=2,
-) where {V}
-  is = IndsNetwork(g)
-  for (dim, verts) in enumerate(dimension_vertices)
-    for (digit, v) in enumerate(verts)
-      if haskey(vertex_data(is), v)
-        is[v] = vcat(is[v], Index(base, "Digit, V$(vertex_tag(v)), Dim$(dim), Dig$(digit)"))
-      else
-        is[v] = Index[Index(base, "Digit, V$(vertex_tag(v)), Dim$(dim), Dig$(digit)")]
-      end
-    end
-  end
-
-  return is
-end
-
-function complex_digit_siteinds(
-  g::AbstractGraph,
-  real_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g),
-  imag_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g);
-  base=2,
-) where {V}
-  is = IndsNetwork(g)
-  for (dim, verts) in enumerate(real_dimension_vertices)
-    for (digit, v) in enumerate(verts)
-      if haskey(vertex_data(is), v)
-        is[v] = vcat(
-          is[v], Index(base, "Digit, Real, V$(vertex_tag(v)), Dim$(dim), Dig$(digit)")
-        )
-      else
-        is[v] = Index[Index(base, "Digit, Real, V$(vertex_tag(v)), Dim$(dim), Dig$(digit)")]
-      end
-    end
-  end
-
-  for (dim, verts) in enumerate(imag_dimension_vertices)
-    for (digit, v) in enumerate(verts)
-      if haskey(vertex_data(is), v)
-        is[v] = vcat(
-          is[v], Index(base, "Digit, Imag, V$(vertex_tag(v)), Dim$(dim), Digit$(digit)")
-        )
-      else
-        is[v] = Index[Index(
-          base, "Digit, Imag, V$(vertex_tag(v)), Dim$(dim), Digit$(digit)"
-        )]
-      end
-    end
-  end
-
-  return is
 end

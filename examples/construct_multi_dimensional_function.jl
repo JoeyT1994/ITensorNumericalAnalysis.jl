@@ -14,6 +14,10 @@ s = complex_continuous_siteinds(g; map_dimension=3)
 println(
   "Constructing the 3D complex function f(z1,z2,z3) = z1³(z2 + z2²) + cosh(πz3)^2 as a tensor network on a randomly chosen tree with $L vertices",
 )
+L = 12
+Random.seed!(1234)
+g = named_comb_tree((3, 4))
+s = complex_continuous_siteinds(g; map_dimension=3)
 ψ_fz1 = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dim=1)
 ψ_fz2 = poly_itn(s, [0.0, 1.0, 1.0]; dim=2)
 ψ_fz3 = cosh_itn(s; k=Number(pi), dim=3)

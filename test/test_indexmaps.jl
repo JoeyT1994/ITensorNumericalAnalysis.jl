@@ -5,6 +5,9 @@ using NamedGraphs: vertices
 using NamedGraphs.NamedGraphGenerators: named_grid
 using ITensors: siteinds, inds
 using Dictionaries: Dictionary
+using Random
+
+Random.seed!(1234)
 
 @testset "indexmap tests" begin
   @testset "test real single dimensional index map" begin

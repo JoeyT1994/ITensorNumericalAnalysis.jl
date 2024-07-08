@@ -3,7 +3,7 @@ using NamedGraphs: NamedEdge, AbstractGraph, a_star
 using NamedGraphs.GraphsExtensions:
   random_bfs_tree, rem_edges, add_edges, leaf_vertices, undirected_graph
 using ITensors: dim, commoninds
-using ITensorNetworks: IndsNetwork, underlying_graph
+using ITensorNetworks: IndsNetwork, insert_linkinds, underlying_graph
 using Random: AbstractRNG
 
 default_c_value() = 1.0
@@ -44,7 +44,7 @@ function exp_itensornetwork(
     ψ[v] = prod([
       ITensor(exp.(k * index_values_to_scalars(s, sind)), sind) for sind in sinds_dim
     ])
-    ψ[v] = ψ[v] * exp(a / Lx) * delta(linds) * ITensor(1.0, sinds_not_dim)
+    ψ[v] = ψ[v] * exp(a / Lx) * delta(linds) * ITensor(1, sinds_not_dim)
   end
 
   ψ[first(dimension_vertices(ψ, dim))] *= c
@@ -225,10 +225,15 @@ function delta_p(
   kwargs...,
 )
   ivmap = calculate_ind_values(s, xs, dims)
-  tn = ITensorNetwork(
-    v -> only(s[v]) in keys(ivmap) ? string(ivmap[only(s[v])]) : ones(dim(only(s[v]))),
-    indsnetwork(s),
-  )
+  vs = collect(vertices(s))
+  ts = ITensor[
+    prod([
+      sind ∈ keys(ivmap) ? onehot(sind => ivmap[sind] + 1) : ITensor(1, sind) for
+      sind in s[v]
+    ]) for v in vs
+  ]
+  tn = ITensorNetwork(vs, ts)
+  tn = insert_linkinds(add_edges(tn, edges(s)))
   return ITensorNetworkFunction(tn, s)
 end
 

@@ -224,4 +224,55 @@ Random.seed!(1234)
       @test c * tanh(k * z1 + a) + c * tanh(k * z2 + a) ≈ fz_z
     end
   end
+
+  @testset "test delta_p" begin
+    L = 10
+    g = named_grid((L, 1))
+    s = complex_continuous_siteinds(g; map_dimension=2)
+    z10, z20 = 0.625 + 0.25 * im, 0.25 * im
+    delta = 2.0^(-1.0 * L)
+    lastDigit = 1 - delta
+    zs = [0.0, delta, 0.25 + 0.5 * im, 0.5, 0.625 * im, 0.875, lastDigit + lastDigit * im]
+    @testset "test single point" begin
+      ψ = delta_p(s, [z10, z20])
+      @test evaluate(ψ, [z10, z20], [1, 2]) ≈ 1
+      # test another point
+      @test evaluate(ψ, [z20, z10], [1, 2]) ≈ 0
+    end
+    @testset "test plane" begin
+      ψ = delta_p(s, [z20], [2])
+
+      # should be 1 in the plane
+      for z in zs
+        @test evaluate(ψ, [z, z20], [1, 2]) ≈ 1
+      end
+      # test random points
+      for z in zs
+        @test evaluate(ψ, [z, 0.5], [1, 2]) ≈ 0
+      end
+    end
+    @testset "test sums of points" begin
+      points = [[z10, z20], [z20, z10]]
+      ψ = delta_p(s, points)
+      @test evaluate(ψ, [z10, z20], [1, 2]) ≈ 1
+      @test evaluate(ψ, [z20, z10], [1, 2]) ≈ 1
+      # test other points
+      @test evaluate(ψ, [0, 0], [1, 2]) ≈ 0
+      @test evaluate(ψ, [0, z20], [1, 2]) ≈ 0
+    end
+
+    @testset "test sums of points and plane" begin
+      p0 = 0.5 + 0.5 * im
+      points = [[z10, z20], [p0]]
+      dims = [[1, 2], [2]]
+      ψ = delta_p(s, points, dims)
+      @test evaluate(ψ, [z10, z20], [1, 2]) ≈ 1
+      for z in zs
+        @test evaluate(ψ, [z, p0], [1, 2]) ≈ 1
+      end
+      ## test other points
+      @test evaluate(ψ, [0, 0], [1, 2]) ≈ 0
+      @test evaluate(ψ, [0, z20], [1, 2]) ≈ 0
+    end
+  end
 end
