@@ -161,30 +161,33 @@ function polynomial_itensornetwork(
 
   for v in dim_vertices
     sinds = inds(s_tree, v)
+    sinds_dim = filter(i -> dimension(s, i) == dim, sinds)
+    sinds_not_dim = filter(i -> dimension(s, i) != dim, sinds)
     if v != source_vertex
       e = get_edge_toward_vertex(g_tree, v, source_vertex)
       betaindex = only(commoninds(ψ, e))
-      alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
+      alphas = setdiff(inds(ψ[v]), [sinds_dim; sinds_not_dim; betaindex])
       ψ[v] = Q_N_tensor(
         eltype,
         length(neighbors(g_tree, v)),
-        sinds,
+        sinds_dim,
         alphas,
         betaindex,
-        index_values_to_scalars.((s_tree,), sinds),
+        index_values_to_scalars.((s_tree,), sinds_dim),
       )
+      ψ[v] *= ITensor(1, sinds_not_dim)
     elseif v == source_vertex
       betaindex = Index(n, "DummyInd")
       alphas = setdiff(inds(ψ[v]), sinds)
       ψv = Q_N_tensor(
         eltype,
         length(neighbors(g_tree, v)) + 1,
-        sinds,
+        sinds_dim,
         alphas,
         betaindex,
-        index_values_to_scalars.((s_tree,), sinds),
+        index_values_to_scalars.((s_tree,), sinds_dim),
       )
-      ψ[v] = ψv * ITensor(coeffs, betaindex)
+      ψ[v] = ψv * ITensor(coeffs, betaindex) * ITensor(1, sinds_not_dim)
     end
   end
 

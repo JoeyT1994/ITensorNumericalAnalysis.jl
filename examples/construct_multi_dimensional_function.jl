@@ -3,7 +3,7 @@ using ITensorNumericalAnalysis
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph
 using NamedGraphs.NamedGraphGenerators: named_comb_tree
-using ITensors: siteinds, maxlinkdim
+using ITensors: siteinds, maxlinkdim, inds
 using Random: Random
 
 L = 12
@@ -17,7 +17,9 @@ println(
 L = 12
 Random.seed!(1234)
 g = named_comb_tree((3, 4))
-s = complex_continuous_siteinds(g; map_dimension=3)
+real_dim_vertices = [[(j, i) for i in 1:4] for j in 1:3]
+imag_dim_vertices = [[(j, i) for i in 4:-1:1] for j in 3:-1:1]
+s = complex_continuous_siteinds(g, real_dim_vertices, imag_dim_vertices)
 ψ_fz1 = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dim=1)
 ψ_fz2 = poly_itn(s, [0.0, 1.0, 1.0]; dim=2)
 ψ_fz3 = cosh_itn(s; k=Number(pi), dim=3)
