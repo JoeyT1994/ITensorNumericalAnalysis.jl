@@ -98,3 +98,7 @@ function vertex(inm::IndsNetworkMap, dim::Int, digit::Int)
   index = ind(inm, dim, digit)
   return only(filter(v -> index ∈ inm[v], vertices(inm)))
 end
+
+function calculate_p(s::IndsNetworkMap, input::Vector{Pair{V, Int}}) where {V}
+  return calculate_p(indexmap(s), [only(s[v]) => value for (v, value) in input])
+end

@@ -42,9 +42,20 @@ function dimension_inds(imap::AbstractIndexMap, dim::Int)
   return collect(filter(i -> index_dimension(imap)[i] == dim, keys(index_dimension(imap))))
 end
 
+function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair{<:Index, <:Int}})
+  ndim = dimension(imap)
+  out = zeros(ndim)
+  for (ind, value) in input
+    d = dimension(imap, ind)
+    out[d] += index_value_to_scalar(imap, ind, value - 1)
+  end
+  length(out) == 1 && return first(out)
+  return out
+end
+
 function calculate_p(
   imap::AbstractIndexMap,
-  ind_to_ind_value_map,
+  ind_to_ind_value_map::Dictionary,
   dims::Vector{Int}=[i for i in 1:dimension(imap)],
 )
   out = Number[]
@@ -55,6 +66,7 @@ function calculate_p(
       sum([index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in indices]),
     )
   end
+  length(out) == 1 && return first(out)
   return out
 end
 
