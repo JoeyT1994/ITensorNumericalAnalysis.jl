@@ -41,7 +41,7 @@ function interpolate_updater(
   ttnf = projected_operator![]
   ttn = state![]
   region = first(sweep_plan[which_region_update])
-  site_inds = [only(siteinds(ttn, v)) for v in region]
+  site_inds = reduce(vcat, [siteinds(ttn, v) for v in region])
   site_ranges = [1:dim(s) for s in site_inds]
   link_inds = setdiff(inds(init), site_inds)
   link_ranges = [1:dim(l) for l in link_inds]
@@ -51,9 +51,8 @@ function interpolate_updater(
   for link_vals in Iterators.product(link_ranges...)
     link_pivs = vcat([space(l)[lval] for (l, lval) in zip(link_inds, link_vals)]...)
     for site_vals in Iterators.product(site_ranges...)
-      site_pivs = [v => s for (v, s) in zip(region, site_vals)]
+      site_pivs = [ind => s for (ind, s) in zip(site_inds, site_vals)]
       arg = vcat(site_pivs, link_pivs)
-      @assert length(arg) == nv(ttn)
       val = ttnf(arg)
       prev_val = A[site_vals..., link_vals...]
       A[site_vals..., link_vals...] = val
@@ -77,10 +76,11 @@ function interpolate_inserter(
   center_vert = only(setdiff(support(region), [ortho_vert]))
   e = edgetype(state)(ortho_vert, center_vert)
   col_inds = uniqueinds(state[ortho_vert], state[center_vert])
+  site_inds = vcat(siteinds(state, ortho_vert), siteinds(state, center_vert))
   #TODO: try to include tags(state,e), but resulting in extra quotation marks?
   ltags = "Link"
   C, Z, _ = interpolative(
-    Pi, col_inds; col_vertex=ortho_vert, tags=ltags, maxdim, mindim, cutoff
+    Pi, col_inds, site_inds; col_vertex=ortho_vert, tags=ltags, maxdim, mindim, cutoff
   )
   state[ortho_vert] = Z
   state[center_vert] = C
@@ -112,7 +112,7 @@ function interpolate_region_printer(;
   return flush(stdout)
 end
 
-random_initial_pivot(s::IndsNetworkMap) = [v => rand(1:dim(only(s[v]))) for v in vertices(s)]
+random_initial_pivot(s::IndsNetworkMap) = [ind => rand(1:dim(ind)) for ind in inds(s)]
 
 function random_initial_pivot(tn::AbstractITensorNetwork)
   s = siteinds(tn)
@@ -148,8 +148,6 @@ function interpolate(
   transform_operator = default_transform_operator(),
   kws...,
 )
-  #TODO: generalize code to ensure a leaf vertex is picked as root
-  #      for initialization purposes
   root_vertex = first(leaf_vertices(init_tn))
   init_tn = interpolative_gauge(init_tn, root_vertex)
 

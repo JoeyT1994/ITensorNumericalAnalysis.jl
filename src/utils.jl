@@ -17,6 +17,12 @@ using ITensorNetworks: IndsNetwork, random_tensornetwork, vertex_tag
 
 # reuse Qudit definitions for now
 
+function default_dimension_vertices(g::AbstractGraph; map_dimension::Int64=1)
+  vs = collect(vertices(g))
+  L = length(vs)
+  return [[v for v in vs[i:map_dimension:L]] for i in 1:map_dimension]
+end
+
 function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
   return parse(Int, String(N)) + 1
 end
@@ -68,17 +74,10 @@ function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
 end
 
 """Build the tensor C such that C_{phys_ind, virt_inds...} = delta_{virt_inds...}"""
-function c_tensor(phys_ind::Index, virt_inds::Vector)
-  inds = vcat(phys_ind, virt_inds)
+function c_tensor(phys_inds::Vector, virt_inds::Vector)
   @assert allequal(dim.(virt_inds))
-  T = ITensor(0.0, inds...)
-  for i in 1:dim(phys_ind)
-    for j in 1:dim(first(virt_inds))
-      ind_array = [v => j for v in virt_inds]
-      T[phys_ind => i, ind_array...] = 1.0
-    end
-  end
-
+  T = delta(Int64, virt_inds)
+  T = T * ITensor(1, phys_inds...)
   return T
 end
 
@@ -99,12 +98,4 @@ function base(s::IndsNetwork)
   dims = dim.(indices)
   @assert all(d -> d == first(dims), dims)
   return first(dims)
-end
-
-function digit_siteinds(g::AbstractGraph; base=2)
-  is = IndsNetwork(g)
-  for v in vertices(g)
-    is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
-  end
-  return is
 end

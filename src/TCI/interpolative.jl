@@ -52,7 +52,7 @@ Optional keyword arguments:
 * tags="Link" - tags to use for the Index connecting `C` to `Z`
 """
 function interpolative(
-  T::ITensor, col_inds; col_vertex, cutoff=0.0, maxdim=typemax(Int), mindim=0, tags="Link"
+  T::ITensor, col_inds, site_inds; col_vertex, cutoff=0.0, maxdim=typemax(Int), mindim=0, tags="Link"
 )
   for i in col_inds
     (haspivots(i) || hastags(i, "Digit") ||
@@ -83,12 +83,10 @@ function interpolative(
   ncols = length(col_inds)
 
   # Make connecting index with pivot info
-  pivot_eltype = Pair{typeof(col_vertex),Int}
-  pivs = Vector{Vector{pivot_eltype}}(undef, rank)
   function get_pivs(r, c)
     i = col_inds[c]
     ip = col_pivs[r][c]
-    is_site[c] && (return [col_vertex => ip])
+    is_site[c] && (return [i => ip])
     return space(i)[ip]
   end
   pivs = [vcat([get_pivs(r, c) for c in 1:ncols]...) for r in 1:rank]

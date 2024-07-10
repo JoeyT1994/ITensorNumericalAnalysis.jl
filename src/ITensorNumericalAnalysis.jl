@@ -1,6 +1,7 @@
 module ITensorNumericalAnalysis
 
 include("utils.jl")
+include("digit_inds.jl")
 include("IndexMaps/abstractindexmap.jl")
 include("IndexMaps/realindexmap.jl")
 include("indsnetworkmap.jl")
