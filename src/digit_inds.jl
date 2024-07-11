@@ -1,6 +1,18 @@
 using Graphs: AbstractGraph
-using ITensors: Index
-using ITensorNetworks: IndsNetwork, vertex_data, vertex_tag
+using ITensors:
+  ITensors,
+  Index,
+  dim,
+  inds,
+  @OpName_str,
+  @SiteType_str,
+  val,
+  state,
+  ValName,
+  StateName,
+  SiteType,
+  op
+using ITensorNetworks: IndsNetwork, vertex_tag
 
 function default_dimension_vertices(g::AbstractGraph; map_dimension::Int64=1)
   vs = collect(vertices(g))

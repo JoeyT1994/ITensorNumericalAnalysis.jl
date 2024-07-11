@@ -1,19 +1,6 @@
 using Graphs: AbstractGraph
-using ITensors:
-  ITensors,
-  Index,
-  dim,
-  inds,
-  siteinds,
-  @OpName_str,
-  @SiteType_str,
-  val,
-  state,
-  ValName,
-  StateName,
-  SiteType,
-  op
-using ITensorNetworks: IndsNetwork, random_tensornetwork, vertex_tag
+using ITensors: ITensors, Index, dim, inds
+using ITensorNetworks: IndsNetwork, random_tensornetwork
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
