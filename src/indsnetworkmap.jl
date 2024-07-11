@@ -77,6 +77,7 @@ for f in [
   :grid_points,
   :index_value_to_scalar,
   :index_values_to_scalars,
+  :scalartype,
 ]
   @eval begin
     function $f(inm::IndsNetworkMap, args...; kwargs...)

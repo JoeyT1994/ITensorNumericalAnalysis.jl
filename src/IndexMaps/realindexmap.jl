@@ -16,6 +16,7 @@ end
 function Base.copy(imap::RealIndexMap)
   return IndexMap(copy(index_digit(imap)), copy(index_dimension(imap)))
 end
+scalartype(imap::RealIndexMap) = Float64
 function ITensors.inds(imap::RealIndexMap)
   @assert keys(index_dimension(imap)) == keys(index_digit(imap))
   return collect(keys(index_dimension(imap)))

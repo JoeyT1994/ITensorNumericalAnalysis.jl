@@ -12,6 +12,7 @@ Base.copy(imap::AbstractIndexMap) = not_implemented()
 index_value_to_scalar(imap::AbstractIndexMap, ind::Index, value::Int) = not_implemented()
 ITensors.inds(imap::AbstractIndexMap) = not_implemented()
 ind(imap::AbstractIndexMap, args...) = not_implemented()
+scalartype(imap::AbstractIndexMap) = not_implemented()
 function calculate_ind_values(
   imap::AbstractIndexMap, xs::Vector, dims::Vector{Int}; kwargs...
 )
@@ -35,7 +36,7 @@ end
 
 function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair{<:Index, <:Int}})
   ndim = dimension(imap)
-  out = zeros(ndim)
+  out = zeros(scalartype(imap), ndim)
   for (ind, value) in input
     d = dimension(imap, ind)
     out[d] += index_value_to_scalar(imap, ind, value - 1)
