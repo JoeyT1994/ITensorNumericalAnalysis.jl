@@ -25,15 +25,6 @@ dimensions(imap::AbstractIndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(imap::AbstractIndexMap, ind::Index) = index_digit(imap)[ind]
 digits(imap::AbstractIndexMap, inds::Vector{Index}) = digit.(inds)
 
-function default_digit_map(indices::Vector{Index}; map_dimension::Int=1)
-  return Dictionary(
-    indices, [ceil(Int, i / map_dimension) for (i, ind) in enumerate(indices)]
-  )
-end
-function default_dimension_map(indices::Vector{Index}; map_dimension::Int)
-  return Dictionary(indices, [(i % map_dimension) + 1 for (i, ind) in enumerate(indices)])
-end
-
 function index_values_to_scalars(imap::AbstractIndexMap, ind::Index)
   return [index_value_to_scalar(imap, ind, i) for i in 0:(dim(ind) - 1)]
 end
@@ -60,7 +51,7 @@ function calculate_p(
 )
   out = Number[]
   for d in dims
-    indices = dimension_inds(imap, d)
+    indices = filter(i -> dimension(imap, i) == d, keys(ind_to_ind_value_map))
     push!(
       out,
       sum([index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in indices]),
@@ -72,6 +63,25 @@ end
 
 function calculate_p(imap::AbstractIndexMap, ind_to_ind_value_map, dim::Int)
   return calculate_p(imap, ind_to_ind_value_map, [dim])
+end
+
+function set_ind_values!(
+  ind_to_ind_value_map::Dictionary, imap::AbstractIndexMap, sorted_inds::Vector, x::Number
+)
+  x_rn = copy(x)
+  for ind in sorted_inds
+    ind_val = dim(ind) - 1
+    ind_set = false
+    while !ind_set
+      if x_rn >= abs(index_value_to_scalar(imap, ind, ind_val))
+        set!(ind_to_ind_value_map, ind, ind_val)
+        x_rn -= abs(index_value_to_scalar(imap, ind, ind_val))
+        ind_set = true
+      else
+        ind_val -= 1
+      end
+    end
+  end
 end
 
 function calculate_ind_values(imap::AbstractIndexMap, x::Number, dim::Int=1; kwargs...)

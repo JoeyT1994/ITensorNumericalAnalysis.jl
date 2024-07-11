@@ -4,6 +4,7 @@ include("utils.jl")
 include("digit_inds.jl")
 include("IndexMaps/abstractindexmap.jl")
 include("IndexMaps/realindexmap.jl")
+include("IndexMaps/complexindexmap.jl")
 include("indsnetworkmap.jl")
 include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
@@ -23,7 +24,8 @@ export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
 export AbstractIndexMap,
   RealIndexMap,
-  default_dimension_map,
+  ComplexIndexMap,
+  default_dimension_vertices,
   dimension_inds,
   calculate_p,
   calculate_ind_values,
@@ -32,6 +34,8 @@ export AbstractIndexMap,
   grid_points
 export IndsNetworkMap,
   continuous_siteinds,
+  complex_continuous_siteinds,
+  real_continuous_siteinds,
   indsnetwork,
   indexmap,
   indexmaptype,

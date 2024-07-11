@@ -3,23 +3,23 @@ using NamedGraphs: NamedEdge, AbstractGraph, a_star
 using NamedGraphs.GraphsExtensions:
   random_bfs_tree, rem_edges, add_edges, leaf_vertices, undirected_graph
 using ITensors: dim, commoninds
-using ITensorNetworks: IndsNetwork, underlying_graph
+using ITensorNetworks: IndsNetwork, insert_linkinds, underlying_graph
 using Random: AbstractRNG
 
 default_c_value() = 1.0
 default_a_value() = 0.0
 default_k_value() = 1.0
 default_nterms() = 20
-default_dimension() = 1
+default_dim() = 1
 
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
 function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1)
   ψ = random_itensornetwork(s; link_space=linkdim)
-  inv_L = Number(1.0 / nv(s))
+  c = c < 0 ? (Complex(c) / linkdim)^Number(1.0 / nv(s)) : (c / linkdim)^Number(1.0 / nv(s))
   for v in vertices(ψ)
     sinds = inds(s, v)
     virt_inds = setdiff(inds(ψ[v]), sinds)
-    ψ[v] = (c / linkdim)^inv_L * c_tensor(sinds, virt_inds)
+    ψ[v] = c * c_tensor(sinds, virt_inds)
   end
 
   return ψ
@@ -32,13 +32,19 @@ function exp_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
 )
   ψ = const_itensornetwork(s)
   Lx = length(dimension_vertices(ψ, dim))
   for v in dimension_vertices(ψ, dim)
-    sind = only(inds(s, v))
-    ψ[v] = ITensor(exp(a / Lx) * exp.(k * index_values_to_scalars(s, sind)), inds(ψ[v]))
+    sinds = inds(s, v)
+    sinds_dim = filter(i -> dimension(s, i) == dim, sinds)
+    sinds_not_dim = filter(i -> dimension(s, i) != dim, sinds)
+    linds = setdiff(inds(ψ[v]), sinds)
+    ψ[v] = prod([
+      ITensor(exp.(k * index_values_to_scalars(s, sind)), sind) for sind in sinds_dim
+    ])
+    ψ[v] = ψ[v] * exp(a / Lx) * delta(linds) * ITensor(1, sinds_not_dim)
   end
 
   ψ[first(dimension_vertices(ψ, dim))] *= c
@@ -53,7 +59,7 @@ function cosh_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
   ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dim)
@@ -68,7 +74,7 @@ function sinh_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
   ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dim)
@@ -84,7 +90,7 @@ function tanh_itensornetwork(
   a=default_a_value(),
   c=default_c_value(),
   nterms::Int=default_nterms(),
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
 )
   ψ = const_itensornetwork(s)
   for n in 1:nterms
@@ -105,7 +111,7 @@ function cos_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=0.5 * c, dim)
   ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * c, dim)
@@ -120,7 +126,7 @@ function sin_itensornetwork(
   k=default_k_value(),
   a=default_a_value(),
   c=default_c_value(),
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a=a * im, k=k * im, c=-0.5 * im * c, dim)
   ψ2 = exp_itensornetwork(s; a=-a * im, k=-k * im, c=0.5 * im * c, dim)
@@ -133,11 +139,13 @@ by indsnetwork"""
 function polynomial_itensornetwork(
   s::IndsNetworkMap,
   coeffs::Vector;
-  dim::Int=default_dimension(),
+  dim::Int=default_dim(),
   k=default_k_value(),
   c=default_c_value(),
 )
   n = length(coeffs)
+  n == 1 && return const_itn(s; c=first(coeffs))
+
   coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
   #First treeify the index network (ignore edges that form loops)
   _s = indsnetwork(s)
@@ -145,35 +153,41 @@ function polynomial_itensornetwork(
   g_tree = undirected_graph(random_bfs_tree(g, first(vertices(g))))
   s_tree = add_edges(rem_edges(_s, edges(g)), edges(g_tree))
   s_tree = IndsNetworkMap(s_tree, indexmap(s))
+  eltype = indexmaptype(s) == RealIndsNetworkMap ? Float64 : ComplexF64
 
   ψ = const_itensornetwork(s_tree; linkdim=n)
   dim_vertices = dimension_vertices(ψ, dim)
   source_vertex = first(dim_vertices)
 
   for v in dim_vertices
-    siteindex = only(inds(s_tree, v))
+    sinds = inds(s_tree, v)
+    sinds_dim = filter(i -> dimension(s, i) == dim, sinds)
+    sinds_not_dim = filter(i -> dimension(s, i) != dim, sinds)
     if v != source_vertex
       e = get_edge_toward_vertex(g_tree, v, source_vertex)
       betaindex = only(commoninds(ψ, e))
-      alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
+      alphas = setdiff(inds(ψ[v]), [sinds_dim; sinds_not_dim; betaindex])
       ψ[v] = Q_N_tensor(
+        eltype,
         length(neighbors(g_tree, v)),
-        siteindex,
+        sinds_dim,
         alphas,
         betaindex,
-        index_values_to_scalars(s_tree, siteindex),
+        index_values_to_scalars.((s_tree,), sinds_dim),
       )
+      ψ[v] *= ITensor(1, sinds_not_dim)
     elseif v == source_vertex
       betaindex = Index(n, "DummyInd")
-      alphas = setdiff(inds(ψ[v]), Index[siteindex])
+      alphas = setdiff(inds(ψ[v]), sinds)
       ψv = Q_N_tensor(
+        eltype,
         length(neighbors(g_tree, v)) + 1,
-        siteindex,
+        sinds_dim,
         alphas,
         betaindex,
-        index_values_to_scalars(s_tree, siteindex),
+        index_values_to_scalars.((s_tree,), sinds_dim),
       )
-      ψ[v] = ψv * ITensor(coeffs, betaindex)
+      ψ[v] = ψv * ITensor(coeffs, betaindex) * ITensor(1, sinds_not_dim)
     end
   end
 
@@ -182,11 +196,11 @@ function polynomial_itensornetwork(
   #Put the transfer tensors in, these are special tensors that
   # go on the digits (sites) that don't correspond to the desired dimension
   for v in setdiff(vertices(ψ), dim_vertices)
-    siteindex = only(inds(s_tree, v))
+    sinds = inds(s_tree, v)
     e = get_edge_toward_vertex(g_tree, v, source_vertex)
     betaindex = only(commoninds(ψ, e))
-    alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
-    ψ[v] = transfer_tensor(siteindex, betaindex, alphas)
+    alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
+    ψ[v] = transfer_tensor(sinds, betaindex, alphas)
   end
 
   return ψ
@@ -214,10 +228,15 @@ function delta_p(
   kwargs...,
 )
   ivmap = calculate_ind_values(s, xs, dims)
-  tn = ITensorNetwork(
-    v -> only(s[v]) in keys(ivmap) ? string(ivmap[only(s[v])]) : ones(dim(only(s[v]))),
-    indsnetwork(s),
-  )
+  vs = collect(vertices(s))
+  ts = ITensor[
+    prod([
+      sind ∈ keys(ivmap) ? onehot(sind => ivmap[sind] + 1) : ITensor(1, sind) for
+      sind in s[v]
+    ]) for v in vs
+  ]
+  tn = ITensorNetwork(vs, ts)
+  tn = insert_linkinds(add_edges(tn, edges(s)))
   return ITensorNetworkFunction(tn, s)
 end
 

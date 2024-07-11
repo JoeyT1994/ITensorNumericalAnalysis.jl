@@ -29,14 +29,9 @@ function ind(imap::RealIndexMap, dim::Int, digit::Int)
   )
 end
 
-function RealIndexMap(s::IndsNetwork; map_dimension::Int=1)
-  indices = inds(s)
-  return RealIndexMap(
-    default_digit_map(indices; map_dimension), default_dimension_map(indices; map_dimension)
-  )
-end
-
-function RealIndexMap(s::IndsNetwork, dimension_vertices::Vector{Vector{V}}) where {V}
+function RealIndexMap(
+  s::IndsNetwork, dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s)
+) where {V}
   dimension_indices = Vector{Index}[inds(s, vertices) for vertices in dimension_vertices]
   return RealIndexMap(dimension_indices)
 end
@@ -53,36 +48,14 @@ function RealIndexMap(dimension_indices::Vector{Vector{V}}) where {V<:Index}
   return RealIndexMap(index_digit, index_dimension)
 end
 
-function calculate_ind_values(
-  imap::RealIndexMap, xs::Vector, dims::Vector{Int}; print_x=false
-)
+function calculate_ind_values(imap::RealIndexMap, xs::Vector, dims::Vector{Int})
   @assert length(xs) == length(dims)
   ind_to_ind_value_map = Dictionary()
   for (i, x) in enumerate(xs)
     d = dims[i]
-    x_rn = x
     indices = dimension_inds(imap, d)
     sorted_inds = sort(indices; by=indices -> digit(imap, indices))
-    for ind in sorted_inds
-      ind_val = dim(ind) - 1
-      ind_set = false
-      while (!ind_set)
-        if x_rn >= index_value_to_scalar(imap, ind, ind_val)
-          set!(ind_to_ind_value_map, ind, ind_val)
-          x_rn -= index_value_to_scalar(imap, ind, ind_val)
-          ind_set = true
-        else
-          ind_val = ind_val - 1
-        end
-      end
-    end
-
-    if print_x
-      x_bitstring = only(calculate_p(imap, ind_to_ind_value_map, d))
-      println(
-        "Dimension $dimension. Actual value of x is $x but bitstring rep. is $x_bitstring"
-      )
-    end
+    set_ind_values!(ind_to_ind_value_map, imap, sorted_inds, x)
   end
   return ind_to_ind_value_map
 end
@@ -94,5 +67,5 @@ function grid_points(imap::RealIndexMap, N::Int, d::Int)
   L = length(dimension_inds(imap, d))
   a = round(base^L / N)
   grid_points = [i * (a / base^L) for i in 0:(N + 1)]
-  return filter(x -> x <= 1, grid_points)
+  return filter(x -> x < 1, grid_points)
 end
