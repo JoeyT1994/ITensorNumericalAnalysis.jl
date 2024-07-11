@@ -38,6 +38,17 @@ function ITensorNetworkFunction(
   return ITensorNetworkFunction(itn, RealIndsNetworkMap(s, dimension_vertices))
 end
 
+function ITensorNetworkFunction(
+  itn::AbstractITensorNetwork,
+  real_dimension_vertices::Vector{Vector{V}},
+  imag_dimension_vertices::Vector{Vector{V}},
+) where {V}
+  s = siteinds(itn)
+  return ITensorNetworkFunction(
+    itn, ComplexIndsNetworkMap(s, real_dimension_vertices, imag_dimension_vertices)
+  )
+end
+
 function ITensorNetworkFunction(itn::AbstractITensorNetwork)
   return ITensorNetworkFunction(itn, RealIndsNetworkMap(siteinds(itn)))
 end
