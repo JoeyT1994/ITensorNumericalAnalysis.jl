@@ -15,49 +15,6 @@ using ITensors:
   op
 using ITensorNetworks: IndsNetwork, random_tensornetwork, vertex_tag
 
-# reuse Qudit definitions for now
-function default_dimension_vertices(g::AbstractGraph; map_dimension::Int64=1)
-  vs = collect(vertices(g))
-  L = length(vs)
-  return [[v for v in vs[i:map_dimension:L]] for i in 1:map_dimension]
-end
-
-function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
-  return parse(Int, String(N)) + 1
-end
-
-function ITensors.state(::StateName{N}, ::SiteType"Digit", s::Index) where {N}
-  n = parse(Int, String(N))
-  st = zeros(dim(s))
-  st[n + 1] = 1.0
-  return ITensor(st, s)
-end
-
-function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 2] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 2] = 1
-  return ITensor(o, s, s')
-end
-
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
   inds = [Index(base, "$i") for i in 1:L]
