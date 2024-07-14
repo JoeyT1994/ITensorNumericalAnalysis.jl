@@ -122,7 +122,7 @@ end
 function interpolate(f, s::IndsNetworkMap; initial_pivot=random_initial_pivot(s), kws...)
   input_f = input -> f(calculate_p(s, input))
   @assert is_tree(s)
-  tn = const_itn(s; linkdim = 1)
+  tn = const_itn(s; linkdim=1)
   tn = interpolate(input_f, ttn(itensornetwork(tn)); initial_pivot, kws...)
   return ITensorNetworkFunction(ITensorNetwork(tn), s)
 end
@@ -142,18 +142,24 @@ function interpolate(
   sweep_printer=interpolate_sweep_printer,
   updater=interpolate_updater,
   use_caching=true,
-  extracter_kwargs = (;),
-  updater_kwargs = (;),
-  transform_operator_kwargs = (;),
-  transform_operator = default_transform_operator(),
+  extracter_kwargs=(;),
+  updater_kwargs=(;),
+  transform_operator_kwargs=(;),
+  transform_operator=default_transform_operator(),
   kws...,
 )
   root_vertex = first(leaf_vertices(init_tn))
   init_tn = interpolative_gauge(init_tn, root_vertex)
 
   ttnf = NetworkFunction(f, initial_pivot; use_caching)
-  sweep_plans = default_sweep_plans(nsweeps,init_tn;root_vertex,extracter,extracter_kwargs,updater_kwargs,
-    inserter_kwargs = (; cutoff, maxdim, mindim),
+  sweep_plans = default_sweep_plans(
+    nsweeps,
+    init_tn;
+    root_vertex,
+    extracter,
+    extracter_kwargs,
+    updater_kwargs,
+    inserter_kwargs=(; cutoff, maxdim, mindim),
     transform_operator,
     transform_operator_kwargs,
     updater,
@@ -161,11 +167,6 @@ function interpolate(
     nsites,
   )
   return alternating_update(
-    ttnf,
-    init_tn,
-    sweep_plans;
-    region_printer,
-    sweep_printer,
-    kws...,
+    ttnf, init_tn, sweep_plans; region_printer, sweep_printer, kws...
   )
 end

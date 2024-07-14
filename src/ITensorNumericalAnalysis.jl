@@ -19,7 +19,6 @@ include("TCI/interpolative.jl")
 include("TCI/lu.jl")
 include("TCI/networkfunction.jl")
 
-
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
 export AbstractIndexMap,

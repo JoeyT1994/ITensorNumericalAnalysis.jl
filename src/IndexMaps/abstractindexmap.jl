@@ -34,7 +34,7 @@ function dimension_inds(imap::AbstractIndexMap, dim::Int)
   return collect(filter(i -> index_dimension(imap)[i] == dim, keys(index_dimension(imap))))
 end
 
-function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair{<:Index, <:Int}})
+function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair{<:Index,<:Int}})
   ndim = dimension(imap)
   out = zeros(scalartype(imap), ndim)
   for (ind, value) in input

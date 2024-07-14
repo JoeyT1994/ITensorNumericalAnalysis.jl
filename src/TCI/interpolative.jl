@@ -52,11 +52,21 @@ Optional keyword arguments:
 * tags="Link" - tags to use for the Index connecting `C` to `Z`
 """
 function interpolative(
-  T::ITensor, col_inds, site_inds; col_vertex, cutoff=0.0, maxdim=typemax(Int), mindim=0, tags="Link"
+  T::ITensor,
+  col_inds,
+  site_inds;
+  col_vertex,
+  cutoff=0.0,
+  maxdim=typemax(Int),
+  mindim=0,
+  tags="Link",
 )
   for i in col_inds
-    (haspivots(i) || hastags(i, "Digit") ||
-      error("interpolative requires all indices to have pivots or else \"Digit\" tag"))
+    (
+      haspivots(i) ||
+      hastags(i, "Digit") ||
+      error("interpolative requires all indices to have pivots or else \"Digit\" tag")
+    )
   end
   # Matricize T
   row_inds = setdiff(inds(T), col_inds)
