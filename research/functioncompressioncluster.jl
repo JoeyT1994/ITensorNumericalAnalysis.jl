@@ -3,7 +3,9 @@ include("commonfunctions.jl")
 include("utils.jl")
 
 using ITensorNetworks: maxlinkdim
-using NamedGraphs: nv, named_comb_tree, named_grid, named_binary_tree, eccentricity
+using NamedGraphs: nv
+using NamedGraphs.GraphsExtensions: eccentricity
+using NamedGraphs. NamedGraphGenerators: named_comb_tree, named_grid, named_binary_tree
 using Random: Random
 
 using NPZ
@@ -54,10 +56,10 @@ function construct_itn(s::IndsNetworkMap, mode::String)
   end
 end
 
-function main()
-  mode = ARGS[1]
-  function_mode = ARGS[2]
-  L = parse(Int64, ARGS[3])
+function main(; md = nothing, func = nothing, l = nothing)
+  mode = md == nothing ? ARGS[1] : md
+  function_mode = func == nothing ? ARGS[2] : func
+  L = l == nothing ? parse(Int64, ARGS[3]) : l
   map_dimension = 1
   s = siteinds_constructor(mode, L; map_dimension)
   ngrid_points = 1000
@@ -86,7 +88,7 @@ function main()
 
     for i in 1:ngrid_points
       x = grid_points[i, 1]
-      fx_xs[χ, i] = real(calculate_fx(fx, x))
+      fx_xs[χ, i] = real(evaluate(fx, x))
       if χ == χ
         fx_xs_exact[i] = eval_function(x)
       end
@@ -105,6 +107,7 @@ function main()
   npzwrite(file_name, grid_points = grid_points, fx_xs = fx_xs, fx_xs_exact = fx_xs_exact, L = L, memory_req = memory_req, errors = errors)
 end
 
-main()
+#main()
+main(; func = "Weirstrass", md = "CanonicalPath", l = 50)
 
 

@@ -17,11 +17,15 @@ function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
 end
 
 """Build the tensor C such that C_{phys_ind, virt_inds...} = delta_{virt_inds...}"""
-function c_tensor(phys_inds::Vector, virt_inds::Vector)
+function c_tensor(eltype::Type, phys_inds::Vector, virt_inds::Vector)
   @assert allequal(dim.(virt_inds))
-  T = delta(Int64, virt_inds)
+  T = delta(eltype, virt_inds)
   T = T * ITensor(1, phys_inds...)
   return T
+end
+
+function c_tensor(phys_inds::Vector, virt_inds::Vector)
+  return c_tensor(Float64, phys_inds, virt_inds)
 end
 
 function ITensors.inds(s::IndsNetwork, v)

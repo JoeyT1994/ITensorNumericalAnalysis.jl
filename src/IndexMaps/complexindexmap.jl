@@ -21,6 +21,7 @@ end
 function imaginary_indices(imap::ComplexIndexMap, dim::Int64)
   return filter(i -> !is_real(imap, i) && dimension(imap, i) == dim, inds(imap))
 end
+scalartype(imap::ComplexIndexMap) = ComplexF64
 
 function index_value_to_scalar(imap::ComplexIndexMap, ind::Index, value::Int)
   return if is_real(imap, ind)

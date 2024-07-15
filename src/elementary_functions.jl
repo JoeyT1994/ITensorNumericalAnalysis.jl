@@ -19,7 +19,7 @@ function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::I
   for v in vertices(ψ)
     sinds = inds(s, v)
     virt_inds = setdiff(inds(ψ[v]), sinds)
-    ψ[v] = c * c_tensor(sinds, virt_inds)
+    ψ[v] = c * c_tensor(scalartype(s), sinds, virt_inds)
   end
 
   return ψ
