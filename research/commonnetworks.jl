@@ -54,6 +54,14 @@ function continuous_siteinds_ordered(g; map_dimension = 1, is_complex = false)
   return s
 end
 
+function continuous_siteinds_ordered_by_names(g; is_complex = false)
+  vs = collect(vertices(g))
+  no_dims = maximum(first.(vs))
+  L = maximum(last.(vs))
+  dimension_vertices = [[(i, j) for j in 1:L] for i in 1:no_dims]
+  return continuous_siteinds(g, dimension_vertices)
+end
+
 function qtt_siteinds_multidimstar_ordered(L, npoints; map_dimension = 1, is_complex = false)
   L = Int64(L/map_dimension)
   pointlength = Int64((L-1) / npoints)
