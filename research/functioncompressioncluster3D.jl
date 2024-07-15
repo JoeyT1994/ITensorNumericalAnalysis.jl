@@ -1,41 +1,41 @@
 include("commonnetworks.jl")
 include("commonfunctions.jl")
+include("laughlinfunctions.jl")
 include("utils.jl")
 
 using ITensorNetworks: maxlinkdim
-using NamedGraphs: add_edges, nv, named_comb_tree, named_grid, named_binary_tree, eccentricity
-using NamedGraphs: disjoint_union
+using NamedGraphs.GraphsExtensions: add_edges, nv, eccentricity, disjoint_union
+using NamedGraphs.NamedGraphGenerators: named_comb_tree, named_grid, named_binary_tree
 using Random: Random, rand
 
 using NPZ
 using MKL
 
 using ITensorNumericalAnalysis
-using ITensorNumericalAnalysis:dimension_indices
 
 Random.seed!(1234)
 
-function siteinds_constructor(mode::String, L::Int64; map_dimension = 3)
+function siteinds_constructor(mode::String, L::Int64; map_dimension = 3, is_complex = false)
   if mode == "CanonicalPath"
-    return qtt_siteinds_canonical(L; map_dimension)
+    return qtt_siteinds_canonical(L; map_dimension, is_complex)
   elseif mode == "SequentialPath"
-    return qtt_siteinds_canonical_sequentialdims(L; map_dimension)
+    return qtt_siteinds_canonical_sequentialdims(L; map_dimension, is_complex)
   elseif mode == "OrderedPath"
-    return continuous_siteinds_ordered(named_grid((L,1)); map_dimension)
+    return continuous_siteinds_ordered(named_grid((L,1)); map_dimension, is_complex)
   elseif mode[1:(length(mode)-1)] == "OrderedStar"
     npoints = parse(Int64, last(mode))
     pointlength = Int64((L-1) / npoints)
-    return continuous_siteinds_ordered(star(npoints, pointlength); map_dimension)
+    return continuous_siteinds_ordered(star(npoints, pointlength); map_dimension, is_complex)
   elseif mode[1:(length(mode)-1)] == "MultiDimOrderedStar"
       npoints = parse(Int64, last(mode))
-      return qtt_siteinds_multidimstar_ordered(L, npoints; map_dimension)
+      return qtt_siteinds_multidimstar_ordered(L, npoints; map_dimension, is_complex)
   elseif mode[1:(length(mode)-1)] == "CombTree"
     backbonelength = parse(Int64, last(mode))
     comblength = round(Int, L / backbonelength)
-    return continuous_siteinds_ordered(named_comb_tree((backbonelength, comblength)); map_dimension)
+    return continuous_siteinds_ordered(named_comb_tree((backbonelength, comblength)); map_dimension, is_complex)
   elseif mode == "BinaryTree"
     k = round(Int, log2(0.5*L + 1)) + 1
-    return continuous_siteinds_ordered(named_binary_tree(k); map_dimension)
+    return continuous_siteinds_ordered(named_binary_tree(k); map_dimension, is_complex)
   end
 end
 
@@ -55,18 +55,26 @@ function construct_itn(s::IndsNetworkMap, mode::String)
     fxy = build_spherical_laplacian_solution(s, coeffs)
     eval_function = (x,y,z) -> calculate_spherical_laplacian_solution(x,y,z,coeffs)
     return fxy, eval_function, nterms
+  elseif mode == "Laughlin"
+    N, v, k, cutoff, maxdim = 5, 1, 1.8, 1e-16, 150
+    nterms = 1
+    fz = build_laughlin(s, v, N; k, cutoff, maxdim)
+    eval_function = z -> calculate_laughlin(z, v; k)
+    return fz, eval_function, nterms
   end
 end
 
 function main()
+  N = 5
   mode = ARGS[1]
   function_mode = ARGS[2]
   L = parse(Int64, ARGS[3])
-  #mode = "SequentialPath"
-  #function_mode = "RandPlaneWaves"
-  #L = 45
-  map_dimension = 3
-  s = siteinds_constructor(mode, L; map_dimension)
+  #mode = "OrderedPath"
+  #function_mode = "Laughlin"
+  is_complex = function_mode == "Laughlin" ? true : false
+  L = 50
+  map_dimension = function_mode == "Laughlin" ? N : 3
+  s = siteinds_constructor(mode, L; map_dimension, is_complex)
   ngrid_points = 1000
   L = nv(s)
   Random.seed!(1234)
@@ -87,13 +95,24 @@ function main()
   Lx = length(dimension_vertices(fxy, 1))
   delta = (2^(-1.0*Lx))
 
-  fxy_xys = zeros(Float64, (χmax, ngrid_points))
-  fxy_xys_exact = zeros(Float64, (ngrid_points))
+  eltype = function_mode == "Laughlin" ? ComplexF64 : Float64
+  fxy_xys = zeros(eltype, (χmax, ngrid_points))
+  fxy_xys_exact = zeros(eltype, (ngrid_points))
   memory_req = zeros(Int64, (χmax))
   errors = zeros(Float64, (χmax))
-  grid_points = zeros(Float64, (ngrid_points, map_dimension))
-  for i in 1:ngrid_points
-    grid_points[i,:] = Float64[delta * Random.rand(1:(2^Lx-1)) for i in 1:map_dimension]
+  if !is_complex
+    grid_points = zeros(Float64, (ngrid_points, map_dimension))
+    for i in 1:ngrid_points
+      grid_points[i,:] = Float64[delta * Random.rand(1:(2^Lx-1)) for i in 1:map_dimension]
+      fxy_xys_exact[i] = eval_function(Tuple(grid_points[i, :]))
+    end
+  else
+    grid_points = zeros(ComplexF64, (ngrid_points, map_dimension))
+    for i in 1:ngrid_points
+      grid_points[i,:] = ComplexF64[delta * Random.rand(1:(2^Lx-1)) + 1.0*im*delta * Random.rand(1:(2^Lx-1)) for i in 1:map_dimension]
+      fxy_xys_exact[i] = eval_function(Tuple(grid_points[i, :]))
+    end
+    
   end
 
   for χ in χmax:-1:1
@@ -101,13 +120,14 @@ function main()
     fxy = truncate(fxy; maxdim=χ)
     println("Evaluating function")
     for i in 1:ngrid_points
-      x, y, z = grid_points[i, 1], grid_points[i, 2], grid_points[i, 3]
-      fxy_xys[χ, i] = real(calculate_fxyz(fxy, [x, y, z]))
-      if χ == χ
-        fxy_xys_exact[i] = eval_function(x, y, z)
-      end
+      fxy_xys[χ, i] = eltype(calculate_fxyz(fxy, grid_points[i, :]))
     end
-    errors[χ] = calc_error(reduce(vcat, fxy_xys_exact), reduce(vcat, fxy_xys[χ, :]))
+    if is_complex
+      errors[χ] = calc_error(reduce(vcat, real.(fxy_xys_exact)), reduce(vcat, real.(fxy_xys[χ, :])))
+       + calc_error(reduce(vcat, imag.(fxy_xys_exact)), reduce(vcat, imag.(fxy_xys[χ, :])))
+    else
+      errors[χ] = calc_error(reduce(vcat, real.(fxy_xys_exact)), reduce(vcat, real.(fxy_xys[χ, :])))
+    end
     memory_req[χ] = no_elements(fxy)
     println("Achieved an error of $(errors[χ])")
     flush(stdout)

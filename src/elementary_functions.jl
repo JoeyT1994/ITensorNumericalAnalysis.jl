@@ -1,15 +1,9 @@
 using Graphs: nv, vertices, edges, neighbors
-using NamedGraphs:
-  random_bfs_tree,
-  rem_edges,
-  add_edges,
-  undirected_graph,
-  NamedEdge,
-  AbstractGraph,
-  leaf_vertices,
-  a_star
+using NamedGraphs: NamedEdge, AbstractGraph, a_star
+using NamedGraphs.GraphsExtensions:
+  random_bfs_tree, rem_edges, add_edges, leaf_vertices, undirected_graph
 using ITensors: dim, commoninds
-using ITensorNetworks: IndsNetwork, underlying_graph
+using ITensorNetworks: IndsNetwork, linkinds, underlying_graph
 
 default_c_value() = 1.0
 default_a_value() = 0.0
@@ -20,11 +14,11 @@ default_dimension() = 1
 """Build a representation of the function f(x,y,z,...) = c, with flexible choice of linkdim"""
 function const_itensornetwork(s::IndsNetworkMap; c=default_c_value(), linkdim::Int=1)
   ψ = random_itensornetwork(s; link_space=linkdim)
-  inv_L = Number(1.0 / nv(s))
+  c = c < 0 ? (Complex(c) / linkdim)^Number(1.0 / nv(s)) : (c / linkdim)^Number(1.0 / nv(s))
   for v in vertices(ψ)
     sinds = inds(s, v)
     virt_inds = setdiff(inds(ψ[v]), sinds)
-    ψ[v] = c^inv_L * c_tensor(only(sinds), virt_inds)
+    ψ[v] = c * c_tensor(sinds, virt_inds)
   end
 
   return ψ
@@ -145,6 +139,8 @@ function polynomial_itensornetwork(
   c=default_c_value(),
 )
   n = length(coeffs)
+  n == 1 && return const_itn(s; c=first(coeffs))
+
   coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
   #First treeify the index network (ignore edges that form loops)
   _s = indsnetwork(s)
@@ -152,33 +148,36 @@ function polynomial_itensornetwork(
   g_tree = undirected_graph(random_bfs_tree(g, first(vertices(g))))
   s_tree = add_edges(rem_edges(_s, edges(g)), edges(g_tree))
   s_tree = IndsNetworkMap(s_tree, indexmap(s))
+  eltype = is_real(s) ? Float64 : ComplexF64
 
   ψ = const_itensornetwork(s_tree; linkdim=n)
   dim_vertices = dimension_vertices(ψ, dimension)
   source_vertex = first(dim_vertices)
 
   for v in dim_vertices
-    siteindex = only(inds(s_tree, v))
+    sinds = inds(s_tree, v)
     if v != source_vertex
       e = get_edge_toward_vertex(g_tree, v, source_vertex)
       betaindex = only(commoninds(ψ, e))
-      alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
+      alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
       ψ[v] = Q_N_tensor(
+        eltype,
         length(neighbors(g_tree, v)),
-        siteindex,
+        sinds,
         alphas,
         betaindex,
-        index_values_to_scalars(s_tree, siteindex),
+        index_values_to_scalars.((s_tree,), sinds),
       )
     elseif v == source_vertex
       betaindex = Index(n, "DummyInd")
-      alphas = setdiff(inds(ψ[v]), Index[siteindex])
+      alphas = setdiff(inds(ψ[v]), sinds)
       ψv = Q_N_tensor(
+        eltype,
         length(neighbors(g_tree, v)) + 1,
-        siteindex,
+        sinds,
         alphas,
         betaindex,
-        index_values_to_scalars(s_tree, siteindex),
+        index_values_to_scalars.((s_tree,), sinds),
       )
       ψ[v] = ψv * ITensor(coeffs, betaindex)
     end
@@ -189,11 +188,11 @@ function polynomial_itensornetwork(
   #Put the transfer tensors in, these are special tensors that
   # go on the digits (sites) that don't correspond to the desired dimension
   for v in setdiff(vertices(ψ), dim_vertices)
-    siteindex = only(inds(s_tree, v))
+    sinds = inds(s_tree, v)
     e = get_edge_toward_vertex(g_tree, v, source_vertex)
     betaindex = only(commoninds(ψ, e))
-    alphas = setdiff(inds(ψ[v]), Index[siteindex, betaindex])
-    ψ[v] = transfer_tensor(siteindex, betaindex, alphas)
+    alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
+    ψ[v] = transfer_tensor(sinds, betaindex, alphas)
   end
 
   return ψ

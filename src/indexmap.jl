@@ -1,15 +1,18 @@
 using Base: Base
 using Dictionaries: Dictionary, set!
-using ITensors: ITensors, Index, dim
+using ITensors: ITensors, Index, dim, hastags
 using ITensorNetworks: IndsNetwork, vertex_data
+using NamedGraphs: vertextype
 
-struct IndexMap{VB,VD}
+struct IndexMap{VB,VD,VC}
   index_digit::VB
   index_dimension::VD
+  index_real::VC
 end
 
 index_digit(imap::IndexMap) = imap.index_digit
 index_dimension(imap::IndexMap) = imap.index_dimension
+index_real(imap::IndexMap) = imap.index_real
 
 function default_digit_map(indices::Vector{Index}; map_dimension::Int=1)
   return Dictionary(
@@ -19,37 +22,74 @@ end
 function default_dimension_map(indices::Vector{Index}; map_dimension::Int)
   return Dictionary(indices, [(i % map_dimension) + 1 for (i, ind) in enumerate(indices)])
 end
-
-function IndexMap(s::IndsNetwork; map_dimension::Int=1)
-  indices = inds(s)
-  return IndexMap(
-    default_digit_map(indices; map_dimension), default_dimension_map(indices; map_dimension)
-  )
+function default_imaginary_map(indices::Vector{Index})
+  return Dictionary(indices, [false for _ in enumerate(indices)])
 end
-
-function IndexMap(s::IndsNetwork, dimension_vertices::Vector{Vector{V}}) where {V}
-  dimension_indices = Vector{Index}[]
-  for vertices in dimension_vertices
-    indices = inds(s, vertices)
-    push!(dimension_indices, indices)
+function default_dimension_vertices(
+  g::AbstractGraph; map_dimension::Int64=1, is_complex::Bool=false
+)
+  verts = collect(vertices(g))
+  L = length(verts)
+  real_dimension_vertices = Vector{vertextype(g)}[
+    verts[i:map_dimension:L] for i in 1:map_dimension
+  ]
+  imag_dimension_vertices = if is_complex
+    Vector{vertextype(g)}[verts[i:map_dimension:L] for i in 1:map_dimension]
+  else
+    Vector{vertextype(g)}[[]]
   end
-  return IndexMap(dimension_indices)
+  return real_dimension_vertices, imag_dimension_vertices
 end
 
-function IndexMap(dimension_indices::Vector{Vector{V}}) where {V<:Index}
+function IndexMap(
+  s::IndsNetwork,
+  real_dimension_vertices::Vector{Vector{V}},
+  imag_dimension_vertices::Vector{Vector{V}}=[[]];
+  kwargs...,
+) where {V}
+  real_dimension_indices = Vector{Index}[
+    [first(inds(s, v)) for v in vertices] for vertices in real_dimension_vertices
+  ]
+  imaginary_dimension_indices = Vector{Index}[
+    [last(inds(s, v)) for v in vertices] for vertices in imag_dimension_vertices
+  ]
+  return IndexMap(real_dimension_indices, imaginary_dimension_indices; kwargs...)
+end
+
+function IndexMap(s::IndsNetwork; map_dimension::Int64=1, is_complex=false, kwargs...)
+  return IndexMap(s, default_dimension_vertices(s; map_dimension, is_complex)...; kwargs...)
+end
+
+function IndexMap(
+  real_dimension_indices::Vector{Vector{I}},
+  imaginary_dimension_indices::Vector{Vector{I}}=Vector{Index}[[]],
+) where {I<:Index}
   index_digit = Dictionary()
   index_dimension = Dictionary()
-  for (dimension, indices) in enumerate(dimension_indices)
-    for (bit, ind) in enumerate(indices)
-      set!(index_digit, ind, bit)
+  index_real = Dictionary()
+  for (dimension, indices) in enumerate(real_dimension_indices)
+    for (digit, ind) in enumerate(indices)
+      set!(index_digit, ind, digit)
       set!(index_dimension, ind, dimension)
+      set!(index_real, ind, true)
     end
   end
-  return IndexMap(index_digit, index_dimension)
+
+  for (dimension, indices) in enumerate(imaginary_dimension_indices)
+    for (digit, ind) in enumerate(indices)
+      set!(index_digit, ind, digit)
+      set!(index_dimension, ind, dimension)
+      set!(index_real, ind, false)
+    end
+  end
+
+  return IndexMap(index_digit, index_dimension, index_real)
 end
 
 function Base.copy(imap::IndexMap)
-  return IndexMap(copy(index_digit(imap)), copy(index_dimension(imap)))
+  return IndexMap(
+    copy(index_digit(imap)), copy(index_dimension(imap)), copy(index_real(imap))
+  )
 end
 
 dimension(imap::IndexMap) = maximum(collect(values(index_dimension(imap))))
@@ -57,8 +97,12 @@ dimension(imap::IndexMap, ind::Index) = index_dimension(imap)[ind]
 dimensions(imap::IndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(imap::IndexMap, ind::Index) = index_digit(imap)[ind]
 digits(imap::IndexMap, inds::Vector{Index}) = digit.(inds)
+is_real(imap::IndexMap, ind::Index) = index_real(imap)[ind]
+is_real(imap::IndexMap) = all(i -> is_real(imap, i), keys(index_real(imap)))
 function index_value_to_scalar(imap::IndexMap, ind::Index, value::Int)
-  return (value) / (dim(ind)^digit(imap, ind))
+  out = (value) / (dim(ind)^digit(imap, ind))
+  out = is_real(imap, ind) ? out : 1.0 * im * out
+  return out
 end
 function index_values_to_scalars(imap::IndexMap, ind::Index)
   return [index_value_to_scalar(imap, ind, i) for i in 0:(dim(ind) - 1)]
@@ -68,44 +112,85 @@ function ITensors.inds(imap::IndexMap)
   @assert keys(index_dimension(imap)) == keys(index_digit(imap))
   return collect(keys(index_dimension(imap)))
 end
-function dimension_inds(imap::IndexMap, dimension::Int)
+function dimension_inds(imap::IndexMap, dim::Int)
+  return collect(filter(i -> dimension(imap, i) == dim, keys(index_dimension(imap))))
+end
+function real_inds(imap::IndexMap, dimensions::Vector{Int64}=[i for i in 1:dimension(imap)])
   return collect(
-    filter(i -> index_dimension(imap)[i] == dimension, keys(index_dimension(imap)))
+    filter(
+      i -> is_real(imap, i) && dimension(imap, i) ∈ dimensions, keys(index_dimension(imap))
+    ),
   )
 end
-function ind(imap::IndexMap, dimension::Int, digit::Int)
+function imaginary_inds(
+  imap::IndexMap, dimensions::Vector{Int64}=[i for i in 1:dimension(imap)]
+)
+  return collect(
+    filter(
+      i -> !is_real(imap, i) && dimension(imap, i) ∈ dimensions, keys(index_dimension(imap))
+    ),
+  )
+end
+function ind(imap::IndexMap, dim::Int, dig::Int, is_re::Bool=true)
   return only(
     filter(
-      i -> index_dimension(imap)[i] == dimension && index_digit(imap)[i] == digit,
+      i -> dimension(imap, i) == dim && digit(imap, i) == dig && is_real(imap, i) == is_re,
       keys(index_dimension(imap)),
     ),
   )
 end
 
-function dimension_indices(imap::IndexMap, dimap::Int)
-  return filter(ind -> dimension(imap, ind) == dim, inds(imap))
-end
-
 function calculate_xyz(imap::IndexMap, ind_to_ind_value_map, dimensions::Vector{Int})
   out = Number[]
   for dimension in dimensions
-    indices = dimension_inds(imap, dimension)
-    push!(
-      out,
-      sum([index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in indices]),
-    )
+    real_indices, imag_indices = real_inds(imap, [dimension]),
+    imaginary_inds(imap, [dimension])
+    real = sum([
+      index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in real_indices
+    ])
+    imag = if isempty(imag_indices)
+      0.0
+    else
+      sum([
+        index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in imag_indices
+      ])
+    end
+    push!(out, real + imag)
   end
   return out
 end
 
-function calculate_xyz(imap::IndexMap, ind_to_ind_value_map)
-  return calculate_xyz(imap, ind_to_ind_value_map, [i for i in 1:dimension(imap)])
+function calculate_xyz(imap::IndexMap, ind_to_ind_value_map; kwargs...)
+  return calculate_xyz(
+    imap, ind_to_ind_value_map, [i for i in 1:dimension(imap)]; kwargs...
+  )
 end
-function calculate_x(imap::IndexMap, ind_to_ind_value_map, dimension::Int)
-  return only(calculate_xyz(imap, ind_to_ind_value_map, [dimension]))
+function calculate_x(imap::IndexMap, ind_to_ind_value_map, dimension::Int; kwargs...)
+  return only(calculate_xyz(imap, ind_to_ind_value_map, [dimension]; kwargs...))
 end
-function calculate_x(imap::IndexMap, ind_to_ind_value_map)
-  return calculate_x(imap, ind_to_ind_value_map, 1)
+function calculate_x(imap::IndexMap, ind_to_ind_value_map; kwargs...)
+  return calculate_x(imap, ind_to_ind_value_map, 1; kwargs...)
+end
+
+"""Given a series of sorted indices (from most significant to least and in the same dimension), set their values 
+in the corresponding dictionary to produce the number x in [0,1]"""
+function set_ind_values!(
+  ind_to_ind_value_map::Dictionary, imap::IndexMap, sorted_inds::Vector, x::Number
+)
+  x_rn = copy(x)
+  for ind in sorted_inds
+    ind_val = dim(ind) - 1
+    ind_set = false
+    while (!ind_set)
+      if x_rn >= abs(index_value_to_scalar(imap, ind, ind_val))
+        set!(ind_to_ind_value_map, ind, ind_val)
+        x_rn -= abs(index_value_to_scalar(imap, ind, ind_val))
+        ind_set = true
+      else
+        ind_val = ind_val - 1
+      end
+    end
+  end
 end
 
 function calculate_ind_values(
@@ -115,23 +200,15 @@ function calculate_ind_values(
   ind_to_ind_value_map = Dictionary()
   for (i, x) in enumerate(xs)
     dimension = dimensions[i]
-    x_rn = x
-    indices = dimension_inds(imap, dimension)
-    sorted_inds = sort(indices; by=indices -> digit(imap, indices))
-    for ind in sorted_inds
-      ind_val = dim(ind) - 1
-      ind_set = false
-      while (!ind_set)
-        if x_rn >= index_value_to_scalar(imap, ind, ind_val)
-          set!(ind_to_ind_value_map, ind, ind_val)
-          x_rn -= index_value_to_scalar(imap, ind, ind_val)
-          ind_set = true
-        else
-          ind_val = ind_val - 1
-        end
-      end
-    end
+    real_indices = real_inds(imap, [dimension])
+    imag_indices = imaginary_inds(imap, [dimension])
 
+    sorted_real_inds = sort(real_indices; by=real_indices -> digit(imap, real_indices))
+    set_ind_values!(ind_to_ind_value_map, imap, sorted_real_inds, real(x))
+    if !isempty(imag_indices)
+      sorted_imag_inds = sort(imag_indices; by=imag_indices -> digit(imap, imag_indices))
+      set_ind_values!(ind_to_ind_value_map, imap, sorted_imag_inds, imag(x))
+    end
     if print_x
       x_bitstring = calculate_x(imap, ind_to_ind_value_map, dimension)
       println(

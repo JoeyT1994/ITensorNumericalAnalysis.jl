@@ -2,30 +2,32 @@ using ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph
-using ITensors: siteinds
+using NamedGraphs.NamedGraphGenerators: named_comb_tree
+using ITensors: siteinds, maxlinkdim
 using Random: Random
 
 L = 12
 Random.seed!(1234)
-g = NamedGraph(SimpleGraph(uniform_tree(L)))
-s = continuous_siteinds(g; map_dimension=3)
+g = named_comb_tree((3, 4))
+s = continuous_siteinds(g; map_dimension=3, is_complex=true)
 
 println(
-  "Constructing the 3D function f(x,y,z) = x³(y + y²) + cosh(πz) as a tensor network on a randomly chosen tree with $L vertices",
+  "Constructing the 3D complex function f(z1,z2,z3) = z1³(z2 + z2²) + cosh(πz3) as a tensor network on a randomly chosen tree with $L vertices",
 )
-ψ_fx = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension=1)
-ψ_fy = poly_itn(s, [0.0, 1.0, 1.0, 0.0]; dimension=2)
-ψ_fz = cosh_itn(s; k=Number(pi), dimension=3)
-ψxyz = ψ_fx * ψ_fy + ψ_fz
+ψ_fz1 = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension=1)
+ψ_fz2 = poly_itn(s, [0.0, 1.0, 1.0]; dimension=2)
+ψ_fz3 = cosh_itn(s; k=Number(pi), dimension=3)
+ψ_z = ψ_fz1 * ψ_fz2 + ψ_fz3
 
-ψxyz = truncate(ψxyz; cutoff=1e-12)
-println("Maximum bond dimension of the network is $(maxlinkdim(ψxyz))")
+ψ_z = truncate(ψ_z; cutoff=1e-12)
+println("Maximum bond dimension of the network is $(maxlinkdim(ψ_z))")
 
-x, y, z = 0.125, 0.625, 0.5
-fxyz_xyz = calculate_fxyz(ψxyz, [x, y, z])
+z1, z2, z3 = 0.125 + 0.5 * im, 0.625 + 0.875 * im, 0.5
+z = [z1, z2, z3]
+f_at_z = calculate_fxyz(ψ_z, z)
 println(
-  "Tensor network evaluates the function as $fxyz_xyz at the co-ordinate: (x,y,z) = ($x, $y, $z)",
+  "Tensor network evaluates the function as $f_at_z at the co-ordinate: (z1,z2,z3) = ($z1, $z2, $z3)",
 )
 println(
-  "Actual value of the function is $(x^3 * (y  + y^2) + cosh(pi * z)) at the co-ordinate: (x,y,z) = ($x, $y, $z)",
+  "Actual value of the function is $(z1^3 * (z2  + z2^2) + cosh(pi * z3)) at the co-ordinate: (z1,z2,z3) =($z1, $z2, $z3)",
 )

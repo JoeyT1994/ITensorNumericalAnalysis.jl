@@ -1,6 +1,13 @@
 using Base: Base
 using ITensorNetworks:
-  ITensorNetworks, AbstractITensorNetwork, data_graph, data_graph_type, scalar
+  ITensorNetworks,
+  ITensorNetwork,
+  AbstractITensorNetwork,
+  data_graph,
+  data_graph_type,
+  scalar,
+  inner,
+  TreeTensorNetwork
 using ITensors: ITensor, dim, contract, siteinds, onehot, maxlinkdim
 using Graphs: Graphs
 

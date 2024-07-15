@@ -14,6 +14,7 @@ using UnicodePlots
 seed!(1234)
 L = 12
 g = NamedGraph(SimpleGraph(uniform_tree(L)))
+g = rename_vertices(v -> (v, 1), g)
 
 s = continuous_siteinds(g; map_dimension=2)
 
@@ -29,12 +30,11 @@ println(
 )
 
 dmrg_kwargs = (nsweeps=15, normalize=true, maxdim=30, cutoff=1e-12, outputlevel=1, nsites=2)
-ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
+final_energy, ϕ_fxy = dmrg(∇, ttn(itensornetwork(ψ_fxy)); dmrg_kwargs...)
 ϕ_fxy = ITensorNetworkFunction(ITensorNetwork(ϕ_fxy), s)
 
 ϕ_fxy = truncate(ϕ_fxy; cutoff=1e-10)
 
-final_energy = inner(ttn(itensornetwork(ϕ_fxy))', ∇, ttn(itensornetwork(ϕ_fxy)))
 println(
   "Finished DMRG. Found solution of energy $final_energy with bond dimension $(maxlinkdim(ϕ_fxy))",
 )
@@ -52,7 +52,7 @@ for (i, x) in enumerate(x_vals)
 end
 
 println("Here is the heatmap of the 2D function")
-show(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
+display(heatmap(vals; xfact=0.01, yfact=0.01, xoffset=0, yoffset=0, colormap=:inferno))
 
 n_grid = 100
 x_vals = grid_points(s, n_grid, 1)
@@ -63,4 +63,4 @@ for (i, x) in enumerate(x_vals)
 end
 
 println("Here is a cut of the function at y = $y")
-show(lineplot(x_vals, vals))
+display(lineplot(x_vals, vals))

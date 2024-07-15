@@ -2,6 +2,7 @@ using Graphs: AbstractGraph
 using ITensors:
   ITensors,
   Index,
+  delta,
   dim,
   inds,
   siteinds,
@@ -68,17 +69,12 @@ function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
 end
 
 """Build the tensor C such that C_{phys_ind, virt_inds...} = delta_{virt_inds...}"""
-function c_tensor(phys_ind::Index, virt_inds::Vector)
-  inds = vcat(phys_ind, virt_inds)
+function c_tensor(phys_inds::Vector, virt_inds::Vector)
   @assert allequal(dim.(virt_inds))
-  T = ITensor(0.0, inds...)
-  for i in 1:dim(phys_ind)
-    for j in 1:dim(first(virt_inds))
-      ind_array = [v => j for v in virt_inds]
-      T[phys_ind => i, ind_array...] = 1.0
-    end
+  T = delta(Int64, virt_inds)
+  for ind in phys_inds
+    T = T * ITensor(1, ind)
   end
-
   return T
 end
 
@@ -91,7 +87,7 @@ function ITensors.inds(s::IndsNetwork, verts::Vector)
 end
 
 function ITensors.inds(s::IndsNetwork)
-  return inds(s, vertices(s))
+  return inds(s, collect(vertices(s)))
 end
 
 function base(s::IndsNetwork)
@@ -101,10 +97,17 @@ function base(s::IndsNetwork)
   return first(dims)
 end
 
-function digit_siteinds(g::AbstractGraph; base=2)
+function digit_siteinds(g::AbstractGraph; base=2, is_complex=false)
   is = IndsNetwork(g)
   for v in vertices(g)
-    is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
+    if !is_complex
+      is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
+    else
+      is[v] = [
+        Index(base, "Digit Re, V$(vertex_tag(v))"),
+        Index(base, "Digit Im, V$(vertex_tag(v))"),
+      ]
+    end
   end
   return is
 end
