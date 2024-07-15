@@ -5,7 +5,8 @@ using ITensors: ITensors
 using ITensorNetworks:
   ITensorNetworks, AbstractIndsNetwork, IndsNetwork, data_graph, underlying_graph
 
-struct IndsNetworkMap{V,I,IN<:IndsNetwork{V,I},IM} <: AbstractIndsNetwork{V,I}
+struct IndsNetworkMap{V,I,IN<:IndsNetwork{V,I},IM<:AbstractIndexMap} <:
+       AbstractIndsNetwork{V,I}
   indsnetwork::IN
   indexmap::IM
 end
@@ -15,6 +16,7 @@ indexmap(inm::IndsNetworkMap) = inm.indexmap
 
 indtype(inm::IndsNetworkMap) = indtype(typeof(indsnetwork(inm)))
 indtype(::Type{<:IndsNetworkMap{V,I,IN,IM}}) where {V,I,IN,IM} = I
+indexmaptype(inm::IndsNetworkMap) = typeof(indexmap(inm))
 ITensorNetworks.data_graph(inm::IndsNetworkMap) = data_graph(indsnetwork(inm))
 function ITensorNetworks.underlying_graph(inm::IndsNetworkMap)
   return underlying_graph(data_graph(indsnetwork(inm)))
@@ -28,39 +30,39 @@ function Base.copy(inm::IndsNetworkMap)
 end
 
 #Constructors 
-function IndsNetworkMap(
-  s::IndsNetwork,
-  real_dimension_vertices::Vector{Vector{V}},
-  imaginary_dimension_vertices::Vector{Vector{V}}=Vector{vertextype(s)}[[]];
-  is_complex=false,
-  kwargs...,
-) where {V}
-  return IndsNetworkMap(
-    s, IndexMap(s, real_dimension_vertices, imaginary_dimension_vertices; kwargs...)
+function RealIndsNetworkMap(s::IndsNetwork, args...; kwargs...)
+  return IndsNetworkMap(s, RealIndexMap(s, args...; kwargs...))
+end
+
+function RealIndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
+  s = digit_siteinds(g, args...; base)
+  return RealIndsNetworkMap(s, args...; kwargs...)
+end
+
+function RealIndsNetworkMap(s::IndsNetwork; map_dimension::Int64=1)
+  return RealIndsNetworkMap(s, default_dimension_vertices(s; map_dimension))
+end
+
+function ComplexIndsNetworkMap(s::IndsNetwork, args...; kwargs...)
+  return IndsNetworkMap(s, ComplexIndexMap(s, args...; kwargs...))
+end
+
+function ComplexIndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
+  s = complex_digit_siteinds(g, args...; base)
+  return ComplexIndsNetworkMap(s, args...; kwargs...)
+end
+
+function ComplexIndsNetworkMap(s::IndsNetwork; map_dimension::Int64=1)
+  return ComplexIndsNetworkMap(
+    s,
+    default_dimension_vertices(s; map_dimension),
+    default_dimension_vertices(s; map_dimension),
   )
 end
 
-function IndsNetworkMap(
-  s::IndsNetwork,
-  real_dimension_indices::Vector{Vector{Index}},
-  imaginary_dimension_indices::Vector{Vector{Index}}=Vector{Index}[[]];
-  kwargs...,
-)
-  return IndsNetworkMap(
-    s, IndexMap(real_dimension_indices, imaginary_dimension_indices; kwargs...)
-  )
-end
-
-function IndsNetworkMap(s::IndsNetwork; kwargs...)
-  return IndsNetworkMap(s, IndexMap(s; kwargs...))
-end
-
-function IndsNetworkMap(g::NamedGraph, args...; base::Int=2, is_complex=false, kwargs...)
-  s = digit_siteinds(g; base, is_complex)
-  return IndsNetworkMap(s, args...; is_complex, kwargs...)
-end
-
-const continuous_siteinds = IndsNetworkMap
+const continuous_siteinds = RealIndsNetworkMap
+const real_continuous_siteinds = RealIndsNetworkMap
+const complex_continuous_siteinds = ComplexIndsNetworkMap
 
 #Forward functionality from indexmap
 for f in [
@@ -71,8 +73,7 @@ for f in [
   :digit,
   :digits,
   :calculate_ind_values,
-  :calculate_x,
-  :calculate_xyz,
+  :calculate_p,
   :grid_points,
   :index_value_to_scalar,
   :index_values_to_scalars,
@@ -118,8 +119,12 @@ function vertex_digit(inm::IndsNetworkMap, v)
   return digit(inm, only(inds(inm, v)))
 end
 
+#function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
+#  return filter(v -> all(d -> d == dimension, vertex_dimensions(inm, v)), vertices(inm))
+#end
+
 function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
-  return filter(v -> all(d -> d == dimension, vertex_dimensions(inm, v)), vertices(inm))
+  return filter(v -> dimension ∈ vertex_dimensions(inm, v), vertices(inm))
 end
 
 function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)

@@ -1,7 +1,10 @@
 module ITensorNumericalAnalysis
 
 include("utils.jl")
-include("indexmap.jl")
+include("digit_inds.jl")
+include("IndexMaps/abstractindexmap.jl")
+include("IndexMaps/realindexmap.jl")
+include("IndexMaps/complexindexmap.jl")
 include("indsnetworkmap.jl")
 include("polynomialutils.jl")
 include("itensornetworkfunction.jl")
@@ -11,11 +14,12 @@ include("integration.jl")
 
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
-export IndexMap,
-  default_dimension_map,
+export AbstractIndexMap,
+  RealIndexMap,
+  ComplexIndexMap,
+  default_dimension_vertices,
   dimension_inds,
-  calculate_xyz,
-  calculate_x,
+  calculate_p,
   calculate_ind_values,
   dimension,
   dimensions,
@@ -25,8 +29,11 @@ export IndexMap,
   real_inds
 export IndsNetworkMap,
   continuous_siteinds,
+  complex_continuous_siteinds,
+  real_continuous_siteinds,
   indsnetwork,
   indexmap,
+  indexmaptype,
   vertex_dimension,
   vertex_digit,
   vertices_dimensions,
@@ -47,11 +54,13 @@ export const_itensornetwork,
   third_derivative_operator,
   fourth_derivative_operator,
   identity_operator,
-  delta_x,
-  delta_xyz
+  delta_p,
+  map_to_zero_operator,
+  map_to_zeros,
+  const_plane_op
 export const_itn,
   poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
-export calculate_fx, calculate_fxyz
+export evaluate
 export operate, operator_proj, multiply
 
 end
