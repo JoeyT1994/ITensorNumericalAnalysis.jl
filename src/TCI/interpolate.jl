@@ -120,11 +120,10 @@ function random_initial_pivot(tn::AbstractITensorNetwork)
   return random_initial_pivot(s)
 end
 
-function interpolate(f, s::IndsNetworkMap; initial_pivot=random_initial_pivot(s), kws...)
+function interpolate(f, s::IndsNetworkMap; initial_pivot=random_initial_pivot(s), initial_state = const_itn(s; linkdim = 1), kws...)
   input_f = input -> f(calculate_p(s, input))
   @assert is_tree(s)
-  tn = const_itn(s; linkdim=1)
-  tn = interpolate(input_f, ttn(itensornetwork(tn)); initial_pivot, kws...)
+  tn = interpolate(input_f, ttn(itensornetwork(initial_state)); initial_pivot, kws...)
   return ITensorNetworkFunction(ITensorNetwork(tn), s)
 end
 

@@ -26,15 +26,16 @@ let
   # Define graph and indices
   L = 33
   delta = 2.0^(-L)
-  χ = 16
+  χ = 15
   #s = continuous_siteinds(g; map_dimension=2)
   s1 = qtt_siteinds_multidimstar_ordered(L, 4; map_dimension = 1, is_complex = false)
   s2 = qtt_siteinds_canonical_sequentialdims(L; map_dimension = 1, is_complex = false)
   ks = weirstrass_coefficients(100, 3)
-  f = x -> calulate_weirstrass(x, ks)
+  #f = x -> calulate_weirstrass(x, ks)
+  f = x -> airyai(-100*x)
 
-  tn1 = interpolate(f, s1; nsweeps=5, maxdim=χ, cutoff=1e-14, outputlevel=1)
-  tn2 = interpolate(f, s2; nsweeps=5, maxdim=χ, cutoff=1e-14, outputlevel=1)
+  tn1 = interpolate(f, s1; nsweeps=10, maxdim=χ, cutoff=1e-16, outputlevel=1)
+  tn2 = interpolate(f, s2; nsweeps=10, maxdim=χ, cutoff=1e-16, outputlevel=1)
 
   ngrid_points = 250
   xs = [delta * Random.rand(1:(2^L-1)) for i in 1:ngrid_points]

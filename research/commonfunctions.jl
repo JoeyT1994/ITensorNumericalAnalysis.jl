@@ -95,3 +95,14 @@ function calculate_spherical_laplacian_solution(x, y, z, coeffs)
   out += r_cub * s_theta * s_phi * s_theta * s_theta *  c_2phi * coeffs[6]
   return out
 end
+
+function in_mandelbrot(c; maxiter = 10000)
+  zi = 0
+  for i in 1:maxiter
+    zi = zi*zi + c
+    if abs(zi) > 2
+      return i / maxiter
+    end
+  end
+  return 1.0
+end
