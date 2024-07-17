@@ -14,13 +14,7 @@ using ITensorNumericalAnalysis:
   IndsNetworkMap,
   complex_continuous_siteinds
 using Elliptic
-
-function two_soliton(x, y)
-  num = 12 * (3 + 4 * cosh(2 * x - 8 * y) + cosh(4 * x - 64 * y))
-  den = 3 * cosh(x - 28 * y) + cosh(3 * x - 36 * y)
-  den = den * den
-  return -12 * num / den
-end
+using SpecialFunctions
 
 include("utils.jl")
 include("commonnetworks.jl")
@@ -30,33 +24,28 @@ Random.seed!(123)
 let
 
   # Define graph and indices
-  L = 32
-  Lx = Int(L/2)
-  delta = 2.0^(-Lx)
-  χ = 25
+  L = 33
+  delta = 2.0^(-L)
+  χ = 16
   #s = continuous_siteinds(g; map_dimension=2)
-  s1 = qtt_siteinds_multidimstar_ordered(L, 3; map_dimension = 2, is_complex = false)
-  s2 = qtt_siteinds_canonical_sequentialdims(L; map_dimension = 2, is_complex = false)
-  #f = x -> sech(3*(x[1] - 1.5*x[2]))*sech(3*(x[1] - 1.5*x[2]))
-  #f = x -> two_soliton(12*x[1] - 6, 2*x[2] / 3 - (1/3))
-  f = x -> sqrt(x[1]*x[1] + x[2]*x[2]) <= 1 ? 1.0 : 0.0
-  f = x -> Jacobi.sn(10*x[1], x[2])
+  s1 = qtt_siteinds_multidimstar_ordered(L, 4; map_dimension = 1, is_complex = false)
+  s2 = qtt_siteinds_canonical_sequentialdims(L; map_dimension = 1, is_complex = false)
+  ks = weirstrass_coefficients(100, 3)
+  f = x -> calulate_weirstrass(x, ks)
 
   tn1 = interpolate(f, s1; nsweeps=5, maxdim=χ, cutoff=1e-14, outputlevel=1)
   tn2 = interpolate(f, s2; nsweeps=5, maxdim=χ, cutoff=1e-14, outputlevel=1)
 
-  ngrid_points = 30
-  xs, ys = [delta * Random.rand(1:(2^Lx-1)) for i in 1:ngrid_points], [delta * Random.rand(1:(2^Lx-1)) for i in 1:ngrid_points]
+  ngrid_points = 250
+  xs = [delta * Random.rand(1:(2^L-1)) for i in 1:ngrid_points]
   err1, err2 = 0, 0
   exact_vals = Float64[]
   tn1_vals = Float64[]
   tn2_vals = Float64[]
   for x in xs
-    for y in ys
-      push!(tn1_vals, real(evaluate(tn1, [x, y])))
-      push!(tn2_vals, real(evaluate(tn2, [x, y])))
-      push!(exact_vals, real(f([x, y])))
-    end
+    push!(tn1_vals, real(evaluate(tn1, x)))
+    push!(tn2_vals, real(evaluate(tn2, x)))
+    push!(exact_vals, real(f(x)))
   end
 
   err1, err2 = calc_error(exact_vals, tn1_vals), calc_error(exact_vals, tn2_vals)

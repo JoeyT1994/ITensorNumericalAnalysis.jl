@@ -125,8 +125,8 @@ function main(; md = nothing, func = nothing, l = nothing, save = true)
   end
 end
 
-main(; func = "Weirstrass", md = "MISearch2", l = 20, save = false)
-main(; func = "Weirstrass", md = "MISearch3", l = 20, save = false)
-#main(; func = "Weirstrass", md = "CanonicalPath", l = 20)
+main(; func = "Weirstrass", md = "OrderedStar4", l = 61, save = false)
+#main(; func = "Weirstrass", md = "MISearch3", l = 61, save = false)
+#main(; func = "Weirstrass", md = "MISearch4", l = 61, save = false)
 
 

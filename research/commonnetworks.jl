@@ -1,4 +1,5 @@
 using ITensorNumericalAnalysis
+using NamedGraphs.GraphsExtensions: disjoint_union, add_edges, eccentricity
 using NamedGraphs.NamedGraphGenerators: named_grid
 using NamedGraphs: NamedGraph, NamedEdge, add_vertex!, add_edge!, vertextype
 
@@ -43,7 +44,7 @@ function star(no_points::Int64, length::Int64)
 end
 
 function continuous_siteinds_ordered(g; map_dimension = 1, is_complex = false)
-  sorted_vertices = sort(vertices(g); by = v -> eccentricity(g, v))
+  sorted_vertices = sort(collect(vertices(g)); by = v -> eccentricity(g, v))
   L = length(sorted_vertices)
   dimension_vertices = Vector{vertextype(g)}[]
   for d in 1:map_dimension

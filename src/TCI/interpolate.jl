@@ -85,6 +85,7 @@ function interpolate_inserter(
   state[ortho_vert] = Z
   state[center_vert] = C
   state = set_ortho_region(state, [center_vert])
+  state = truncate(state; cutoff)
   return state, nothing
 end
 
