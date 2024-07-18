@@ -123,10 +123,10 @@ function main()
       fxy_xys[χ, i] = eltype(calculate_fxyz(fxy, grid_points[i, :]))
     end
     if is_complex
-      errors[χ] = calc_error(reduce(vcat, real.(fxy_xys_exact)), reduce(vcat, real.(fxy_xys[χ, :])))
-       + calc_error(reduce(vcat, imag.(fxy_xys_exact)), reduce(vcat, imag.(fxy_xys[χ, :])))
+      errors[χ] = calc_error_V2(reduce(vcat, real.(fxy_xys_exact)), reduce(vcat, real.(fxy_xys[χ, :])))
+       + calc_error_V2(reduce(vcat, imag.(fxy_xys_exact)), reduce(vcat, imag.(fxy_xys[χ, :])))
     else
-      errors[χ] = calc_error(reduce(vcat, real.(fxy_xys_exact)), reduce(vcat, real.(fxy_xys[χ, :])))
+      errors[χ] = calc_error_V2(reduce(vcat, real.(fxy_xys_exact)), reduce(vcat, real.(fxy_xys[χ, :])))
     end
     memory_req[χ] = no_elements(fxy)
     println("Achieved an error of $(errors[χ])")

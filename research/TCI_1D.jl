@@ -34,8 +34,12 @@ let
   #f = x -> calulate_weirstrass(x, ks)
   f = x -> airyai(-100*x)
 
-  tn1 = interpolate(f, s1; nsweeps=10, maxdim=χ, cutoff=1e-16, outputlevel=1)
-  tn2 = interpolate(f, s2; nsweeps=10, maxdim=χ, cutoff=1e-16, outputlevel=1)
+  tn1, region_observer1 = interpolate(f, s1; nsweeps=2, maxdim=χ, cutoff=1e-16, outputlevel=1)
+  tn2, region_observer2 = interpolate(f, s2; nsweeps=2, maxdim=χ, cutoff=1e-16, outputlevel=1)
+
+  @show region_observer1[:, :error]
+  @show region_observer1[:, :region]
+  @show region_observer1[:, :sweep]
 
   ngrid_points = 250
   xs = [delta * Random.rand(1:(2^L-1)) for i in 1:ngrid_points]

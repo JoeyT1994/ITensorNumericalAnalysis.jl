@@ -1,6 +1,7 @@
 using ITensors: inds, dim
 using ITensorNetworks: AbstractITensorNetwork
 using NamedGraphs: vertices
+using LinearAlgebra: dot
 
 function calc_error(exact_vals::Vector, approx_vals::Vector)
   @assert length(exact_vals) == length(approx_vals)
@@ -22,4 +23,11 @@ function no_elements(tn::AbstractITensorNetwork)
         no_elements += prod(dims)
     end
     return no_elements
+end
+
+
+function calc_error_V2(exact_vals::Vector, approx_vals::Vector)
+  @assert length(exact_vals) == length(approx_vals)
+
+ return dot(exact_vals, approx_vals) / sqrt(dot(exact_vals, exact_vals) * dot(approx_vals, approx_vals))
 end

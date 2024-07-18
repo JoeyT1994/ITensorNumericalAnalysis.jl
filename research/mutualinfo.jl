@@ -117,3 +117,29 @@ function generate_tree(mi_matrix, L, no_dims, max_z)
     println("Bought MI down from $(sum(mi_matrix)) to $(sum(mi_matrix - adj_mat .* mi_matrix))")
     return g
 end
+
+function order_star_vertices(mi_matrix, L, z)
+    row_sums = [sum(mi_matrix[i, :]) for i in 1:L]
+    verts = sort([i for i in 1:L]; by = i -> row_sums[i])
+    g = star(z, Int((L - 1)/z))
+
+
+    
+end
+
+function star(no_points::Int64, length::Int64)
+    g = NamedGraph([(1, 1)])
+    x = 2
+    for i in 1:length
+      for j in 1:no_points
+        add_vertex!(g, (x, 1))
+        if i == 1
+          add_edge!(g, NamedEdge((x, 1) => (1, 1)))
+        else
+          add_edge!(g, NamedEdge((x, 1) => (x - no_points, 1)))
+        end
+        x += 1
+      end
+    end
+    return g
+  end

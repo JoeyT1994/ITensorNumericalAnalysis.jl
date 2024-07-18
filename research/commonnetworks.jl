@@ -43,6 +43,14 @@ function star(no_points::Int64, length::Int64)
   return g
 end
 
+function order_star_vertices(mi_matrix, L, z)
+  row_sums = [sum(mi_matrix[i, :]) for i in 1:L]
+  verts = reverse(sort([i for i in 1:L]; by = i -> row_sums[i]))
+  g = star(z, Int((L - 1)/z))
+  dimension_vertices = [sort([(i,1) for i in 1:L]; by = x -> verts[first(x)])]
+  return g, dimension_vertices
+end
+
 function continuous_siteinds_ordered(g; map_dimension = 1, is_complex = false)
   sorted_vertices = sort(collect(vertices(g)); by = v -> eccentricity(g, v))
   L = length(sorted_vertices)
