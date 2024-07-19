@@ -223,7 +223,7 @@ function function_itensornetwork(
     else
       throw("mode $mode not recognized")
     end
-    return ψ, cf
+    return ψ
 
     """ 2D functions """
   elseif num_inputs == 2
@@ -255,7 +255,7 @@ function function_itensornetwork(
     else
       throw("mode $mode not recognized")
     end
-    return ψ, cf
+    return ψ
   else
     throw("functions with $num_inputs inputs not supported.")
   end
