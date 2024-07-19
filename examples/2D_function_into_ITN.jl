@@ -37,8 +37,8 @@ f(x, y) = exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.05)
 #f(x, y) = exp(x) - exp(y)
 #f(x, y) = cos(20 * (x + y)) + sin(50 * (x - y))
 
-ψ_f, cf = function_itn(s, f; mode="fourier", cutoff=1e-3, max_coeffs=100)
-ψ_c, cc = function_itn(s, f; mode="chebyshev", cutoff=1e-2, max_coeffs=36, by_mag=false)
+ψ_f = function_itn(s, f; mode="fourier", cutoff=1e-3, max_coeffs=100)
+ψ_c = function_itn(s, f; mode="chebyshev", cutoff=1e-2, max_coeffs=36, by_mag=false)
 
 println("maxlinkdim of ψ_f after truncation: $(maxlinkdim(ψ_f))")
 println("maxlinkdim of ψ_c after truncation: $(maxlinkdim(ψ_c))")

@@ -28,12 +28,12 @@ data = reverse(data; dims=1)
 println("size of matrix: $(size(data))")
 
 elapsed_time = @elapsed begin
-  ψ_f, cf = data_itn(s, data; mode="fourier", cutoff=1e-4, max_coeffs=100, by_mag=true)
+  ψ_f = data_itn(s, data; mode="fourier", cutoff=1e-4, max_coeffs=100, by_mag=true)
 end
 println("constructing ψ_f: ", elapsed_time, " seconds")
 
 # elapsed_time = @elapsed begin
-#     ψ_c, cc = data_itn(s, data; mode="chebyshev", cutoff=1e-3, max_coeffs = 100)
+#     ψ_c = data_itn(s, data; mode="chebyshev", cutoff=1e-3, max_coeffs = 100)
 # end
 # println("constructing ψ_c: ", elapsed_time, " seconds")
 
@@ -64,7 +64,6 @@ println("constructing ψ_f: ", elapsed_time, " seconds")
 ψ_f = truncate(ψ_f; cutoff=1e-16)
 # ψ_c = truncate(ψ_c, cutoff=1e-16)
 
-println("size of coeffs of ψ_f: $(size(cf))")
 println("maxlinkdim of ψ_f: $(maxlinkdim(ψ_f))")
 # println("size of coeffs of ψ_c: $(size(cc))")
 # println("maxlinkdim of ψ_c: $(maxlinkdim(ψ_c))")

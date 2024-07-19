@@ -88,13 +88,12 @@ fourier_max = 100
 cheb_cut = 1e-3
 fourier_cut = 1e-3
 
-ψ_c, cc = function_itn(
+ψ_c = function_itn(
   s, f; cutoff=cheb_cut, max_coeffs=cheb_max, mode="chebyshev", by_mag=false
 )
-ψ_f, cf = function_itn(s, f; cutoff=fourier_cut, max_coeffs=fourier_max, mode="fourier")
+ψ_f = function_itn(s, f; cutoff=fourier_cut, max_coeffs=fourier_max, mode="fourier")
 
-n_c = length(cc)
-n_f = length(cf)
+
 
 println("truncating...")
 ψ_c = truncate(ψ_c; cutoff=1e-10)
@@ -120,8 +119,8 @@ true_vals = [f(x) for x in x_vals]
 
 println("Plotting f(x)")
 plot(x_vals, true_vals; label="true function", title="f(x)")
-plot!(x_vals, f_vals; label="Fourier w/ $n_f terms")
-plot!(x_vals, c_vals; label="Chebyshev w/ $n_c terms")
+plot!(x_vals, f_vals; label="Fourier ")
+plot!(x_vals, c_vals; label="Chebyshev")
 
 ### Plots of Loss vs # terms and Maxlinkdim vs # terms
 
@@ -139,8 +138,8 @@ plot!(x_vals, c_vals; label="Chebyshev w/ $n_c terms")
 # for (j, i) in enumerate(eval_range)
 #   println("$i terms")
 
-#   local ψ_c, n_c = function_itn(s, f; cutoff=1e-10, max_coeffs=i, mode="chebyshev")
-#   local ψ_f, n_f = function_itn(s, f; cutoff=1e-10, max_coeffs=i, mode="fourier")
+#   local ψ_c = function_itn(s, f; cutoff=1e-10, max_coeffs=i, mode="chebyshev")
+#   local ψ_f = function_itn(s, f; cutoff=1e-10, max_coeffs=i, mode="fourier")
 
 #   ψ_c = truncate(ψ_c; cutoff=1e-10)
 #   ψ_f = truncate(ψ_f; cutoff=1e-10)

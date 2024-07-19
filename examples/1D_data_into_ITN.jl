@@ -30,7 +30,7 @@ x_vals = [collect(range(0.0, 0.5; length=50)); collect(range(0.51, 1.0; length=5
 data = [f(x) + noise_level * randn() for x in x_vals]
 
 ### Plot one result
-ψ_f, cf = data_itn(s, data, x_vals; mode="fourier", cutoff=1e-3, max_coeffs=300)
+ψ_f = data_itn(s, data, x_vals; mode="fourier", cutoff=1e-3, max_coeffs=300)
 println("length of coeffs vector: $(length(cf))")
 ψ_f = truncate(ψ_f; cutoff=1e-10)
 x_vals_ψ = grid_points(s, 1)
@@ -42,10 +42,6 @@ for (i, x) in enumerate(x_vals_ψ)
 end
 plot1 = plot(x_vals, data; label="true data")
 plot!(x_vals_ψ, f_vals; label="fourier approx")
-
-#""" Plotting Log of Fourier coefficient vs coefficient number """
-# plot2 = plot(1:length(cf), log10.(abs.(cf)), xlabel="k",ylabel="log|f_k|", title="fourier spectrum of noise")
-# display(plot2)
 
 ### Plot of error vs # terms
 # max_terms = 201

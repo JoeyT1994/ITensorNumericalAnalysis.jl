@@ -43,23 +43,21 @@ noise_level = 0.0
 data = [f(x, y) + noise_level * randn() for x in xrange, y in yrange]
 
 elapsed_time = @elapsed begin
-  ψ_f, cf = data_itn(s, data, (xrange, yrange); mode="fourier", cutoff=1e-3, max_coeffs=20)
+  ψ_f = data_itn(s, data, (xrange, yrange); mode="fourier", cutoff=1e-3, max_coeffs=20)
 end
 println("ψ_f time: ", elapsed_time)
 
 elapsed_time = @elapsed begin
-  ψ_c, cc = data_itn(
+  ψ_c = data_itn(
     s, data, (xrange, yrange); mode="chebyshev", cutoff=1e-3, max_coeffs=20, by_mag=false
   )
 end
 println("ψ_c time: ", elapsed_time)
 
 ψ_f = truncate(ψ_f; cutoff=1e-10)
-println("size of ψ_f coeffs: $(size(cf))")
 println("maxlinkdim of ψ_f after truncation: $(maxlinkdim(ψ_f))")
 
 ψ_c = truncate(ψ_c; cutoff=1e-10)
-println("size of ψ_c coeffs: $(size(cc))")
 println("maxlinkdim of ψ_c after truncation: $(maxlinkdim(ψ_c))")
 
 x_vals = grid_points(s, 1)
