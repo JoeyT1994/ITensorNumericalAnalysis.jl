@@ -124,6 +124,10 @@ function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
   return filter(v -> dimension ∈ vertex_dimensions(inm, v), vertices(inm))
 end
 
+function dimension_vertices(inm::IndsNetworkMap, dims::Vector{Int})
+  return filter(v -> vertex_dimension(inm, v) in dims, vertices(inm))
+end
+
 function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)
   index = ind(inm, dimension, digit)
   return only(filter(v -> index ∈ inm[v], vertices(inm)))
