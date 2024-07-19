@@ -17,7 +17,7 @@ end
     + ∑_{k=1}^{n} coeffs[2k+1]*cos(2kπx)  """
 function fourier_itensornetwork(
   s::IndsNetworkMap,
-  coeffs::Vector{Float64};
+  coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}};
   dim::Int=1,
   min_threshold=1e-15,
 )
@@ -38,7 +38,7 @@ end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are sines/cosines. """
 function fourier_2D_itensornetwork(
-  s::IndsNetworkMap, coeffs::Matrix{Float64}; dims::Vector{Int}=[1, 2], min_threshold=1e-15
+  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], min_threshold=1e-15
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
@@ -61,7 +61,7 @@ end
 """ Build the function f(x) = ∑_{k=1}^n coeffs[k] * T_k(x) 
     where T_k(x) is the k-th Chebyshev polynomial """
 function chebyshev_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector{Float64}; dim::Int=1
+  s::IndsNetworkMap, coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dim::Int=1
 )
   n = length(coeffs)
   if n <= 0
@@ -113,7 +113,7 @@ end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are chebyshev polynomials """
 function chebyshev_2D_itensornetwork(
-  s::IndsNetworkMap, coeffs::Matrix{Float64}; dims::Vector{Int}=[1, 2], min_threshold=1e-15
+  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], min_threshold=1e-15
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
