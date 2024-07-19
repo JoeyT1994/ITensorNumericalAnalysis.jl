@@ -116,10 +116,6 @@ function vertex_digit(inm::IndsNetworkMap, v)
   return digit(inm, only(inds(inm, v)))
 end
 
-#function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
-#  return filter(v -> all(d -> d == dimension, vertex_dimensions(inm, v)), vertices(inm))
-#end
-
 function dimension_vertices(inm::IndsNetworkMap, dimension::Int)
   return filter(v -> dimension ∈ vertex_dimensions(inm, v), vertices(inm))
 end
