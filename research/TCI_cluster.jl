@@ -46,13 +46,13 @@ function siteinds_constructor(mode::String, L::Int64; map_dimension = 1, f = not
 end
 
 function get_function(mode::String)
-  if mode == "Weirstrass"
+  if mode == "Weierstrass"
     nterms, a = 100, 3
     ks = weirstrass_coefficients(nterms, a)
     eval_function = x -> calulate_weirstrass(x, ks)
     return eval_function, nterms, ks
   elseif mode == "Airy"
-    nterms, omega = 100, 250
+    nterms, omega = 100, 50
     eval_function = x -> airyai(-omega * x)
     return eval_function, nterms, nothing
   elseif mode == "Gaussian"
