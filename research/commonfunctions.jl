@@ -1,5 +1,6 @@
 using Random: randn
 using SpecialFunctions
+using ITensorNumericalAnalysis: IndsNetworkMap
 
 function bessel_coefficients(nterms::Int64, a, k=1.0)
   coeffs = [0.0 for i in 1:a]

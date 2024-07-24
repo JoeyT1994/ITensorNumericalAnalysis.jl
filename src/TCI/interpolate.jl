@@ -85,7 +85,6 @@ function interpolate_inserter(
   state[ortho_vert] = Z
   state[center_vert] = C
   state = set_ortho_region(state, [center_vert])
-  state = truncate(state; cutoff)
   return state, nothing
 end
 
@@ -135,7 +134,7 @@ function interpolate(
   initial_pivot=random_initial_pivot(init_tn),
   inserter=interpolate_inserter,
   maxdim=typemax(Int),
-  mindim=0,
+  mindim=1,
   nsweeps,
   nsites=2,
   region_printer=interpolate_region_printer,

@@ -53,8 +53,9 @@ The value of k is determined dynamically such that both `k <= maxdim`
 and `abs(D[k,k]) < cutoff`.
 """
 function prrldu(M_::Matrix; cutoff::Real=0.0, maxdim::Int=typemax(Int), mindim::Int=1)
-  mindim = max(maxdim, 1)
   mindim = min(maxdim, mindim)
+  @assert maxdim > 0
+  @assert mindim > 0
   Elt = eltype(M_)
   M = copy(M_)
   Nr, Nc = size(M)

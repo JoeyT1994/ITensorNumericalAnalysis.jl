@@ -34,11 +34,11 @@ function siteinds_constructor(mode::String, L::Int64; map_dimension = 1, f = not
     k = round(Int, log2(0.5*L + 1)) + 1
     return continuous_siteinds_ordered(named_binary_tree(k); map_dimension)
   elseif mode[1:(length(mode)-1)] == "MISearch"
-    nsamples = 1000
+    nsamples, max_z = 5000, parse(Int64, last(mode))
     mi = generate_mi_matrix(f, nsamples, L, map_dimension)
-    max_z = parse(Int64, last(mode))
-    g = generate_tree(mi, L, map_dimension, max_z)
-    return continuous_siteinds_ordered_by_names(g)
+    g = named_grid((L,1))
+    g = minimize_me(g, mi; max_z, alpha = 2)
+    return continuous_siteinds(g, [[(i,1) for i in 1:L]])
   end
 end
 
@@ -125,8 +125,8 @@ function main(; md = nothing, func = nothing, l = nothing, save = true)
   end
 end
 
-main(; func = "Weirstrass", md = "OrderedStar4", l = 61, save = false)
-#main(; func = "Weirstrass", md = "MISearch3", l = 61, save = false)
-#main(; func = "Weirstrass", md = "MISearch4", l = 61, save = false)
+#main(; func = "Weirstrass", md = "CanonicalPath", l = 61, save = false)
+main(; func = "Weirstrass", md = "MISearch3", l = 61, save = false)
+main(; func = "Weirstrass", md = "MISearch4", l = 61, save = false)
 
 

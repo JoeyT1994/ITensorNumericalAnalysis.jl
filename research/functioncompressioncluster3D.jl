@@ -138,6 +138,6 @@ function main()
   npzwrite(file_name, grid_points = grid_points, fxy_xys = fxy_xys, fxy_xys_exact = fxy_xys_exact, L = L, memory_req = memory_req, errors = errors)
 end
 
-main()
+#main()
 
 

@@ -16,7 +16,7 @@ function _interpolative_gauge_edge(
   site_inds = siteinds(tn, src(edge))
   col_tags = tags(tn, edge)
   C, Z, inf_error = interpolative(
-    tn[src(edge)], col_inds, site_inds; col_vertex=src(edge), tags=col_tags, kwargs...
+    Algorithm("prrldu"), tn[src(edge)], col_inds, site_inds; col_vertex=src(edge), tags=col_tags, kwargs...
   )
   tn[src(edge)] = Z
   tn[dst(edge)] *= C

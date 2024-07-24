@@ -1,7 +1,8 @@
 
 using LinearAlgebra: eigvals, tr
 using Random
-using NamedGraphs.GraphsExtensions: add_edge, a_star
+using Graphs: merge_vertices
+using NamedGraphs.GraphsExtensions: add_edge, a_star, dst, src, add_vertex, add_edge, neighbors, rem_edge
 using NamedGraphs: NamedGraph, NamedEdge
 
 include("commonfunctions.jl")
@@ -117,3 +118,67 @@ function generate_tree(mi_matrix, L, no_dims, max_z)
     println("Bought MI down from $(sum(mi_matrix)) to $(sum(mi_matrix - adj_mat .* mi_matrix))")
     return g
 end
+
+function cost_function(g, mi_matrix; alpha = 1)
+    c = 0
+    verts = collect(vertices(g))
+    for (i, v) in enumerate(verts)
+        for vp in verts[(i+1):length(verts)]
+            d = length(a_star(g, v, vp))
+            c += (d^alpha) * mi_matrix[last(v), first(v), last(vp), first(vp)]
+        end
+    end
+    return c
+end
+
+function perform_move(g, e, mi_matrix; max_z = 3, alpha = 1)
+    cur_c = cost_function(g, mi_matrix; alpha)
+    costs_graphs = [g => cur_c]
+    g_swap = rename_vertices(v -> v == dst(e) ? src(e) : v == src(e) ? dst(e) : v, g)
+    push!(costs_graphs, g_swap => cost_function(g_swap, mi_matrix; alpha))
+
+    g_mod = merge_vertices(g, [dst(e), src(e)])
+    g_mod = add_vertex(g_mod, src(e))
+    for vn in filter(v -> v ≠ src(e), neighbors(g, dst(e)))
+        g_mod_t = rem_edge(g_mod, NamedEdge(dst(e) => vn))
+        g_mod_t = add_edges(g_mod_t, [NamedEdge(dst(e) => src(e)), NamedEdge(src(e) => vn)])
+        if degree(g_mod_t, dst(e)) <= max_z
+            push!(costs_graphs, g_mod_t => cost_function(g_mod_t, mi_matrix; alpha))
+        end
+    end
+    g_mod_branch1 = add_edge(g_mod, NamedEdge(dst(e) => src(e)))
+    if degree(g_mod_branch1, dst(e)) <= max_z
+        push!(costs_graphs, g_mod_branch1 => cost_function(g_mod_branch1, mi_matrix; alpha))
+    end
+
+    g_mod = merge_vertices(g, [src(e), dst(e)])
+    g_mod = add_vertex(g_mod, dst(e))
+    for vn in filter(v -> v ≠ dst(e), neighbors(g, src(e)))
+        g_mod_t = rem_edge(g_mod, NamedEdge(src(e) => vn))
+        g_mod_t = add_edges(g_mod_t, [NamedEdge(src(e) => dst(e)), NamedEdge(dst(e) => vn)])
+        if degree(g_mod_t, src(e)) <= max_z
+            push!(costs_graphs, g_mod_t => cost_function(g_mod_t, mi_matrix; alpha))
+        end
+    end
+    g_mod_branch2 = add_edge(g_mod, NamedEdge(src(e) => dst(e)))
+    if degree(g_mod_branch2, src(e)) <= max_z
+        push!(costs_graphs, g_mod_branch2 => cost_function(g_mod_branch2, mi_matrix; alpha))
+    end
+
+    costs_graphs_sort = sort(costs_graphs; by = c -> last(c))
+    return first(first(costs_graphs_sort)), last(first(costs_graphs_sort))
+end
+
+function minimize_me(g, mi_matrix; niters = 5000, max_z = 3, alpha = 1)
+    println("Starting cost function is $(cost_function(g, mi_matrix; alpha))")
+    g_t = copy(g)
+    for i in 1:niters
+        e = rand(edges(g_t))
+        g_t, new_c = perform_move(g_t, e, mi_matrix; max_z, alpha)
+    end
+
+    println("Final cost functions is $(cost_function(g_t, mi_matrix; alpha))")
+    return g_t
+end
+
+

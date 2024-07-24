@@ -1,6 +1,7 @@
 using ITensors: ITensor, Index, dag, combinedind, combiner
 using ITensors.NDTensors: matrix
 using LinearAlgebra: LinearAlgebra
+using ITensors.NDTensors.BackendSelection: @Algorithm_str, Algorithm
 
 """
     interpolative(M::Matrix; cutoff, maxdim)
@@ -15,7 +16,7 @@ which is controlled by the parameters `cutoff`
 and `maxdim`.
 
 """
-function interpolative(M::Matrix; kws...)
+function interpolative(::Algorithm"prrldu", M::Matrix; kws...)
   # Compute interpolative decomposition (ID) from PRRLU
   L, d, U, pr, pc, inf_error = prrldu(M; kws...)
   U11 = U[:, 1:length(d)]
@@ -51,14 +52,45 @@ Optional keyword arguments:
 * cutoff::Float64 - keep only as many columns such that the value of the infinity (max) norm difference from the original tensor is below this value
 * tags="Link" - tags to use for the Index connecting `C` to `Z`
 """
+
 function interpolative(
+  ::Algorithm"nuclear", M::Matrix; cutoff=0.0, maxdim=min(size(M)...), kws...
+)
+  maxdim = min(maxdim, size(M)...)
+  cols = Int[]
+  K = M' * M
+  m = size(K, 1)
+  Kt = K
+  error = 0.0
+  for t in 1:maxdim
+    Kt2 = Kt * Kt
+    l = argmax(p -> (p ∈ cols ? -Inf : Kt2[p, p] / Kt[p, p]), 1:m)
+    max_err2 = Kt2[l, l] / Kt[l, l]
+    push!(cols, l)
+    error = sqrt(abs(max_err2))
+    (max_err2 < cutoff^2) && break
+    Kt = K - K[:, cols] * (K[cols, cols] \ K[cols, :]) #Schur complement
+  end
+  C = M[:, cols]
+  X = C \ M
+  for w in 1:length(cols), r in 1:length(cols)
+    X[r, cols[w]] = (r == w) ? 1.0 : 0.0
+  end
+  return C, X, cols, error
+end
+
+function interpolative(T, args...; algorithm="prrldu", kws...)
+  return interpolative(Algorithm(algorithm), T, args...; kws...)
+end
+
+function interpolative(::Algorithm"prrldu",
   T::ITensor,
   col_inds,
   site_inds;
   col_vertex,
   cutoff=0.0,
   maxdim=typemax(Int),
-  mindim=0,
+  mindim=1,
   tags="Link",
 )
   for i in col_inds

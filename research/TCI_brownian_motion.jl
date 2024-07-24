@@ -12,30 +12,41 @@ using ITensorNumericalAnalysis:
   calculate_p,
   evaluate,
   IndsNetworkMap,
-  complex_continuous_siteinds
+  complex_continuous_siteinds,
+  integrate
 using Elliptic
 using SpecialFunctions
+using Distributions, Random
 
 include("utils.jl")
 include("commonnetworks.jl")
 include("commonfunctions.jl")
 
+function brownian_coeffs(nterms)
+  return [rand(Normal()) for i in 1:nterms]
+end
+
+function weiener_process(x, ks)
+  return ks[1]*x + sqrt(2)*sum([ks[i] * sin(pi *i * x) / (pi * i) for i in 2:length(ks)])
+end
+
 Random.seed!(123)
 let
 
   # Define graph and indices
-  L = 33
+  L = 51
   delta = 2.0^(-L)
-  χ = 5
+  χ1,χ2  = 8, 100
   #s = continuous_siteinds(g; map_dimension=2)
-  s1 = qtt_siteinds_multidimstar_ordered(L, 4; map_dimension = 1, is_complex = false)
-  s2 = qtt_siteinds_canonical_sequentialdims(L; map_dimension = 1, is_complex = false)
-  ks = weirstrass_coefficients(100, 3)
-  #f = x -> calulate_weirstrass(x, ks)
-  f = x -> airyai(-100*x)
+  s1 = qtt_siteinds_multidimstar_ordered(L, 5; map_dimension = 1, is_complex = false)
+  s2 = qtt_siteinds_canonical(L; map_dimension = 1, is_complex = false)
 
-  tn1 = interpolate(f, s1; nsweeps=10, maxdim=χ, cutoff=1e-16, outputlevel=1)
-  tn2 = interpolate(f, s2; nsweeps=10, maxdim=χ, cutoff=1e-16, outputlevel=1)
+  nterms = 10000
+  ks = brownian_coeffs(nterms)
+  f = x -> weiener_process(x, ks)
+
+  tn1 = interpolate(f, s1; nsweeps=10, maxdim=χ1, cutoff=1e-16, outputlevel = 1)
+  tn2 = interpolate(f, s2; nsweeps=10, maxdim=χ2, cutoff=1e-16, outputlevel=1)
 
   ngrid_points = 250
   xs = [delta * Random.rand(1:(2^L-1)) for i in 1:ngrid_points]
