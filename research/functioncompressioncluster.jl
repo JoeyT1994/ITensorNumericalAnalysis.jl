@@ -110,7 +110,7 @@ function main(; md = nothing, func = nothing, l = nothing, save = true)
       end
     end
 
-    errors[χ] = calc_error(reduce(vcat, fx_xs_exact), reduce(vcat, fx_xs[χ, :]))
+    errors[χ] = calc_error_V2(reduce(vcat, fx_xs_exact), reduce(vcat, fx_xs[χ, :]))
     memory_req[χ] = no_elements(fx)
     println("Achieved an error of $(errors[χ])")
     flush(stdout)

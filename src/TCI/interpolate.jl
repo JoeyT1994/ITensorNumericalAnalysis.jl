@@ -18,6 +18,7 @@ using ITensorNetworks:
   default_transform_operator,
   default_sweep_plans
 using NamedGraphs.GraphsExtensions: is_leaf_vertex, incident_edges
+using Observers: observer
 
 function interpolate_extracter(
   state, projected_operator, region, gauge_center; internal_kwargs
@@ -122,8 +123,8 @@ end
 function interpolate(f, s::IndsNetworkMap; initial_pivot=random_initial_pivot(s), initial_state = const_itn(s; linkdim = 1), kws...)
   input_f = input -> f(calculate_p(s, input))
   @assert is_tree(s)
-  tn = interpolate(input_f, ttn(itensornetwork(initial_state)); initial_pivot, kws...)
-  return ITensorNetworkFunction(ITensorNetwork(tn), s)
+  tn, region_observer = interpolate(input_f, ttn(itensornetwork(initial_state)); initial_pivot, kws...)
+  return ITensorNetworkFunction(ITensorNetwork(tn), s), region_observer
 end
 
 function interpolate(
@@ -149,6 +150,10 @@ function interpolate(
 )
   root_vertex = first(leaf_vertices(init_tn))
   init_tn = interpolative_gauge(init_tn, root_vertex)
+  region(; which_region_update, sweep_plan, kw...) = first(sweep_plan[which_region_update])
+  sweep(; sweep_plan, which_sweep, kw...) = which_sweep
+  error(; inf_norm_error, kw...) = inf_norm_error
+  region_observer! = observer(region, error, sweep)
 
   ttnf = NetworkFunction(f, initial_pivot; use_caching)
   sweep_plans = default_sweep_plans(
@@ -166,6 +171,6 @@ function interpolate(
     nsites,
   )
   return alternating_update(
-    ttnf, init_tn, sweep_plans; region_printer, sweep_printer, kws...
-  )
+    ttnf, init_tn, sweep_plans; region_observer!, region_printer, sweep_printer, kws...
+  ), region_observer!
 end
