@@ -28,12 +28,12 @@ data = reverse(data; dims=1)
 println("size of matrix: $(size(data))")
 
 elapsed_time = @elapsed begin
-  ψ_f = data_itn(s, data; mode="fourier", cutoff=1e-4, max_coeffs=100, by_mag=true)
+  ψ_f = data_itn(s, data; mode="fourier", cutoff=1e-4, max_coeffs=30)
 end
 println("constructing ψ_f: ", elapsed_time, " seconds")
 
 # elapsed_time = @elapsed begin
-#     ψ_c = data_itn(s, data; mode="chebyshev", cutoff=1e-3, max_coeffs = 100)
+#     ψ_c = data_itn(s, data; mode="chebyshev", cutoff=1e-3, max_coeffs = 30)
 # end
 # println("constructing ψ_c: ", elapsed_time, " seconds")
 
@@ -65,7 +65,6 @@ println("constructing ψ_f: ", elapsed_time, " seconds")
 # ψ_c = truncate(ψ_c, cutoff=1e-16)
 
 println("maxlinkdim of ψ_f: $(maxlinkdim(ψ_f))")
-# println("size of coeffs of ψ_c: $(size(cc))")
 # println("maxlinkdim of ψ_c: $(maxlinkdim(ψ_c))")
 
 x_vals = grid_points(s, 1)
@@ -91,7 +90,7 @@ println("fourier L2 error:  $fourier_loss")
 # println("chebyshev L2 error: $chebyshev_loss")
 
 plot1 = heatmap(x_vals, y_vals, data; title="true image")
-plot2 = heatmap(x_vals, y_vals, ψ_f_eval; title="fourier TN") #fourier TN approximation
+plot2 = heatmap(x_vals, y_vals, ψ_f_eval; title="cheb TN") #fourier TN approximation
 # plot3 = heatmap(x_vals, y_vals, ψ_c_eval; title="chebyshev TN")
 
 combined = plot(plot1, plot2; layout=(1, 2), size=(700, 280))

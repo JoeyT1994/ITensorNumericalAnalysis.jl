@@ -20,6 +20,7 @@ function fourier_itensornetwork(
   coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}};
   dim::Int=1,
   min_threshold=1e-15,
+  cutoff=1e-16
 )
   n = length(coeffs)
   if n < 1
@@ -30,7 +31,7 @@ function fourier_itensornetwork(
   for i in 2:n
     if abs(coeffs[i]) > min_threshold
       ψ += coeffs[i] * fourier_term(s, i, dim)
-      ψ = truncate(ψ; cutoff=1e-16)
+      ψ = truncate(ψ; cutoff)
     end
   end
   return ψ
@@ -38,7 +39,7 @@ end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are sines/cosines. """
 function fourier_2D_itensornetwork(
-  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], min_threshold=1e-15
+  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], min_threshold=1e-15, cutoff=1e-16
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
@@ -51,7 +52,7 @@ function fourier_2D_itensornetwork(
     for k in 1:m
       if abs(coeffs[j, k]) > min_threshold
         ψ += coeffs[j, k] * fourier_term(s, j, dims[1]) * fourier_term(s, k, dims[2])
-        ψ = truncate(ψ; cutoff=1e-16)
+        ψ = truncate(ψ; cutoff)
       end
     end
   end
@@ -59,78 +60,64 @@ function fourier_2D_itensornetwork(
 end
 
 """ Build the function f(x) = ∑_{k=1}^n coeffs[k] * T_k(x) 
-    where T_k(x) is the k-th Chebyshev polynomial """
+    where T_k(x) is the k-th Chebyshev polynomial. """
 function chebyshev_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dim::Int=1
+  s::IndsNetworkMap, coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dim::Int=1, cutoff=1e-16
 )
   n = length(coeffs)
   if n <= 0
     throw("coeffs must be nonempty")
   elseif n == 1
-    return coeffs[1] * const_itensornetwork(s)
+    return coeffs[1] * const_itn(s)
   end
 
-  # Converts a polynomial in chebyshev basis to its standard polynomial form
-  Tn_minus_one = [1.0; zeros(n - 1)] # T_0 = 1
-  Tn = [[-1.0, 2.0]; zeros(n - 2)] # T_1 = 2x-1
-  std_coeffs = zeros(n)
-  std_coeffs += coeffs[1] * Tn_minus_one
-  std_coeffs += coeffs[2] * Tn
-  for i in 3:n
-    #recurrence relation: T_{n+1} = (4x-2)*T_n - T_{n-1}
-    Tn_plus_one = circshift(Tn, 1) * 4.0 - Tn * 2.0 - Tn_minus_one
-    Tn_minus_one = Tn
-    Tn = Tn_plus_one
-    std_coeffs += coeffs[i] * Tn
-  end
-  return polynomial_itensornetwork(s, std_coeffs; dim=dim)
-end
+  #Clenshaw Evaluation method - uses idea from https://arxiv.org/pdf/2407.09609
+  y_n = const_itn(s; c = 0)
+  y_n1 = const_itn(s; c = 0)
 
-""" helper function for chebyshev_2D_itensornetwork """
-function cheb_term(s::IndsNetworkMap, k::Integer, d::Integer)
-  Tn_minus_one = [1.0] # T_0 = 1
-  Tn = [-1.0, 2.0] # T_1 = 2x-1
-  if k == 1
-    return const_itensornetwork(s)
-  elseif k == 2
-    return polynomial_itensornetwork(s, Tn; dim=d)
-  else
-    #generate the k-th chebyshev coefficients
-    for i in 3:k
-      Tn_plus_one = [0.0; Tn] * 4.0
-      for j in 1:length(Tn_minus_one)
-        Tn_plus_one[j] -= Tn_minus_one[j]
-      end
-      for j in 1:length(Tn)
-        Tn_plus_one[j] -= 2 * Tn[j]
-      end
-      Tn_minus_one = Tn
-      Tn = Tn_plus_one
-    end
-    return polynomial_itensornetwork(s, Tn; dim=d)
+  # y_n-1 = c_n-1 - y_n+1 + (4x-2) * y_n
+  for d in n:-1:1
+    old_y_n = truncate(y_n; cutoff)
+    y_n = coeffs[d] * const_itn(s) + (-1) * y_n1 + poly_itn(s, [-2, 4]; dim) * old_y_n
+    y_n1 = old_y_n
   end
+
+  return truncate(y_n + poly_itn(s, [1,-2]; dim) * y_n1; cutoff)
 end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are chebyshev polynomials """
 function chebyshev_2D_itensornetwork(
-  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], min_threshold=1e-15
+  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], cutoff=1e-16
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
   if n < 1 || m < 1
     throw("coeffs must be nonempty")
   end
+  
+  #Clenshaw Evaluation method - uses idea from https://arxiv.org/pdf/2407.09609
+  y_n = const_itn(s; c = 0)
+  y_n1 = const_itn(s; c = 0)
 
-  ψ = const_itn(s; c=0)
-  for j in 1:n
-    for k in 1:m
-      if abs(coeffs[j, k]) > min_threshold
-        ψ += coeffs[j, k] * cheb_term(s, j, dims[1]) * cheb_term(s, k, dims[2])
-        ψ = truncate(ψ; cutoff=1e-16)
-      end
+  for j in m:-1:1
+    #determine the weighted sum of chebyshev polynomials of x
+    x_n = const_itn(s; c = 0)
+    x_n1 = const_itn(s; c = 0)
+    for i in n:-1:1
+       # x_n-1 = c_n-1 - x_n+1 + (4x-2) * x_n
+      old_x_n = truncate(x_n; cutoff)
+      x_n = coeffs[i,j] * const_itn(s) + (-1) * x_n1 + poly_itn(s, [-2, 4]; dim=dims[1]) * old_x_n
+      x_n1 = old_x_n
     end
+    coeff_j =  truncate(x_n + poly_itn(s, [1,-2]; dim=dims[1]) * x_n1; cutoff)
+
+    # y_n-1 = c_n-1 - y_n+1 + (4y-2) * y_n
+    old_y_n = truncate(y_n; cutoff)
+    y_n = coeff_j + (-1)*y_n1 + poly_itn(s, [-2, 4]; dim=dims[2]) * old_y_n
+    y_n1 = old_y_n
   end
-  return ψ
+
+  return truncate(y_n + poly_itn(s, [1,-2]; dim=dims[2]) * y_n1; cutoff)
 end
 
 """ Helper function for function_itensornetwork (1D case) """
@@ -179,9 +166,10 @@ end
     - `s`: IndsNetworkMap
     - `f`: a real-valued function on domain [0,1] or [0,1]⊗[0,1] which can be given as a black box
     - `cutoff`: (default=1e-3) specifies at what value should the fourier/chebyshev coefficients be truncated below
-    - `max_coeffs`: the maximum number of coefficients allowed
+    - `max_coeffs`: the maximum number of coefficients allowed in 1D. In 2D, it is the maximum degree of a coefficient in each dimension
     - `mode`: ["fourier", "chebyshev"] "fourier" uses a fourier basis and "chebyshev" uses a chebyshev polynomial basis
     - `by_mag`: boolean. if false, will use the `max_coeffs` coefficients of lowest degree. if true, will use the `max_coeffs` coefficients of greatest absolute magnitude.
+    - `trunc_level`: what cutoff the periodic truncation is done at
 """
 function function_itensornetwork(
   s::IndsNetworkMap,
@@ -189,7 +177,8 @@ function function_itensornetwork(
   cutoff::Float64=1e-3,
   max_coeffs::Integer=100,
   mode="fourier",
-  by_mag=true,
+  by_mag=false,
+  trunc_level=1e-16
 )
 
   #get the number of inputs to f
@@ -199,9 +188,8 @@ function function_itensornetwork(
 
   """ 1D functions """
   if num_inputs == 1
-    domain = Interval(0.0, 1.0)
     if mode == "fourier"
-      S = Fourier(domain)
+      S = Fourier(Interval(0.0, 1.0))
       f_fourier = Fun(f, S)
       a = chop(f_fourier, cutoff)
       if by_mag
@@ -209,9 +197,9 @@ function function_itensornetwork(
       else
         cf = ncoefficients(a) > max_coeffs ? coefficients(a)[1:max_coeffs] : coefficients(a)
       end
-      ψ = fourier_itensornetwork(s, cf)
+      ψ = fourier_itensornetwork(s, cf; cutoff=trunc_level)
     elseif mode == "chebyshev"
-      T = Chebyshev(domain)
+      T = Chebyshev(Interval(0.0, 1.0))
       f_chebyshev = Fun(f, T)
       a = chop(f_chebyshev, cutoff)
       if by_mag
@@ -219,7 +207,7 @@ function function_itensornetwork(
       else
         cf = ncoefficients(a) > max_coeffs ? coefficients(a)[1:max_coeffs] : coefficients(a)
       end
-      ψ = chebyshev_itensornetwork(s, cf)
+      ψ = chebyshev_itensornetwork(s, cf; cutoff=trunc_level)
     else
       throw("mode $mode not recognized")
     end
@@ -227,31 +215,28 @@ function function_itensornetwork(
 
     """ 2D functions """
   elseif num_inputs == 2
-    domain = Interval(0.0, 1.0)
     if mode == "fourier"
-      S = Fourier(domain)^2
+      S = Fourier(Interval(0.0, 1.0))^2
       f_fourier = ProductFun(f, S; tol=cutoff)
       if by_mag
         cf = greatest_n_2d(coefficients(f_fourier), max_coeffs)
       else
-        D = Int(floor(sqrt(max_coeffs)))
-        a = min(D, size(coefficients(f_fourier))[1])
-        b = min(D, size(coefficients(f_fourier))[2])
+        a = min(max_coeffs, size(coefficients(f_fourier))[1])
+        b = min(max_coeffs, size(coefficients(f_fourier))[2])
         cf = coefficients(f_fourier)[1:a, 1:b]
       end
-      ψ = fourier_2D_itensornetwork(s, cf; dims=[1, 2])
+      ψ = fourier_2D_itensornetwork(s, cf; dims=[1, 2], cutoff=trunc_level)
     elseif mode == "chebyshev"
-      T = Chebyshev(domain)^2
+      T = Chebyshev(Interval(0.0, 1.0))^2
       f_chebyshev = ProductFun(f, T; tol=cutoff)
       if by_mag
         cf = greatest_n_2d(coefficients(f_chebyshev), max_coeffs)
       else
-        D = Int(floor(sqrt(max_coeffs)))
-        a = min(D, size(coefficients(f_chebyshev))[1])
-        b = min(D, size(coefficients(f_chebyshev))[2])
+        a = min(max_coeffs, size(coefficients(f_chebyshev))[1])
+        b = min(max_coeffs, size(coefficients(f_chebyshev))[2])
         cf = coefficients(f_chebyshev)[1:a, 1:b]
       end
-      ψ = chebyshev_2D_itensornetwork(s, cf; dims=[1, 2])
+      ψ = chebyshev_2D_itensornetwork(s, cf; dims=[1, 2], cutoff=trunc_level)
     else
       throw("mode $mode not recognized")
     end

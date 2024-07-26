@@ -10,7 +10,7 @@ using Plots
 
 Random.seed!(1234)
 
-L = 10
+L = 8
 #comb tree
 g = named_comb_tree((1, L))
 
@@ -54,43 +54,41 @@ end
 ### Potential functions to choose from
 
 #piecewise function
-#f(x) = x < 0.75 ? x < 0.25 ? 0 : sin(4π * (x - 0.25)) : 0
+ f(x) = x < 0.75 ? x < 0.25 ? 0 : sin(4π * (x - 0.25)) : 0
 #gaussian
 #f(x) = exp(-(x - 0.5)^2 / 0.01)
 
 #almost 1/x function. this breaks it if the cutoff is not fairly large/max_coeffs fairly small
-# f(x) = 1/(.01+x) + 5*x^2
+#f(x) = 1/(.01+x) + 5*x^2
 
 #f(x) = sin(1/(.01+x))
 #f(x) = cos(π*x) + 5*x
-#f(x) = sin(20*x^(1/7))
+# f(x) = sin(20*x^(1/7))
 
-#
+
 # Sum of random Gaussians
-#
-Ng = 40
-ω = 0.001
-ws = [ω * rand() for n in 1:Ng]
-xs = [rand() for n in 1:Ng]
-hs = [randn() for n in 1:Ng]
-step_size = 2.5 * rand()
-step_location = 0.4
-function f(x::Number)
-  val = sum(g -> hs[g] * exp(-(x[1] - xs[g])^2 / ws[g]), 1:Ng)
-  val += (x[1] > step_location) ? step_size : 0.0
-  return val
-end
+
+# Ng = 40
+# ω = 0.001
+# ws = [ω * rand() for n in 1:Ng]
+# xs = [rand() for n in 1:Ng]
+# hs = [randn() for n in 1:Ng]
+# step_size = 2.5 * rand()
+# step_location = 0.4
+# function f(x::Number)
+#   val = sum(g -> hs[g] * exp(-(x[1] - xs[g])^2 / ws[g]), 1:Ng)
+#   val += (x[1] > step_location) ? step_size : 0.0
+#   return val
+# end
 
 ### Plotting f(x) vs ITN encodings using Fourier or Chebyshev decompositions
 
-cheb_max = 25
+cheb_max = 100
 fourier_max = 100
-cheb_cut = 1e-3
-fourier_cut = 1e-3
+cheb_cut = 1e-4
+fourier_cut = 1e-4
 
-ψ_c = function_itn(
-  s, f; cutoff=cheb_cut, max_coeffs=cheb_max, mode="chebyshev", by_mag=false
-)
+ψ_c = function_itn(s, f; cutoff=cheb_cut, max_coeffs=cheb_max, mode="chebyshev")
 ψ_f = function_itn(s, f; cutoff=fourier_cut, max_coeffs=fourier_max, mode="fourier")
 
 
