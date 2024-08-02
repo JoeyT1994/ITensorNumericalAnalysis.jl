@@ -66,15 +66,15 @@ function calulate_weirstrass(x::Float64, ks::Vector)
   return out
 end
 
-function build_random_planewaves(s::IndsNetworkMap, nterms, As, kxs, kys, kzs; dimension = 1)
-  itns = [exp_itn(s; k = 1.0im * kxs[i], c = As[i], dimension = 1)*exp_itn(s; k = 1.0im * kys[i], dimension = 2)*exp_itn(s; k = 1.0im * kzs[i], dimension = 3) for i in 1:nterms]
+function build_random_planewaves(s::IndsNetworkMap; nterms, As, kxs, kys, kzs, dimension = 1)
+  itns = [exp_itn(s; k = 1.0im * kxs[i], c = As[i], dim = 1)*exp_itn(s; k = 1.0im * kys[i], dim = 2)*exp_itn(s; k = 1.0im * kzs[i], dim = 3) for i in 1:nterms]
   return reduce(+, reduce(vcat,itns))
 end
 
 function build_spherical_laplacian_solution(s::IndsNetworkMap, coeffs)
-  r, r_sq, r_cub = poly_itn(s, [0.0, 1.0]; dimension = 1), poly_itn(s, [0.0, 0.0, 1.0]; dimension = 1), poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dimension = 1)
-  c_theta, s_theta = cos_itn(s; k = pi, dimension = 2), sin_itn(s; k = pi, dimension = 2)
-  c_phi, s_phi, c_2phi = cos_itn(s; k =2.0*pi, dimension = 3), sin_itn(s; k = 2.0*pi, dimension = 3), cos_itn(s; k =4.0*pi, dimension = 3)
+  r, r_sq, r_cub = poly_itn(s, [0.0, 1.0]; dim = 1), poly_itn(s, [0.0, 0.0, 1.0]; dim = 1), poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dim = 1)
+  c_theta, s_theta = cos_itn(s; k = pi, dim = 2), sin_itn(s; k = pi, dim = 2)
+  c_phi, s_phi, c_2phi = cos_itn(s; k =2.0*pi, dim = 3), sin_itn(s; k = 2.0*pi, dim = 3), cos_itn(s; k =4.0*pi, dim = 3)
   ψ = r * s_theta * s_phi * const_itn(s; c = coeffs[1])
   ψ += r_cub * s_theta * s_phi * const_itn(s; c = coeffs[2])
   ψ += r_sq * s_theta * s_phi * c_theta * const_itn(s; c = coeffs[3])

@@ -31,11 +31,11 @@ function star(no_points::Int64, length::Int64)
   x = 2
   for i in 1:length
     for j in 1:no_points
-      add_vertex!(g, (x, 1))
+      add_vertex!(g, (1, x))
       if i == 1
-        add_edge!(g, NamedEdge((x, 1) => (1, 1)))
+        add_edge!(g, NamedEdge((1, x) => (1, 1)))
       else
-        add_edge!(g, NamedEdge((x, 1) => (x - no_points, 1)))
+        add_edge!(g, NamedEdge((1, x) => (1,x - no_points)))
       end
       x += 1
     end
