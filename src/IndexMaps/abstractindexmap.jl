@@ -18,8 +18,10 @@ function calculate_ind_values(
   return not_implemented()
 end
 grid_points(imap::AbstractIndexMap, N::Int, d::Int) = not_implemented()
+rem_index(imap::AbstractIndexMap, ind::Index) = not_implemented()
 
-dimension(imap::AbstractIndexMap) = maximum(collect(values(index_dimension(imap))))
+dimensions(imap::AbstractIndexMap) = Int64.(unique(collect(values(index_dimension(imap)))))
+dimension(imap::AbstractIndexMap) = maximum(dimensions(imap))
 dimension(imap::AbstractIndexMap, ind::Index) = index_dimension(imap)[ind]
 dimensions(imap::AbstractIndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(imap::AbstractIndexMap, ind::Index) = index_digit(imap)[ind]
@@ -33,10 +35,16 @@ function dimension_inds(imap::AbstractIndexMap, dim::Int)
   return collect(filter(i -> index_dimension(imap)[i] == dim, keys(index_dimension(imap))))
 end
 
+function reduced_indexmap(imap::AbstractIndexMap, dim::Int)
+  imap_dim = copy(imap)
+  for ind in setdiff(inds(imap), dimension_inds(imap, dim))
+    imap_dim = rem_index(imap_dim, ind)
+  end
+  return imap_dim
+end
+
 function calculate_p(
-  imap::AbstractIndexMap,
-  ind_to_ind_value_map,
-  dims::Vector{Int}=[i for i in 1:dimension(imap)],
+  imap::AbstractIndexMap, ind_to_ind_value_map, dims::Vector{Int}=dimensions(imap)
 )
   out = Number[]
   for d in dims
@@ -72,7 +80,9 @@ function set_ind_values!(
   end
 end
 
-function calculate_ind_values(imap::AbstractIndexMap, x::Number, dim::Int=1; kwargs...)
+function calculate_ind_values(
+  imap::AbstractIndexMap, x::Number, dim::Int=first(dimensions(imap)); kwargs...
+)
   return calculate_ind_values(imap, [x], [dim]; kwargs...)
 end
 function calculate_ind_values(imap::AbstractIndexMap, xs::Vector; kwargs...)

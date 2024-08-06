@@ -25,3 +25,23 @@ function integrate(
   ∑ = ITensorNetwork(eltype(first(fitn)), v -> [0.5, 0.5], s)
   return inner(∑, operator, itensornetwork(fitn); alg, kwargs...)
 end
+
+function partial_integrate(
+  fitn::ITensorNetworkFunction, dims::Vector{Int}; reduce_network=true
+)
+  s = indsnetworkmap(fitn)
+  new_imap = copy(indexmap(s))
+  fitn = copy(itensornetwork(fitn))
+  for v in dimension_vertices(s, dims)
+    sinds_dim = filter(i -> dimension(s, i) ∈ dims, s[v])
+    for sind in sinds_dim
+      fitn[v] *= ITensor(eltype(fitn[v]), 0.5, sind)
+      new_imap = rem_index(new_imap, sind)
+    end
+  end
+  if reduce_network
+    fitn = merge_internal_tensors(fitn)
+  end
+  new_inmap = IndsNetworkMap(siteinds(fitn), new_imap)
+  return ITensorNetworkFunction(fitn, new_inmap)
+end

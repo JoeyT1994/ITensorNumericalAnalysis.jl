@@ -257,21 +257,27 @@ function operator_proj(fx::ITensorNetworkFunction)
   return operator
 end
 
-function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
-  gx, fx = sim(copy(gx); sites=[]), copy(fx)
-  @assert vertices(gx) == vertices(fx)
-  fxgx = copy(fx)
-  s = siteinds(fxgx)
-  for v in vertices(fxgx)
-    @assert issetequal(siteinds(fx, v), siteinds(gx, v))
-    sinds = siteinds(fxgx, v)
-    sindssim = sim.(sinds)
-    fxgx[v] *= prod([delta(s, s', ssim) for (s, ssim) in zip(sinds, sindssim)])
-    temp_tensor = replaceinds(gx[v], sinds, sindssim)
-    fxgx[v] = noprime!(fxgx[v] * temp_tensor)
+function multiply(g::ITensorNetworkFunction, f::ITensorNetworkFunction)
+  imap = merge(indexmap(g), indexmap(f))
+  g, f = sim(copy(itensornetwork(g)); sites=[]), copy(itensornetwork(f))
+  verts = union(vertices(g), vertices(f))
+  tensors = Pair{Any,ITensor}[]
+  for v in verts
+    if v ∉ vertices(g)
+      push!(tensors, v => f[v])
+    elseif v ∉ vertices(f)
+      push!(tensors, v => g[v])
+    else
+      cinds = commoninds(g[v], f[v])
+      fg_v = f[v] * replaceinds(g[v], cinds, cinds')
+      fg_v *= prod([delta(cind, cind', cind'') for cind in cinds])
+      push!(tensors, v => noprime(fg_v))
+    end
   end
-
-  return combine_linkinds(fxgx)
+  fg = combine_linkinds(ITensorNetwork(tensors))
+  s = siteinds(fg)
+  inmap = IndsNetworkMap(s, imap)
+  return ITensorNetworkFunction(fg, inmap)
 end
 
 function multiply(

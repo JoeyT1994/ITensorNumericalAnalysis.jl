@@ -1,6 +1,9 @@
 using Graphs: AbstractGraph
-using ITensors: ITensors, Index, dim, inds
-using ITensorNetworks: IndsNetwork, random_tensornetwork
+using NamedGraphs.GraphsExtensions: rem_edge, add_edge, dst, src
+using ITensors: ITensors, Index, dim, inds, uniqueinds, tags
+using ITensorNetworks:
+  AbstractITensorNetwork, IndsNetwork, random_tensornetwork, is_multi_edge, linkinds
+using ITensors.ITensorMPS: ITensorMPS
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
@@ -41,4 +44,87 @@ function base(s::IndsNetwork)
   dims = dim.(indices)
   @assert all(d -> d == first(dims), dims)
   return first(dims)
+end
+
+#Given an itensornetwork, contract away any tensors which don't have external indices.
+function merge_internal_tensors(tn::AbstractITensorNetwork)
+  tn = copy(tn)
+  internal_vertices = filter(v -> isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  external_vertices = filter(v -> !isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  for v in internal_vertices
+    vns = neighbors(tn, v)
+    if !isempty(vns)
+      tn = contract(tn, v => first(vns))
+    else
+      tn[first(external_vertices)] *= tn[v][]
+      tn = rem_vertex(tn, v)
+    end
+  end
+  return tn
+end
+
+#Overloading this here for now due to a bug when adding networks with the same edges but just 
+#reversed
+
+function edges_equal(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
+  for e in edges(tn1)
+    if e ∉ edges(tn2) && reverse(e) ∉ edges(tn2)
+      return false
+    end
+  end
+  return true
+end
+
+function ITensorMPS.add(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
+  @assert issetequal(vertices(tn1), vertices(tn2))
+
+  tn1 = combine_linkinds(tn1; edges=filter(is_multi_edge(tn1), edges(tn1)))
+  tn2 = combine_linkinds(tn2; edges=filter(is_multi_edge(tn2), edges(tn2)))
+
+  edges_tn1, edges_tn2 = edges(tn1), edges(tn2)
+
+  if edges_equal(tn1, tn2)
+    new_edges = union(edges_tn1, edges_tn2)
+    tn1 = insert_linkinds(tn1, new_edges)
+    tn2 = insert_linkinds(tn2, new_edges)
+  end
+
+  edges_tn1, edges_tn2 = edges(tn1), edges(tn2)
+
+  tn12 = copy(tn1)
+  new_edge_indices = Dict(
+    zip(
+      edges_tn1,
+      [
+        Index(
+          dim(only(linkinds(tn1, e))) + dim(only(linkinds(tn2, e))),
+          tags(only(linkinds(tn1, e))),
+        ) for e in edges_tn1
+      ],
+    ),
+  )
+
+  #Create vertices of tn12 as direct sum of tn1[v] and tn2[v]. Work out the matching indices by matching edges. Make index tags those of tn1[v]
+  for v in vertices(tn1)
+    @assert issetequal(siteinds(tn1, v), siteinds(tn2, v))
+
+    e1_v = filter(x -> src(x) == v || dst(x) == v, edges_tn1)
+    e2_v = filter(x -> src(x) == v || dst(x) == v, edges_tn2)
+
+    #@assert issetequal(e1_v, e2_v)
+    tn1v_linkinds = Index[only(linkinds(tn1, e)) for e in e1_v]
+    tn2v_linkinds = Index[only(linkinds(tn2, e)) for e in e1_v]
+    tn12v_linkinds = Index[new_edge_indices[e] for e in e1_v]
+
+    @assert length(tn1v_linkinds) == length(tn2v_linkinds)
+
+    tn12[v] = ITensors.directsum(
+      tn12v_linkinds,
+      tn1[v] => Tuple(tn1v_linkinds),
+      tn2[v] => Tuple(tn2v_linkinds);
+      tags=tags.(Tuple(tn1v_linkinds)),
+    )
+  end
+
+  return tn12
 end
