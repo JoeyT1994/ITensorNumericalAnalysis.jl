@@ -32,7 +32,7 @@ function index_values_to_scalars(imap::AbstractIndexMap, ind::Index)
 end
 
 function dimension_inds(imap::AbstractIndexMap, dims::Vector{<:Int})
-  return collect(filter(i -> index_dimension(imap)[i] ∈ dim, keys(index_dimension(imap))))
+  return collect(filter(i -> index_dimension(imap)[i] ∈ dims, keys(index_dimension(imap))))
 end
 
 function dimension_inds(imap::AbstractIndexMap, dim::Int)
