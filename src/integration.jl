@@ -27,7 +27,7 @@ function integrate(
 end
 
 function partial_integrate(
-  fitn::ITensorNetworkFunction, dims::Vector{Int}; reduce_network=true
+  fitn::ITensorNetworkFunction, dims::Vector{Int}; merge_vertices=true
 )
   s = indsnetworkmap(fitn)
   new_imap = copy(indexmap(s))
@@ -39,7 +39,7 @@ function partial_integrate(
       new_imap = rem_index(new_imap, sind)
     end
   end
-  if reduce_network
+  if merge_vertices
     fitn = merge_internal_tensors(fitn)
   end
   new_inmap = IndsNetworkMap(siteinds(fitn), new_imap)

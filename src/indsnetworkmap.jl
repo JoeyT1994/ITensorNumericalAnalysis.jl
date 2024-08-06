@@ -26,8 +26,8 @@ NamedGraphs.vertextype(::Type{<:IndsNetworkMap{V,I,IN,IM}}) where {V,I,IN,IM} = 
 ITensorNetworks.underlying_graph_type(G::Type{<:IndsNetworkMap}) = NamedGraph{vertextype(G)}
 Graphs.is_directed(::Type{<:IndsNetworkMap}) = false
 
-function reduced_indsnetworkmap(inm::IndsNetworkMap, dim::Int)
-  im = reduced_indexmap(indexmap(inm), dim)
+function reduced_indsnetworkmap(inm::IndsNetworkMap, dims::Vector{<:Int})
+  im = reduced_indexmap(indexmap(inm), dims)
   im_inds = inds(im)
   s = copy(indsnetwork(inm))
   for v in vertices(s)
@@ -39,6 +39,10 @@ function reduced_indsnetworkmap(inm::IndsNetworkMap, dim::Int)
     end
   end
   return IndsNetworkMap(s, im)
+end
+
+function reduced_indsnetworkmap(inm::IndsNetworkMap, dim::Int)
+  return reduced_indsnetworkmap(inm, [dim])
 end
 
 function Base.copy(inm::IndsNetworkMap)

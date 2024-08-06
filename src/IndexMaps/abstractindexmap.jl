@@ -31,16 +31,24 @@ function index_values_to_scalars(imap::AbstractIndexMap, ind::Index)
   return [index_value_to_scalar(imap, ind, i) for i in 0:(dim(ind) - 1)]
 end
 
-function dimension_inds(imap::AbstractIndexMap, dim::Int)
-  return collect(filter(i -> index_dimension(imap)[i] == dim, keys(index_dimension(imap))))
+function dimension_inds(imap::AbstractIndexMap, dims::Vector{<:Int})
+  return collect(filter(i -> index_dimension(imap)[i] ∈ dim, keys(index_dimension(imap))))
 end
 
-function reduced_indexmap(imap::AbstractIndexMap, dim::Int)
+function dimension_inds(imap::AbstractIndexMap, dim::Int)
+  return dimension_inds(imap, [dim])
+end
+
+function reduced_indexmap(imap::AbstractIndexMap, dims::Vector{<:Int})
   imap_dim = copy(imap)
-  for ind in setdiff(inds(imap), dimension_inds(imap, dim))
+  for ind in setdiff(inds(imap), dimension_inds(imap, dims))
     imap_dim = rem_index(imap_dim, ind)
   end
   return imap_dim
+end
+
+function reduced_indexmap(imap::AbstractIndexMap, dim::Int)
+  return reduced_indexmap(imap, [dim])
 end
 
 function calculate_p(
