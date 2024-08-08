@@ -24,8 +24,8 @@ function integrate(
   take_sum=false,
   kwargs...,
 )
-  c = take_sum ? 1.0 : (1.0 / base(s))
   s = indsnetwork(indsnetworkmap(fitn))
+  c = take_sum ? 1.0 : (1.0 / base(s))
   # create basic integrator to apply to the operator|fitn> state
   ∑ = ITensorNetwork(eltype(first(fitn)), v -> [c for i in 1:base(s)], s)
   return inner(∑, operator, itensornetwork(fitn); alg, kwargs...)
