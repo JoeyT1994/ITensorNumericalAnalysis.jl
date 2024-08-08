@@ -21,11 +21,13 @@ function integrate(
   operator::AbstractITensorNetwork,
   fitn::ITensorNetworkFunction;
   alg=default_contraction_alg(),
+  take_sum=false,
   kwargs...,
 )
+  c = take_sum ? 1.0 : (1.0 / base(s))
   s = indsnetwork(indsnetworkmap(fitn))
   # create basic integrator to apply to the operator|fitn> state
-  ∑ = ITensorNetwork(eltype(first(fitn)), v -> [0.5, 0.5], s)
+  ∑ = ITensorNetwork(eltype(first(fitn)), v -> [c for i in 1:base(s)], s)
   return inner(∑, operator, itensornetwork(fitn); alg, kwargs...)
 end
 
