@@ -10,7 +10,6 @@ using ITensorNetworks:
   environment,
   update,
   factor,
-  default_message_update,
   tensornetwork,
   partitioned_tensornetwork,
   operator_vertex,
@@ -64,20 +63,9 @@ function base(s::IndsNetwork)
   return first(dims)
 end
 
-function ITensorNetworks.message(bp_cache::BeliefPropagationCache, edge::PartitionEdge)
-  mts = messages(bp_cache)
-  haskey(mts, edge) && return mts[edge]
-  return default_message(bp_cache, edge)
-end
-
-function ITensorNetworks.default_message_update(
-  contract_list::Vector{ITensor}; normalize=true, kwargs...
-)
+function unnormalized_message_update(contract_list::Vector{ITensor}; kwargs...)
   sequence = optimal_contraction_sequence(contract_list)
   updated_messages = contract(contract_list; sequence, kwargs...)
-  if normalize
-    updated_messages /= norm(updated_messages)
-  end
   return ITensor[updated_messages]
 end
 
@@ -98,7 +86,7 @@ function two_site_rdm(
   pg = rem_vertex(pg, operator_vertex(ψIψ, v2))
   ψIψ_bpc_mod = BeliefPropagationCache(pg, messages(ψIψ_bpc), default_message)
   ψIψ_bpc_mod = update(
-    ψIψ_bpc_mod, path; message_update=ms -> default_message_update(ms; normalize=false)
+    ψIψ_bpc_mod, path; message_update=ms -> unnormalized_message_update(ms)
   )
   incoming_mts = environment(ψIψ_bpc_mod, [PartitionVertex(v2)])
   local_state = factor(ψIψ_bpc_mod, PartitionVertex(v2))
