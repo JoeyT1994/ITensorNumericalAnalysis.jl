@@ -1,9 +1,10 @@
 using Graphs: AbstractGraph
-using ITensors: ITensors, Index, dim, inds, combiner, array, tr
+using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr
 using ITensorNetworks:
   AbstractITensorNetwork,
   BeliefPropagationCache,
   IndsNetwork,
+  ITensorNetworks,
   QuadraticFormNetwork,
   random_tensornetwork,
   environment,
