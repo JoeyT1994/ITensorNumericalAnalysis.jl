@@ -26,9 +26,6 @@ using NamedGraphs.GraphsExtensions: rem_vertex
 using NamedGraphs.PartitionedGraphs:
   PartitionEdge, partitionvertices, partitioned_graph, PartitionVertex
 
-
-
-
 #Overloading this here for now due to a bug when adding networks with the same edges but just 
 #reversed
 

@@ -1,12 +1,8 @@
 module ITensorNumericalAnalysis
 
 function __init__()
-include(
-  joinpath(
-    pkgdir(ITensorNumericalAnalysis), "src", "fixes.jl"
-  ),
-)
-  nothing
+  include(joinpath(pkgdir(ITensorNumericalAnalysis), "src", "fixes.jl"))
+  return nothing
 end
 
 include("utils.jl")
