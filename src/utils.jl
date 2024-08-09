@@ -1,5 +1,6 @@
 using Graphs: AbstractGraph
-using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr
+using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds
+using ITensors.ITensorMPS: ITensorMPS
 using ITensorNetworks:
   AbstractITensorNetwork,
   BeliefPropagationCache,
@@ -16,8 +17,10 @@ using ITensorNetworks:
   messages,
   default_message,
   optimal_contraction_sequence,
-  norm
-using NamedGraphs: NamedGraph, NamedEdge, NamedGraphs, rename_vertices
+  norm,
+  is_multi_edge,
+  linkinds
+using NamedGraphs: NamedGraph, NamedEdge, NamedGraphs, rename_vertices, src, dst
 using NamedGraphs.GraphsExtensions: rem_vertex
 using NamedGraphs.PartitionedGraphs:
   PartitionEdge, partitionvertices, partitioned_graph, PartitionVertex
@@ -95,4 +98,21 @@ function two_site_rdm(
   rdm = array((rdm * combiner(inds(rdm; plev=0)...)) * combiner(inds(rdm; plev=1)...))
   rdm /= tr(rdm)
   return rdm
+end
+
+#Given an itensornetwork, contract away any tensors which don't have external indices.
+function merge_internal_tensors(tn::AbstractITensorNetwork)
+  tn = copy(tn)
+  internal_vertices = filter(v -> isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  external_vertices = filter(v -> !isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  for v in internal_vertices
+    vns = neighbors(tn, v)
+    if !isempty(vns)
+      tn = contract(tn, v => first(vns))
+    else
+      tn[first(external_vertices)] *= tn[v][]
+      tn = rem_vertex(tn, v)
+    end
+  end
+  return tn
 end

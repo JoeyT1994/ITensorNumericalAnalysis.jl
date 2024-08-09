@@ -1,5 +1,10 @@
 module ITensorNumericalAnalysis
 
+function __init__()
+  include(joinpath(pkgdir(ITensorNumericalAnalysis), "src", "fixes.jl"))
+  return nothing
+end
+
 include("utils.jl")
 include("digit_inds.jl")
 include("IndexMaps/abstractindexmap.jl")

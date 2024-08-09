@@ -21,6 +21,7 @@ end
 
 itensornetwork(fitn::ITensorNetworkFunction) = fitn.itensornetwork
 indsnetworkmap(fitn::ITensorNetworkFunction) = fitn.indsnetworkmap
+indexmap(fitn::ITensorNetworkFunction) = indexmap(indsnetworkmap(fitn))
 
 #Needed for interface from AbstractITensorNetwork
 function ITensorNetworks.data_graph_type(TN::Type{<:ITensorNetworkFunction})
@@ -93,7 +94,7 @@ end
 function evaluate(
   fitn::ITensorNetworkFunction,
   xs::Vector,
-  dims::Vector{<:Int}=[i for i in 1:length(xs)];
+  dims::Vector{<:Int}=dimensions(fitn);
   alg=default_contraction_alg(),
   kwargs...,
 )
@@ -102,9 +103,10 @@ function evaluate(
   return scalar(itensornetwork(fitn_xyz); alg, kwargs...)
 end
 
-function evaluate(fitn::ITensorNetworkFunction, x::Number; kwargs...)
-  @assert dimension(fitn) == 1
-  return evaluate(fitn, [x], [1]; kwargs...)
+function evaluate(
+  fitn::ITensorNetworkFunction, x::Number, dim::Int=first(dimensions(fitn)); kwargs...
+)
+  return evaluate(fitn, [x], [dim]; kwargs...)
 end
 
 function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)

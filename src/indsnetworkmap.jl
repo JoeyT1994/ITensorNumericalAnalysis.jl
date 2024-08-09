@@ -1,6 +1,7 @@
 using Base: Base
 using Graphs: Graphs
 using NamedGraphs: NamedGraphs
+using NamedGraphs.GraphsExtensions: rem_vertex
 using ITensors: ITensors
 using ITensorNetworks:
   ITensorNetworks, AbstractIndsNetwork, IndsNetwork, data_graph, underlying_graph
@@ -24,6 +25,25 @@ end
 NamedGraphs.vertextype(::Type{<:IndsNetworkMap{V,I,IN,IM}}) where {V,I,IN,IM} = V
 ITensorNetworks.underlying_graph_type(G::Type{<:IndsNetworkMap}) = NamedGraph{vertextype(G)}
 Graphs.is_directed(::Type{<:IndsNetworkMap}) = false
+
+function reduced_indsnetworkmap(inm::IndsNetworkMap, dims::Vector{<:Int})
+  im = reduced_indexmap(indexmap(inm), dims)
+  im_inds = inds(im)
+  s = copy(indsnetwork(inm))
+  for v in vertices(s)
+    c_inds = filter(i -> i ∈ im_inds, s[v])
+    if isempty(c_inds)
+      s = rem_vertex(s, v)
+    else
+      s[v] = c_inds
+    end
+  end
+  return IndsNetworkMap(s, im)
+end
+
+function reduced_indsnetworkmap(inm::IndsNetworkMap, dim::Int)
+  return reduced_indsnetworkmap(inm, [dim])
+end
 
 function Base.copy(inm::IndsNetworkMap)
   return IndsNetworkMap(indsnetwork(inm), indexmap(inm))
@@ -127,4 +147,10 @@ end
 function vertex(inm::IndsNetworkMap, dimension::Int, digit::Int)
   index = ind(inm, dimension, digit)
   return only(filter(v -> index ∈ inm[v], vertices(inm)))
+end
+
+function ITensorNetworks.union_all_inds(inm1::IndsNetworkMap, inm2::IndsNetworkMap)
+  s = union_all_inds(indsnetwork(inm1), indsnetwork(inm2))
+  imap = merge(indexmap(inm1), indexmap(inm2))
+  return IndsNetworkMap(s, imap)
 end
