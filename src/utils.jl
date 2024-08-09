@@ -66,12 +66,6 @@ function base(s::IndsNetwork)
   return first(dims)
 end
 
-function unnormalized_message_update(contract_list::Vector{ITensor}; kwargs...)
-  sequence = optimal_contraction_sequence(contract_list)
-  updated_messages = contract(contract_list; sequence, kwargs...)
-  return ITensor[updated_messages]
-end
-
 """Compute the two-site rdm from a tree-tensor network, sclaes as O(Lchi^{z+1})"""
 function two_site_rdm(
   ψ::AbstractITensorNetwork, v1, v2; (cache!)=nothing, cache_update_kwargs=(;)
@@ -89,7 +83,7 @@ function two_site_rdm(
   pg = rem_vertex(pg, operator_vertex(ψIψ, v2))
   ψIψ_bpc_mod = BeliefPropagationCache(pg, messages(ψIψ_bpc), default_message)
   ψIψ_bpc_mod = update(
-    ψIψ_bpc_mod, path; message_update=ms -> unnormalized_message_update(ms)
+    ψIψ_bpc_mod, path; message_update=ms -> default_message_update(ms; normalize=false)
   )
   incoming_mts = environment(ψIψ_bpc_mod, [PartitionVertex(v2)])
   local_state = factor(ψIψ_bpc_mod, PartitionVertex(v2))

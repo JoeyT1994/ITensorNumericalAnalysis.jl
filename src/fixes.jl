@@ -91,3 +91,20 @@ function ITensorMPS.add(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork
 
   return tn12
 end
+
+function ITensorNetworks.default_message_update(
+  contract_list::Vector{ITensor}; normalize=true, kwargs...
+)
+  sequence = optimal_contraction_sequence(contract_list)
+  updated_messages = contract(contract_list; sequence, kwargs...)
+  message_norm = norm(updated_messages)
+  if normalize && !iszero(message_norm)
+    updated_messages /= message_norm
+  end
+  return ITensor[updated_messages]
+end
+
+function ITensorNetworks.message(bp_cache::BeliefPropagationCache, edge::PartitionEdge)
+  mts = messages(bp_cache)
+  return get(() -> default_message(bp_cache, edge), mts, edge)
+end
