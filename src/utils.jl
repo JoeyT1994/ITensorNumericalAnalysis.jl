@@ -1,5 +1,6 @@
 using Graphs: AbstractGraph
-using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr
+using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds
+using ITensors.ITensorMPS: ITensorMPS
 using ITensorNetworks:
   AbstractITensorNetwork,
   BeliefPropagationCache,
@@ -16,8 +17,10 @@ using ITensorNetworks:
   messages,
   default_message,
   optimal_contraction_sequence,
-  norm
-using NamedGraphs: NamedGraph, NamedEdge, NamedGraphs, rename_vertices
+  norm,
+  is_multi_edge,
+  linkinds
+using NamedGraphs: NamedGraph, NamedEdge, NamedGraphs, rename_vertices, src, dst
 using NamedGraphs.GraphsExtensions: rem_vertex
 using NamedGraphs.PartitionedGraphs:
   PartitionEdge, partitionvertices, partitioned_graph, PartitionVertex
@@ -63,12 +66,6 @@ function base(s::IndsNetwork)
   return first(dims)
 end
 
-function unnormalized_message_update(contract_list::Vector{ITensor}; kwargs...)
-  sequence = optimal_contraction_sequence(contract_list)
-  updated_messages = contract(contract_list; sequence, kwargs...)
-  return ITensor[updated_messages]
-end
-
 """Compute the two-site rdm from a tree-tensor network, sclaes as O(Lchi^{z+1})"""
 function two_site_rdm(
   ψ::AbstractITensorNetwork, v1, v2; (cache!)=nothing, cache_update_kwargs=(;)
@@ -86,7 +83,7 @@ function two_site_rdm(
   pg = rem_vertex(pg, operator_vertex(ψIψ, v2))
   ψIψ_bpc_mod = BeliefPropagationCache(pg, messages(ψIψ_bpc), default_message)
   ψIψ_bpc_mod = update(
-    ψIψ_bpc_mod, path; message_update=ms -> unnormalized_message_update(ms)
+    ψIψ_bpc_mod, path; message_update=ms -> default_message_update(ms; normalize=false)
   )
   incoming_mts = environment(ψIψ_bpc_mod, [PartitionVertex(v2)])
   local_state = factor(ψIψ_bpc_mod, PartitionVertex(v2))
@@ -95,4 +92,21 @@ function two_site_rdm(
   rdm = array((rdm * combiner(inds(rdm; plev=0)...)) * combiner(inds(rdm; plev=1)...))
   rdm /= tr(rdm)
   return rdm
+end
+
+#Given an itensornetwork, contract away any tensors which don't have external indices.
+function merge_internal_tensors(tn::AbstractITensorNetwork)
+  tn = copy(tn)
+  internal_vertices = filter(v -> isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  external_vertices = filter(v -> !isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  for v in internal_vertices
+    vns = neighbors(tn, v)
+    if !isempty(vns)
+      tn = contract(tn, v => first(vns))
+    else
+      tn[first(external_vertices)] *= tn[v][]
+      tn = rem_vertex(tn, v)
+    end
+  end
+  return tn
 end
