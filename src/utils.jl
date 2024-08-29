@@ -1,5 +1,5 @@
 using Graphs: AbstractGraph
-using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds
+using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds, permute
 using ITensors.ITensorMPS: ITensorMPS
 using ITensorNetworks:
   AbstractITensorNetwork,
@@ -88,6 +88,8 @@ function two_site_rdm(
   incoming_mts = environment(ψIψ_bpc_mod, [PartitionVertex(v2)])
   local_state = factor(ψIψ_bpc_mod, PartitionVertex(v2))
   rdm = contract(vcat(incoming_mts, local_state); sequence="automatic")
+  s = siteinds(ψ)
+  rdm = permute(rdm, reduce(vcat, [s[v1], s[v2], s[v1]', s[v2]']))
 
   rdm = array((rdm * combiner(inds(rdm; plev=0)...)) * combiner(inds(rdm; plev=1)...))
   rdm /= tr(rdm)
