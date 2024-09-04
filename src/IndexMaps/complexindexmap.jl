@@ -23,10 +23,11 @@ function imaginary_indices(imap::ComplexIndexMap, dim::Int64)
 end
 
 function index_value_to_scalar(imap::ComplexIndexMap, ind::Index, value::Int)
+  invb = float(dim(ind))^-digit(imap, ind)
   return if is_real(imap, ind)
-    (value) / (dim(ind)^digit(imap, ind))
+    (value) * invb
   else
-    im * (value) / (dim(ind)^digit(imap, ind))
+    im * (value) * invb
   end
 end
 function Base.copy(imap::ComplexIndexMap)
@@ -133,7 +134,7 @@ end
 function grid_points(imap::ComplexIndexMap, N::Int, d::Int)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
-  base = first(dims)
+  base = float(first(dims))
   Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
   are, aim = round(base^Lre / N), round(base^Lim / N)
   grid_points = [

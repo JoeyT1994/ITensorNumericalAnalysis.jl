@@ -11,7 +11,7 @@ end
 index_digit(imap::RealIndexMap) = imap.index_digit
 index_dimension(imap::RealIndexMap) = imap.index_dimension
 function index_value_to_scalar(imap::RealIndexMap, ind::Index, value::Int)
-  return (value) / (dim(ind)^digit(imap, ind))
+  return (value) * (float(dim(ind))^-digit(imap, ind))
 end
 function Base.copy(imap::RealIndexMap)
   return RealIndexMap(copy(index_digit(imap)), copy(index_dimension(imap)))
@@ -78,7 +78,7 @@ end
 function grid_points(imap::RealIndexMap, N::Int, d::Int)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
-  base = first(dims)
+  base = float(first(dims))
   L = length(dimension_inds(imap, d))
   a = round(base^L / N)
   grid_points = [i * (a / base^L) for i in 0:(N + 1)]
