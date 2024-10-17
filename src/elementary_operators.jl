@@ -67,7 +67,7 @@ function forward_shift_opsum(
 
   string_site = [("D+", vertex(s, dim, L - n))]
   add!(ttn_op, 1.0, "D+", vertex(s, dim, L - n))
-  for i in (L - n):-1:2
+  for i in (L-n):-1:2
     pop!(string_site)
     push!(string_site, ("D-", vertex(s, dim, i)))
     push!(string_site, ("D+", vertex(s, dim, i - 1)))
@@ -90,7 +90,7 @@ function backward_shift_opsum(
 
   string_site = [("D-", vertex(s, dim, L - n))]
   add!(ttn_op, 1.0, "D-", vertex(s, dim, L - n))
-  for i in (L - n):-1:2
+  for i in (L-n):-1:2
     pop!(string_site)
     push!(string_site, ("D+", vertex(s, dim, i)))
     push!(string_site, ("D-", vertex(s, dim, i - 1)))

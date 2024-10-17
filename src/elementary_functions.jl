@@ -62,7 +62,7 @@ function cosh_itensornetwork(
   dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=(-a), k=(-k), c=0.5 * c, dim)
 
   return ψ1 + ψ2
 end
@@ -77,7 +77,7 @@ function sinh_itensornetwork(
   dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=(-a), k=(-k), c=-0.5 * c, dim)
 
   return ψ1 + ψ2
 end
@@ -282,7 +282,7 @@ function delta_kernel(
     # and remove them with the opposite sign
     for i in 1:length(points)
       p1, d1 = points[i], points_dims[i]
-      for j in (i + 1):length(points)
+      for j in (i+1):length(points)
         p2, d2 = points[j], points_dims[j]
 
         # same dimensions, and no point overlap,

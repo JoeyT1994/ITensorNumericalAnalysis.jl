@@ -43,8 +43,8 @@ function ind(imap::ComplexIndexMap, dim::Int, digit::Int, real_ind::Bool=true)
     filter(
       i ->
         index_dimension(imap)[i] == dim &&
-          index_digit(imap)[i] == digit &&
-          (real_ind == is_real(imap, i)),
+        index_digit(imap)[i] == digit &&
+        (real_ind == is_real(imap, i)),
       inds(imap),
     ),
   )
@@ -72,7 +72,7 @@ whilst imaginary valued digits should have the "Imag" tag. The complex_continuou
 constructor will do this by default
 """
 function ComplexIndexMap(
-  s::IndsNetwork,
+  s::IndsNetwork;
   real_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s),
   imag_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s),
 ) where {V}
@@ -137,7 +137,7 @@ function grid_points(imap::ComplexIndexMap, N::Int, d::Int)
   Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
   are, aim = round(base^Lre / N), round(base^Lim / N)
   grid_points = [
-    i * (are / base^Lre) + im * j * (aim / base^Lim) for i in 0:(N + 1) for j in 0:(N + 1)
+    i * (are / base^Lre) + im * j * (aim / base^Lim) for i in 0:(N+1) for j in 0:(N+1)
   ]
   return filter(x -> real(x) < 1 && imag(x) < 1, grid_points)
 end
