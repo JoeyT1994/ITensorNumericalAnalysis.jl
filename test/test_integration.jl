@@ -40,7 +40,7 @@ seed!(42)
   @testset "partial integration 3D" begin
     L = 90
     g = named_comb_tree((3, L ÷ 3))
-    s = continuous_siteinds(g, [[(i, j) for j in 1:(L÷3)] for i in 1:3])
+    s = continuous_siteinds(g, [[(i, j) for j in 1:(L ÷ 3)] for i in 1:3])
     s1, s2, s3 = reduced_indsnetworkmap(s, 1),
     reduced_indsnetworkmap(s, 2),
     reduced_indsnetworkmap(s, 3)

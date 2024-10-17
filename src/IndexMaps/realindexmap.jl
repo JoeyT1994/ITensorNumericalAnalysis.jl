@@ -81,6 +81,6 @@ function grid_points(imap::RealIndexMap, N::Int, d::Int)
   base = first(dims)
   L = length(dimension_inds(imap, d))
   a = round(base^L / N)
-  grid_points = [i * (a / base^L) for i in 0:(N+1)]
+  grid_points = [i * (a / base^L) for i in 0:(N + 1)]
   return filter(x -> x < 1, grid_points)
 end

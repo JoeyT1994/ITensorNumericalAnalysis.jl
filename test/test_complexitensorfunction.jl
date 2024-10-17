@@ -143,13 +143,13 @@ Random.seed!(1234)
         k = rand() + im * rand()
         c = rand() + im * rand()
 
-        coeffs = [rand() + im * rand() for i in 1:(deg+1)]
+        coeffs = [rand() + im * rand() for i in 1:(deg + 1)]
 
         z = 0.875 + 0.25 * im
         ψ_fz = poly_itn(s, coeffs; k, c)
         fz_z = evaluate(ψ_fz, z)
 
-        fx_exact = c * sum([coeffs[i] * ((k * z)^(i - 1)) for i in 1:(deg+1)])
+        fx_exact = c * sum([coeffs[i] * ((k * z)^(i - 1)) for i in 1:(deg + 1)])
         @test fz_z ≈ fx_exact atol = 1e-4
       end
     end
@@ -182,10 +182,10 @@ Random.seed!(1234)
     L = 10
     g = named_grid((L, 1))
     real_dimension_vertices = [
-      [(i, 1) for i in 1:Int(L/2)], [(i, 1) for i in ((Int(L/2))+1):L]
+      [(i, 1) for i in 1:Int(L / 2)], [(i, 1) for i in ((Int(L / 2)) + 1):L]
     ]
     imag_dimension_vertices = [
-      [(i, 1) for i in ((Int(L/2))+1):L], [(i, 1) for i in 1:Int(L/2)]
+      [(i, 1) for i in ((Int(L / 2)) + 1):L], [(i, 1) for i in 1:Int(L / 2)]
     ]
     s = complex_continuous_siteinds(g, real_dimension_vertices, imag_dimension_vertices)
     z1, z2 = 0.625 + 0.875 * im, 0.25 + 0.125 * im

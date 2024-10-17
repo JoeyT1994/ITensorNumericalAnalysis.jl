@@ -28,7 +28,7 @@ digit(imap::AbstractIndexMap, ind::Index) = index_digit(imap)[ind]
 digits(imap::AbstractIndexMap, inds::Vector{Index}) = digit.(inds)
 
 function index_values_to_scalars(imap::AbstractIndexMap, ind::Index)
-  return [index_value_to_scalar(imap, ind, i) for i in 0:(dim(ind)-1)]
+  return [index_value_to_scalar(imap, ind, i) for i in 0:(dim(ind) - 1)]
 end
 
 function dimension_inds(imap::AbstractIndexMap, dims::Vector{<:Int})

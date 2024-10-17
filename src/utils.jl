@@ -30,7 +30,7 @@ function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
   inds = [Index(base, "$i") for i in 1:L]
   dims = Tuple([base for i in 1:L])
   array = zeros(dims)
-  for i in 0:(base^(L)-1)
+  for i in 0:(base^(L) - 1)
     xis = digits(i; base, pad=L)
     x = sum([xis[i] / (base^i) for i in 1:L])
     array[Tuple(xis + ones(Int, (L)))...] = fx(x)

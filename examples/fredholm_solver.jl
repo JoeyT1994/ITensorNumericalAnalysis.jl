@@ -40,7 +40,7 @@ println("solve f(x) = eˣ + ∫₀¹ (xy) f(y) dy")
 # 3. apply operator I or |x>
 # 4. apply shift if any
 
-s = continuous_siteinds(g, [[(i, j) for j in 1:(L÷2)] for i in 1:2])
+s = continuous_siteinds(g, [[(i, j) for j in 1:(L ÷ 2)] for i in 1:2])
 dim_ψ = 2
 s1, s2 = reduced_indsnetworkmap(s, 1), reduced_indsnetworkmap(s, 2)
 

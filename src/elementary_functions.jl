@@ -282,7 +282,7 @@ function delta_kernel(
     # and remove them with the opposite sign
     for i in 1:length(points)
       p1, d1 = points[i], points_dims[i]
-      for j in (i+1):length(points)
+      for j in (i + 1):length(points)
         p2, d2 = points[j], points_dims[j]
 
         # same dimensions, and no point overlap,

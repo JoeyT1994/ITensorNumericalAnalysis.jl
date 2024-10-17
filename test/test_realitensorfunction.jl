@@ -131,13 +131,13 @@ Random.seed!(1234)
         k = rand()
         c = rand()
 
-        coeffs = [rand() for i in 1:(deg+1)]
+        coeffs = [rand() for i in 1:(deg + 1)]
 
         x = 0.875
         ψ_fx = poly_itn(s, coeffs; k, c)
         fx_x = evaluate(ψ_fx, x)
 
-        fx_exact = c * sum([coeffs[i] * ((k * x)^(i - 1)) for i in 1:(deg+1)])
+        fx_exact = c * sum([coeffs[i] * ((k * x)^(i - 1)) for i in 1:(deg + 1)])
         @test fx_x ≈ fx_exact atol = 1e-4
       end
     end
