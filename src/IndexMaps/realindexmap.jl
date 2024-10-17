@@ -37,7 +37,7 @@ function rem_index(imap::RealIndexMap, ind::Index)
 end
 
 function RealIndexMap(
-  s::IndsNetwork; dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s)
+  s::IndsNetwork, dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s)
 ) where {V}
   dimension_indices = Vector{Index}[
     !isempty(vertices) ? inds(s, vertices) : Index[] for vertices in dimension_vertices

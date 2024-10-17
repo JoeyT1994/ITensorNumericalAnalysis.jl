@@ -70,8 +70,8 @@ function real_digit_tag(vertex, dim::Int, digit::Int)
 end
 
 function digit_siteinds(
-  g::AbstractGraph;
-  dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g),
+  g::AbstractGraph,
+  dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g);
   base=2,
 ) where {V}
   is = IndsNetwork(g; site_space=Dictionary(vertices(g), [Index[] for v in vertices(g)]))
@@ -85,9 +85,9 @@ function digit_siteinds(
 end
 
 function complex_digit_siteinds(
-  g::AbstractGraph;
+  g::AbstractGraph,
   real_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g),
-  imag_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g),
+  imag_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(g);
   base=2,
 ) where {V}
   is = IndsNetwork(g; site_space=Dictionary(vertices(g), [Index[] for v in vertices(g)]))
