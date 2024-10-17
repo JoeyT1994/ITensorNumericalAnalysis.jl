@@ -1,7 +1,7 @@
 module ITensorNumericalAnalysis
 
 function __init__()
-  include(joinpath(@__DIR__,"fixes.jl"))
+  include(joinpath(@__DIR__, "fixes.jl"))
   return nothing
 end
 
