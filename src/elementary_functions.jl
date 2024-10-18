@@ -62,7 +62,7 @@ function cosh_itensornetwork(
   dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=(-a), k=(-k), c=0.5 * c, dim)
 
   return ψ1 + ψ2
 end
@@ -77,7 +77,7 @@ function sinh_itensornetwork(
   dim::Int=default_dim(),
 )
   ψ1 = exp_itensornetwork(s; a, k, c=0.5 * c, dim)
-  ψ2 = exp_itensornetwork(s; a=-a, k=-k, c=-0.5 * c, dim)
+  ψ2 = exp_itensornetwork(s; a=(-a), k=(-k), c=-0.5 * c, dim)
 
   return ψ1 + ψ2
 end
