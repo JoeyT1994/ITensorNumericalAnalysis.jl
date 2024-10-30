@@ -6,17 +6,15 @@ using ITensorNetworks: IndsNetwork, vertex_data
 abstract type AbstractIndexMap{VB,VD} end
 
 #These functions need to be defined on the concrete type for implementation
-function index_digit(imap::AbstractIndexMap) end
-function index_dimension(imap::AbstractIndexMap) end
-function Base.copy(imap::AbstractIndexMap) end
-function index_value_to_scalar(imap::AbstractIndexMap, ind::Index, value::Int) end
-function ITensors.inds(imap::AbstractIndexMap) end
-function ind(imap::AbstractIndexMap, args...) end
-function calculate_ind_values(
-  imap::AbstractIndexMap, xs::Vector, dims::Vector{Int}; kwargs...
-) end
-function grid_points(imap::AbstractIndexMap, N::Int, d::Int) end
-function rem_index(imap::AbstractIndexMap, ind::Index) end
+function index_digit end
+function index_dimension end
+#function Base.copy(imap::AbstractIndexMap) end
+function index_value_to_scalar end
+#function ITensors.inds(imap::AbstractIndexMap) end
+function ind end
+function calculate_ind_values end
+function grid_points end
+function rem_index end
 
 dimensions(imap::AbstractIndexMap) = Int64.(unique(collect(values(index_dimension(imap)))))
 dimension(imap::AbstractIndexMap) = maximum(dimensions(imap))
