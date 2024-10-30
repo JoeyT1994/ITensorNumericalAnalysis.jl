@@ -6,19 +6,17 @@ using ITensorNetworks: IndsNetwork, vertex_data
 abstract type AbstractIndexMap{VB,VD} end
 
 #These functions need to be defined on the concrete type for implementation
-index_digit(imap::AbstractIndexMap) = not_implemented()
-index_dimension(imap::AbstractIndexMap) = not_implemented()
-Base.copy(imap::AbstractIndexMap) = not_implemented()
-index_value_to_scalar(imap::AbstractIndexMap, ind::Index, value::Int) = not_implemented()
-ITensors.inds(imap::AbstractIndexMap) = not_implemented()
-ind(imap::AbstractIndexMap, args...) = not_implemented()
+function index_digit(imap::AbstractIndexMap) end
+function index_dimension(imap::AbstractIndexMap) end
+function Base.copy(imap::AbstractIndexMap) end
+function index_value_to_scalar(imap::AbstractIndexMap, ind::Index, value::Int) end
+function ITensors.inds(imap::AbstractIndexMap) end
+function ind(imap::AbstractIndexMap, args...) end
 function calculate_ind_values(
   imap::AbstractIndexMap, xs::Vector, dims::Vector{Int}; kwargs...
-)
-  return not_implemented()
-end
-grid_points(imap::AbstractIndexMap, N::Int, d::Int) = not_implemented()
-rem_index(imap::AbstractIndexMap, ind::Index) = not_implemented()
+) end
+function grid_points(imap::AbstractIndexMap, N::Int, d::Int) end
+function rem_index(imap::AbstractIndexMap, ind::Index) end
 
 dimensions(imap::AbstractIndexMap) = Int64.(unique(collect(values(index_dimension(imap)))))
 dimension(imap::AbstractIndexMap) = maximum(dimensions(imap))
