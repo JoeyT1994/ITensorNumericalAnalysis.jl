@@ -18,24 +18,12 @@ L = 10
 
 #comb tree
 g = named_comb_tree((2, L ÷ 2))
-
-#uniform tree
-# g = NamedGraph(SimpleGraph(uniform_tree(L)))
-# g = rename_vertices(v -> (v, 1), g)
-
-#binary tree
-# g = named_binary_tree(4)
-# g = rename_vertices(v -> join(["$i," for i in v]), g)
-
 s = continuous_siteinds(g; map_dimension=2)
 
 x_vals = grid_points(s, 1)
 y_vals = grid_points(s, length(x_vals), 2)
 
-### Example Test Functions to use
 f(x, y) = exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.05)
-#f(x, y) = exp(x) - exp(y)
-#f(x, y) = cos(20 * (x + y)) + sin(50 * (x - y))
 
 ψ_f = function_itn(s, f; mode="fourier", cutoff=1e-3, max_coeffs=400, by_mag=true)
 ψ_c = function_itn(s, f; mode="chebyshev", cutoff=1e-3, max_coeffs=400, by_mag=true)
