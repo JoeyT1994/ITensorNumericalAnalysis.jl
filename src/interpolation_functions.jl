@@ -17,10 +17,10 @@ end
     + ∑_{k=1}^{n} coeffs[2k+1]*cos(2kπx)  """
 function fourier_itensornetwork(
   s::IndsNetworkMap,
-  coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}};
+  coeffs::Vector{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
   dim::Int=1,
   min_threshold=1e-15,
-  cutoff=1e-16
+  cutoff=1e-16,
 )
   n = length(coeffs)
   if n < 1
@@ -39,7 +39,11 @@ end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are sines/cosines. """
 function fourier_2D_itensornetwork(
-  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], min_threshold=1e-15, cutoff=1e-16
+  s::IndsNetworkMap,
+  coeffs::Matrix{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  dims::Vector{Int}=[1, 2],
+  min_threshold=1e-15,
+  cutoff=1e-16,
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
@@ -62,7 +66,10 @@ end
 """ Build the function f(x) = ∑_{k=1}^n coeffs[k] * T_k(x) 
     where T_k(x) is the k-th Chebyshev polynomial. """
 function chebyshev_itensornetwork(
-  s::IndsNetworkMap, coeffs::Vector{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dim::Int=1, cutoff=1e-16
+  s::IndsNetworkMap,
+  coeffs::Vector{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  dim::Int=1,
+  cutoff=1e-16,
 )
   n = length(coeffs)
   if n <= 0
@@ -72,8 +79,8 @@ function chebyshev_itensornetwork(
   end
 
   #Clenshaw Evaluation method - uses idea from https://arxiv.org/pdf/2407.09609
-  y_n = const_itn(s; c = 0)
-  y_n1 = const_itn(s; c = 0)
+  y_n = const_itn(s; c=0)
+  y_n1 = const_itn(s; c=0)
 
   # y_n-1 = c_n-1 - y_n+1 + (4x-2) * y_n
   for d in n:-1:1
@@ -82,42 +89,48 @@ function chebyshev_itensornetwork(
     y_n1 = old_y_n
   end
 
-  return truncate(y_n + poly_itn(s, [1,-2]; dim) * y_n1; cutoff)
+  return truncate(y_n + poly_itn(s, [1, -2]; dim) * y_n1; cutoff)
 end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are chebyshev polynomials """
 function chebyshev_2D_itensornetwork(
-  s::IndsNetworkMap, coeffs::Matrix{<:Union{AbstractFloat, Complex{<:AbstractFloat}}}; dims::Vector{Int}=[1, 2], cutoff=1e-16
+  s::IndsNetworkMap,
+  coeffs::Matrix{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  dims::Vector{Int}=[1, 2],
+  cutoff=1e-16,
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
   if n < 1 || m < 1
     throw("coeffs must be nonempty")
   end
-  
+
   #Clenshaw Evaluation method - uses idea from https://arxiv.org/pdf/2407.09609
-  y_n = const_itn(s; c = 0)
-  y_n1 = const_itn(s; c = 0)
+  y_n = const_itn(s; c=0)
+  y_n1 = const_itn(s; c=0)
 
   for j in m:-1:1
     #determine the weighted sum of chebyshev polynomials of x
-    x_n = const_itn(s; c = 0)
-    x_n1 = const_itn(s; c = 0)
+    x_n = const_itn(s; c=0)
+    x_n1 = const_itn(s; c=0)
     for i in n:-1:1
-       # x_n-1 = c_n-1 - x_n+1 + (4x-2) * x_n
+      # x_n-1 = c_n-1 - x_n+1 + (4x-2) * x_n
       old_x_n = truncate(x_n; cutoff)
-      x_n = coeffs[i,j] * const_itn(s) + (-1) * x_n1 + poly_itn(s, [-2, 4]; dim=dims[1]) * old_x_n
+      x_n =
+        coeffs[i, j] * const_itn(s) +
+        (-1) * x_n1 +
+        poly_itn(s, [-2, 4]; dim=dims[1]) * old_x_n
       x_n1 = old_x_n
     end
-    coeff_j =  truncate(x_n + poly_itn(s, [1,-2]; dim=dims[1]) * x_n1; cutoff)
+    coeff_j = truncate(x_n + poly_itn(s, [1, -2]; dim=dims[1]) * x_n1; cutoff)
 
     # y_n-1 = c_n-1 - y_n+1 + (4y-2) * y_n
     old_y_n = truncate(y_n; cutoff)
-    y_n = coeff_j + (-1)*y_n1 + poly_itn(s, [-2, 4]; dim=dims[2]) * old_y_n
+    y_n = coeff_j + (-1) * y_n1 + poly_itn(s, [-2, 4]; dim=dims[2]) * old_y_n
     y_n1 = old_y_n
   end
 
-  return truncate(y_n + poly_itn(s, [1,-2]; dim=dims[2]) * y_n1; cutoff)
+  return truncate(y_n + poly_itn(s, [1, -2]; dim=dims[2]) * y_n1; cutoff)
 end
 
 """ Helper function for function_itensornetwork (1D case) """
@@ -178,7 +191,7 @@ function function_itensornetwork(
   max_coeffs::Integer=100,
   mode="fourier",
   by_mag=false,
-  trunc_level=1e-16
+  trunc_level=1e-16,
 )
 
   #get the number of inputs to f
