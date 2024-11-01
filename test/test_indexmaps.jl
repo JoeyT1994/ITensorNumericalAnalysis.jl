@@ -69,5 +69,4 @@ Random.seed!(1234)
     xyzvals_approx = calculate_p(s, ind_to_ind_value_map, [i for i in 1:dimension(s)])
     xyzvals ≈ xyzvals_approx
   end
-
 end
