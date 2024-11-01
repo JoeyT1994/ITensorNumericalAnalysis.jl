@@ -10,7 +10,7 @@ using Random: Random
 
 Random.seed!(1234)
 
-@testset "test itensorfunctions" begin
+@testset "test real itensorfunctions" begin
   @testset "test constructor from ITensorNetwork" begin
     L = 10
 

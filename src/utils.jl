@@ -1,57 +1,30 @@
 using Graphs: AbstractGraph
 using ITensors:
-  ITensors,
-  Index,
-  dim,
-  inds,
-  siteinds,
-  @OpName_str,
-  @SiteType_str,
-  val,
-  state,
-  ValName,
-  StateName,
-  SiteType,
-  op
-using ITensorNetworks: IndsNetwork, random_tensornetwork, vertex_tag
-
-# reuse Qudit definitions for now
-
-function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
-  return parse(Int, String(N)) + 1
-end
-
-function ITensors.state(::StateName{N}, ::SiteType"Digit", s::Index) where {N}
-  n = parse(Int, String(N))
-  st = zeros(dim(s))
-  st[n + 1] = 1.0
-  return ITensor(st, s)
-end
-
-function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 2] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 1] = 1
-  return ITensor(o, s, s')
-end
-function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 2] = 1
-  return ITensor(o, s, s')
-end
+  ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds, permute
+using ITensors.ITensorMPS: ITensorMPS
+using ITensorNetworks:
+  AbstractITensorNetwork,
+  BeliefPropagationCache,
+  IndsNetwork,
+  ITensorNetworks,
+  QuadraticFormNetwork,
+  random_tensornetwork,
+  environment,
+  update,
+  factor,
+  tensornetwork,
+  partitioned_tensornetwork,
+  operator_vertex,
+  messages,
+  default_message,
+  optimal_contraction_sequence,
+  norm,
+  is_multi_edge,
+  linkinds
+using NamedGraphs: NamedGraph, NamedEdge, NamedGraphs, rename_vertices, src, dst
+using NamedGraphs.GraphsExtensions: rem_vertex
+using NamedGraphs.PartitionedGraphs:
+  PartitionEdge, partitionvertices, partitioned_graph, PartitionVertex
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
@@ -68,17 +41,10 @@ function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
 end
 
 """Build the tensor C such that C_{phys_ind, virt_inds...} = delta_{virt_inds...}"""
-function c_tensor(phys_ind::Index, virt_inds::Vector)
-  inds = vcat(phys_ind, virt_inds)
+function c_tensor(phys_inds::Vector, virt_inds::Vector)
   @assert allequal(dim.(virt_inds))
-  T = ITensor(0.0, inds...)
-  for i in 1:dim(phys_ind)
-    for j in 1:dim(first(virt_inds))
-      ind_array = [v => j for v in virt_inds]
-      T[phys_ind => i, ind_array...] = 1.0
-    end
-  end
-
+  T = delta(Int64, virt_inds)
+  T = T * ITensor(1, phys_inds...)
   return T
 end
 
@@ -101,10 +67,49 @@ function base(s::IndsNetwork)
   return first(dims)
 end
 
-function digit_siteinds(g::AbstractGraph; base=2)
-  is = IndsNetwork(g)
-  for v in vertices(g)
-    is[v] = [Index(base, "Digit, V$(vertex_tag(v))")]
+"""Compute the two-site rdm from a tree-tensor network, sclaes as O(Lchi^{z+1})"""
+function two_site_rdm(
+  ψ::AbstractITensorNetwork, v1, v2; (cache!)=nothing, cache_update_kwargs=(;)
+)
+  ψIψ_bpc = if isnothing(cache!)
+    update(BeliefPropagationCache(QuadraticFormNetwork(ψ)); cache_update_kwargs...)
+  else
+    cache![]
   end
-  return is
+  ψIψ = tensornetwork(ψIψ_bpc)
+  pg = partitioned_tensornetwork(ψIψ_bpc)
+
+  path = PartitionEdge.(a_star(partitioned_graph(ψIψ_bpc), v1, v2))
+  pg = rem_vertex(pg, operator_vertex(ψIψ, v1))
+  pg = rem_vertex(pg, operator_vertex(ψIψ, v2))
+  ψIψ_bpc_mod = BeliefPropagationCache(pg, messages(ψIψ_bpc), default_message)
+  ψIψ_bpc_mod = update(
+    ψIψ_bpc_mod, path; message_update=ms -> default_message_update(ms; normalize=false)
+  )
+  incoming_mts = environment(ψIψ_bpc_mod, [PartitionVertex(v2)])
+  local_state = factor(ψIψ_bpc_mod, PartitionVertex(v2))
+  rdm = contract(vcat(incoming_mts, local_state); sequence="automatic")
+  s = siteinds(ψ)
+  rdm = permute(rdm, reduce(vcat, [s[v1], s[v2], s[v1]', s[v2]']))
+
+  rdm = array((rdm * combiner(inds(rdm; plev=0)...)) * combiner(inds(rdm; plev=1)...))
+  rdm /= tr(rdm)
+  return rdm
+end
+
+#Given an itensornetwork, contract away any tensors which don't have external indices.
+function merge_internal_tensors(tn::AbstractITensorNetwork)
+  tn = copy(tn)
+  internal_vertices = filter(v -> isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  external_vertices = filter(v -> !isempty(uniqueinds(tn, v)), collect(vertices(tn)))
+  for v in internal_vertices
+    vns = neighbors(tn, v)
+    if !isempty(vns)
+      tn = contract(tn, v => first(vns))
+    else
+      tn[first(external_vertices)] *= tn[v][]
+      tn = rem_vertex(tn, v)
+    end
+  end
+  return tn
 end

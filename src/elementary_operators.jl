@@ -57,7 +57,7 @@ function boundary_term(s::IndsNetworkMap, boundary::String, dim, isfwd::Bool, n:
 end
 
 function forward_shift_opsum(
-  s::IndsNetworkMap; dim=default_dimension(), boundary=default_boundary(), n::Int=0
+  s::IndsNetworkMap; dim=default_dim(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
@@ -80,7 +80,7 @@ function forward_shift_opsum(
 end
 
 function backward_shift_opsum(
-  s::IndsNetworkMap; dim=default_dimension(), boundary=default_boundary(), n::Int=0
+  s::IndsNetworkMap; dim=default_dim(), boundary=default_boundary(), n::Int=0
 )
   @assert is_tree(s)
   @assert base(s) == 2
@@ -123,7 +123,7 @@ function stencil(
   s::IndsNetworkMap,
   shifts::Vector,
   delta_power::Int;
-  dim=default_dimension(),
+  dim=default_dim(),
   left_boundary=default_boundary(),
   right_boundary=default_boundary(),
   scale=true,
@@ -257,20 +257,27 @@ function operator_proj(fx::ITensorNetworkFunction)
   return operator
 end
 
-#gx and fx need to live in different virtual spaces (can't share linkinds)
-function multiply(gx::ITensorNetworkFunction, fx::ITensorNetworkFunction)
-  fx, fxgx = copy(fx), copy(gx)
-  fx = map_inds(prime, fx; sites=[])
-  @assert vertices(gx) == vertices(fx)
-  s = siteinds(fxgx)
-  for v in vertices(fxgx)
-    ssim = sim(s[v])
-    temp_tensor = replaceinds(fx[v], s[v], ssim)
-    fxgx[v] = fxgx[v] * delta(s[v], s[v]', ssim) * temp_tensor
-    fxgx[v] = replaceinds(fxgx[v], s[v]', s[v])
+function multiply(g::ITensorNetworkFunction, f::ITensorNetworkFunction)
+  imap = merge(indexmap(g), indexmap(f))
+  g, f = sim(copy(itensornetwork(g)); sites=[]), copy(itensornetwork(f))
+  verts = union(vertices(g), vertices(f))
+  tensors = Pair{Any,ITensor}[]
+  for v in verts
+    if v ∉ vertices(g)
+      push!(tensors, v => f[v])
+    elseif v ∉ vertices(f)
+      push!(tensors, v => g[v])
+    else
+      cinds = commoninds(g[v], f[v])
+      fg_v = f[v] * replaceinds(g[v], cinds, cinds')
+      fg_v *= prod([delta(cind, cind', cind'') for cind in cinds])
+      push!(tensors, v => noprime(fg_v))
+    end
   end
-
-  return combine_linkinds(fxgx)
+  fg = combine_linkinds(ITensorNetwork(tensors))
+  s = siteinds(fg)
+  inmap = IndsNetworkMap(s, imap)
+  return ITensorNetworkFunction(fg, inmap)
 end
 
 function multiply(
