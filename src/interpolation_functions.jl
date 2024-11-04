@@ -1,15 +1,15 @@
 using ApproxFun:
   Interval, Fourier, Chebyshev, Fun, ProductFun, coefficients, chop, ncoefficients
-using Interpolations: LinearInterpolation, Line
+using Interpolations: LinearInterpolation, Line, CubicSplineInterpolation
 
 """ Helper function for fourier_itensornetwork and fourier_2D_itensornetwork """
-function fourier_term(s::IndsNetworkMap, j::Integer, d::Integer)
+function fourier_term(s::IndsNetworkMap, j::Integer, dim::Integer)
   if j == 1
     return const_itn(s)
   elseif j % 2 == 0
-    return sin_itn(s; k=j * π, dim=d)
+    return sin_itn(s; k=j * π, dim)
   else
-    return cos_itn(s; k=(j - 1) * π, dim=d)
+    return cos_itn(s; k=(j - 1) * π, dim)
   end
 end
 
@@ -17,7 +17,7 @@ end
     + ∑_{k=1}^{n} coeffs[2k+1]*cos(2kπx)  """
 function fourier_itensornetwork(
   s::IndsNetworkMap,
-  coeffs::Vector{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  coeffs::Vector{<:Number};
   dim::Int=1,
   min_threshold=1e-15,
   cutoff=1e-16,
@@ -27,7 +27,7 @@ function fourier_itensornetwork(
     throw("coeffs must be nonempty")
   end
 
-  ψ = coeffs[1] * const_itn(s)
+  ψ = coeffs[1] * fourier_term(s, 1, dim)
   for i in 2:n
     if abs(coeffs[i]) > min_threshold
       ψ += coeffs[i] * fourier_term(s, i, dim)
@@ -40,7 +40,7 @@ end
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are sines/cosines. """
 function fourier_2D_itensornetwork(
   s::IndsNetworkMap,
-  coeffs::Matrix{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  coeffs::Matrix{<:Number};
   dims::Vector{Int}=[1, 2],
   min_threshold=1e-15,
   cutoff=1e-16,
@@ -67,7 +67,7 @@ end
     where T_k(x) is the k-th Chebyshev polynomial. """
 function chebyshev_itensornetwork(
   s::IndsNetworkMap,
-  coeffs::Vector{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  coeffs::Vector{<:Number};
   dim::Int=1,
   cutoff=1e-16,
 )
@@ -95,7 +95,7 @@ end
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are chebyshev polynomials """
 function chebyshev_2D_itensornetwork(
   s::IndsNetworkMap,
-  coeffs::Matrix{<:Union{AbstractFloat,Complex{<:AbstractFloat}}};
+  coeffs::Matrix{<:Number};
   dims::Vector{Int}=[1, 2],
   cutoff=1e-16,
 )
@@ -172,26 +172,26 @@ function greatest_n_2d(coeffs_matrix, n)
 end
 
 """ 
-    function_itensornetwork(s,f, cutoff=1e-3, max_coeffs=100, mode="fourier", by_mag=true)
+    function_itensornetwork(s,f, chop_level=1e-3, max_coeffs=100, mode="fourier", by_mag=true, cutoff=1e-16)
     Takes in a function `f` as a black box, outputs a tensor network approximation using Fourier or Chebyshev series. Supports 1D or 2D functions.
 
     #Arguments
     - `s`: IndsNetworkMap
     - `f`: a real-valued function on domain [0,1] or [0,1]⊗[0,1] which can be given as a black box
-    - `cutoff`: (default=1e-3) specifies at what value should the fourier/chebyshev coefficients be truncated below
+    - `chop_level`: (default=1e-3) specifies at what level of precision should the fourier/chebyshev coefficients be chopped off at
     - `max_coeffs`: the maximum number of coefficients allowed in 1D. In 2D, it is the maximum degree of a coefficient in each dimension
     - `mode`: ["fourier", "chebyshev"] "fourier" uses a fourier basis and "chebyshev" uses a chebyshev polynomial basis
     - `by_mag`: boolean. if false, will use the `max_coeffs` coefficients of lowest degree. if true, will use the `max_coeffs` coefficients of greatest absolute magnitude.
-    - `trunc_level`: what cutoff the periodic truncation is done at
+    - `cutoff`: (default=1e-16) at what cutoff the repeated calls to truncate() are performed at
 """
 function function_itensornetwork(
   s::IndsNetworkMap,
   f::Function;
-  cutoff::Float64=1e-3,
+  chop_level::Float64=1e-3,
   max_coeffs::Integer=100,
   mode="fourier",
   by_mag=false,
-  trunc_level=1e-16,
+  cutoff=1e-16,
 )
 
   #get the number of inputs to f
@@ -204,23 +204,23 @@ function function_itensornetwork(
     if mode == "fourier"
       S = Fourier(Interval(0.0, 1.0))
       f_fourier = Fun(f, S)
-      a = chop(f_fourier, cutoff)
+      a = chop(f_fourier, chop_level)
       if by_mag
         cf = greatest_n(coefficients(a), max_coeffs)
       else
         cf = ncoefficients(a) > max_coeffs ? coefficients(a)[1:max_coeffs] : coefficients(a)
       end
-      ψ = fourier_itensornetwork(s, cf; cutoff=trunc_level)
+      ψ = fourier_itensornetwork(s, cf; cutoff)
     elseif mode == "chebyshev"
       T = Chebyshev(Interval(0.0, 1.0))
       f_chebyshev = Fun(f, T)
-      a = chop(f_chebyshev, cutoff)
+      a = chop(f_chebyshev, chop_level)
       if by_mag
         cf = greatest_n(coefficients(a), max_coeffs)
       else
         cf = ncoefficients(a) > max_coeffs ? coefficients(a)[1:max_coeffs] : coefficients(a)
       end
-      ψ = chebyshev_itensornetwork(s, cf; cutoff=trunc_level)
+      ψ = chebyshev_itensornetwork(s, cf; cutoff)
     else
       throw("mode $mode not recognized")
     end
@@ -230,7 +230,7 @@ function function_itensornetwork(
   elseif num_inputs == 2
     if mode == "fourier"
       S = Fourier(Interval(0.0, 1.0))^2
-      f_fourier = ProductFun(f, S; tol=cutoff)
+      f_fourier = ProductFun(f, S; tol=chop_level)
       if by_mag
         cf = greatest_n_2d(coefficients(f_fourier), max_coeffs)
       else
@@ -238,10 +238,10 @@ function function_itensornetwork(
         b = min(max_coeffs, size(coefficients(f_fourier))[2])
         cf = coefficients(f_fourier)[1:a, 1:b]
       end
-      ψ = fourier_2D_itensornetwork(s, cf; dims=[1, 2], cutoff=trunc_level)
+      ψ = fourier_2D_itensornetwork(s, cf; dims=[1, 2], cutoff)
     elseif mode == "chebyshev"
       T = Chebyshev(Interval(0.0, 1.0))^2
-      f_chebyshev = ProductFun(f, T; tol=cutoff)
+      f_chebyshev = ProductFun(f, T; tol=chop_level)
       if by_mag
         cf = greatest_n_2d(coefficients(f_chebyshev), max_coeffs)
       else
@@ -249,7 +249,7 @@ function function_itensornetwork(
         b = min(max_coeffs, size(coefficients(f_chebyshev))[2])
         cf = coefficients(f_chebyshev)[1:a, 1:b]
       end
-      ψ = chebyshev_2D_itensornetwork(s, cf; dims=[1, 2], cutoff=trunc_level)
+      ψ = chebyshev_2D_itensornetwork(s, cf; dims=[1, 2], cutoff)
     else
       throw("mode $mode not recognized")
     end
@@ -265,37 +265,23 @@ end
     #Arguments
     - `s`: IndsNetworkMap
     - `data`: a real-valued vector or matrix of data points
-    - `eval_pts`: optional, where the data is located. by default it will the data as evenly spaced over [0,1] or [0,1]⊗[0,1], depending on dimension of the data.
-    - other kwargs are inherited from `function_itensornetwork`
+    - `domain`: optional argument, specifies at what coordinates the data is located. Must match the shape of `data`. If left unspecified, data is treated as evenly spaced over [0,1]/[0,1]⊗[0,1].
+    - `interpolation_mode`: Taken from Interpolations.jl. By default is `LinearInterpolation`, alternatively can be `CubicSplineInterpolation`.
+    - all other kwargs are inherited from `function_itensornetwork`
 
 """
-function data_itensornetwork(s::IndsNetworkMap, data, eval_pts=nothing; kwargs...)
+function data_itensornetwork(s::IndsNetworkMap, data, domain=nothing, interpolation_mode=LinearInterpolation; kwargs...)
   dimensionality = length(size(data))
-
-  if dimensionality == 1
-    #if no eval_pts are given, assumes that the data is evenly spaced across [0,1]
-    if eval_pts == nothing
-      eval_pts = grid_points(s, length(data), 1; exact_grid=false)
-    end
-    if length(eval_pts) != length(data)
-      throw("length of data and eval_pts do not match!")
-    end
-    f = LinearInterpolation(eval_pts, data; extrapolation_bc=Line())
-    g = (x) -> f(x) #make a function g that is defined as f
-    return function_itensornetwork(s, g; kwargs...)
-  elseif dimensionality == 2
-    if eval_pts == nothing
-      eval_pts_x = grid_points(s, size(data)[1], 1; exact_grid=false)
-      eval_pts_y = grid_points(s, size(data)[2], 2; exact_grid=false)
-      eval_pts = (eval_pts_x, eval_pts_y)
-    end
-    if length(eval_pts[1]) * length(eval_pts[2]) != length(data)
-      throw("length of data and eval_pts do not match!")
-    end
-    f = LinearInterpolation(eval_pts, data; extrapolation_bc=Line())
-    g = (x, y) -> f(x, y) #make a function g that is defined identically to f
-    return function_itensornetwork(s, g; kwargs...)
+  if isnothing(domain)
+    domain = Tuple([grid_points(s, size(data)[i], i; exact_grid=false) for i in 1:dimensionality])
   end
+  if map(length, domain) != size(data)
+    throw("shape of data and domain do not match!")
+  end
+  # Specifies how the function should be defined between data points
+  f = interpolation_mode(domain, data; extrapolation_bc=Line()) 
+  g = x... -> f(x...)
+  return function_itensornetwork(s, g; kwargs...)
 end
 
 const fourier_itn = fourier_itensornetwork
