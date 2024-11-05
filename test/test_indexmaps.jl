@@ -75,17 +75,17 @@ Random.seed!(1234)
     base = 2
     g = named_comb_tree((2, L ÷ 2))
     s = continuous_siteinds(g; map_dimension=2)
-  
+
     #first set -- irregular span
     N = 125
     a = 0.12
     b = 0.95
 
-    test_gridpoints = grid_points(s, N, 1, span=[a, b])
-  
+    test_gridpoints = grid_points(s, N, 1; span=[a, b])
+
     points_in_span = floor(b * base^(L / 2)) - ceil(a * base^(L / 2)) + 1
     N_gridpoints = Int(floor(points_in_span / ceil(points_in_span / N))) + 1
-  
+
     @test length(test_gridpoints) == N_gridpoints
     @test test_gridpoints[1] >= a
     @test test_gridpoints[end] < b
@@ -93,7 +93,7 @@ Random.seed!(1234)
     left = (test_gridpoints[1] - a)
     right = (b - test_gridpoints[end])
     @test internal >= left && internal >= right
-  
+
     #second set
     N = 32
     a = 0.25
@@ -106,7 +106,7 @@ Random.seed!(1234)
     left = (test2[1] - a)
     right = (b - test2[end])
     @test internal >= left && internal >= right
-  
+
     #third set
     test3 = grid_points(s, 1)
     @test length(test3) == 256
@@ -116,14 +116,14 @@ Random.seed!(1234)
     left = (test3[1] - a)
     right = (b - test3[end])
     @test internal >= left && internal >= right
-  
+
     #test the rand_p() function to see if it succeeds
     rng = Random.Xoshiro(42)
     rand_gridpoint1 = rand_p(rng, s)
     rand_gridpoint2 = rand_p(rng, s, 1)
     default_rng_gridpoint1 = rand_p(s)
     default_rng_gridpoint2 = rand_p(s, 1)
-  
+
     #fourth set -- very large L
     L = 140
     base = 2

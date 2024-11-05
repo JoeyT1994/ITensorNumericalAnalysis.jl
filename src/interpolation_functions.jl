@@ -16,11 +16,7 @@ end
 """ Build the function f(x) = coeffs[1] + ∑_{k=1}^{n} coeffs[2k]*sin(2kπx) 
     + ∑_{k=1}^{n} coeffs[2k+1]*cos(2kπx)  """
 function fourier_itensornetwork(
-  s::IndsNetworkMap,
-  coeffs::Vector{<:Number};
-  dim::Int=1,
-  min_threshold=1e-15,
-  cutoff=1e-16,
+  s::IndsNetworkMap, coeffs::Vector{<:Number}; dim::Int=1, min_threshold=1e-15, cutoff=1e-16
 )
   n = length(coeffs)
   if n < 1
@@ -66,10 +62,7 @@ end
 """ Build the function f(x) = ∑_{k=1}^n coeffs[k] * T_k(x) 
     where T_k(x) is the k-th Chebyshev polynomial. """
 function chebyshev_itensornetwork(
-  s::IndsNetworkMap,
-  coeffs::Vector{<:Number};
-  dim::Int=1,
-  cutoff=1e-16,
+  s::IndsNetworkMap, coeffs::Vector{<:Number}; dim::Int=1, cutoff=1e-16
 )
   n = length(coeffs)
   if n <= 0
@@ -94,10 +87,7 @@ end
 
 """ Build the function f(x,y) = ∑_{j=1}^n ∑_{k=1}^n coeffs[j, k]*ϕ_j(x)*ϕ_k(y) where ϕ_j and ϕ_k are chebyshev polynomials """
 function chebyshev_2D_itensornetwork(
-  s::IndsNetworkMap,
-  coeffs::Matrix{<:Number};
-  dims::Vector{Int}=[1, 2],
-  cutoff=1e-16,
+  s::IndsNetworkMap, coeffs::Matrix{<:Number}; dims::Vector{Int}=[1, 2], cutoff=1e-16
 )
   n = size(coeffs)[1]
   m = size(coeffs)[2]
@@ -270,16 +260,20 @@ end
     - all other kwargs are inherited from `function_itensornetwork`
 
 """
-function data_itensornetwork(s::IndsNetworkMap, data, domain=nothing, interpolation_mode=LinearInterpolation; kwargs...)
+function data_itensornetwork(
+  s::IndsNetworkMap, data, domain=nothing, interpolation_mode=LinearInterpolation; kwargs...
+)
   dimensionality = length(size(data))
   if isnothing(domain)
-    domain = Tuple([grid_points(s, size(data)[i], i; exact_grid=false) for i in 1:dimensionality])
+    domain = Tuple([
+      grid_points(s, size(data)[i], i; exact_grid=false) for i in 1:dimensionality
+    ])
   end
   if map(length, domain) != size(data)
     throw("shape of data and domain do not match!")
   end
   # Specifies how the function should be defined between data points
-  f = interpolation_mode(domain, data; extrapolation_bc=Line()) 
+  f = interpolation_mode(domain, data; extrapolation_bc=Line())
   g = (x...) -> f(x...)
   return function_itensornetwork(s, g; kwargs...)
 end

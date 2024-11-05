@@ -152,5 +152,6 @@ function rand_p(rng::AbstractRNG, imap::ComplexIndexMap, d::Integer)
   @assert all(y -> y == first(dims), dims)
   base = float(first(dims))
   Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
-  return rand(rng, 0:(base^Lre - 1)) / base^Lre + im * rand(rng, 0:(base^Lim - 1)) / base^Lim
+  return rand(rng, 0:(base^Lre - 1)) / base^Lre +
+         im * rand(rng, 0:(base^Lim - 1)) / base^Lim
 end

@@ -91,7 +91,12 @@ end
   - `enforced::AbstractVector{<:Number}`: A list of points that we want to enforce to show up in the grid.
 """
 function grid_points(
-  imap::RealIndexMap, N::Int, d::Int; span::AbstractVector{<:Number}=[0,1], exact_grid::Bool=true, enforced=[]
+  imap::RealIndexMap,
+  N::Int,
+  d::Int;
+  span::AbstractVector{<:Number}=[0, 1],
+  exact_grid::Bool=true,
+  enforced=[],
 )
   if length(span) != 2 || span[1] >= span[2] || span[1] < 0 || span[2] > 1
     throw(
@@ -163,17 +168,13 @@ function grid_points(
   return grid_points
 end
 
-function grid_points(
-  imap::RealIndexMap, d::Int; kwargs...
-)
+function grid_points(imap::RealIndexMap, d::Int; kwargs...)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
   base = dims[d]
   L = length(dimension_inds(imap, d))
   return grid_points(imap, base^L, d; kwargs...)
 end
-
-
 
 """ 
   Picks a random grid point from `imap` given a dimension
