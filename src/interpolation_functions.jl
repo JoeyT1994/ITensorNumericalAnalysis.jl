@@ -280,7 +280,7 @@ function data_itensornetwork(s::IndsNetworkMap, data, domain=nothing, interpolat
   end
   # Specifies how the function should be defined between data points
   f = interpolation_mode(domain, data; extrapolation_bc=Line()) 
-  g = x... -> f(x...)
+  g = (x...) -> f(x...)
   return function_itensornetwork(s, g; kwargs...)
 end
 

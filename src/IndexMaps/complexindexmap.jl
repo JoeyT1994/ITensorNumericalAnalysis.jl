@@ -2,6 +2,7 @@ using Base: Base
 using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim, hastags
 using ITensorNetworks: IndsNetwork, vertex_data
+using Random: AbstractRNG
 
 struct ComplexIndexMap{VB,VD,VR} <: AbstractIndexMap{VB,VD}
   index_digit::VB
@@ -141,4 +142,15 @@ function grid_points(imap::ComplexIndexMap, N::Int, d::Int)
     i * (are / base^Lre) + im * j * (aim / base^Lim) for i in 0:(N + 1) for j in 0:(N + 1)
   ]
   return filter(x -> real(x) < 1 && imag(x) < 1, grid_points)
+end
+
+""" 
+  Picks a random grid point from `imap` given a dimension
+"""
+function rand_p(rng::AbstractRNG, imap::ComplexIndexMap, d::Integer)
+  dims = dim.(dimension_inds(imap, d))
+  @assert all(y -> y == first(dims), dims)
+  base = float(first(dims))
+  Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
+  return rand(rng, 0:(base^Lre - 1)) / base^Lre + im * rand(rng, 0:(base^Lim - 1)) / base^Lim
 end

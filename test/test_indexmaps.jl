@@ -2,7 +2,7 @@ using Test
 using ITensorNumericalAnalysis
 
 using NamedGraphs: vertices
-using NamedGraphs.NamedGraphGenerators: named_grid
+using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
 using NamedGraphs.GraphsExtensions: is_tree
 using ITensors: siteinds, inds
 using Dictionaries: Dictionary
@@ -80,7 +80,8 @@ Random.seed!(1234)
     N = 125
     a = 0.12
     b = 0.95
-    test_gridpoints = grid_points(s, N, 1, [a, b])
+
+    test_gridpoints = grid_points(s, N, 1, span=[a, b])
   
     points_in_span = floor(b * base^(L / 2)) - ceil(a * base^(L / 2)) + 1
     N_gridpoints = Int(floor(points_in_span / ceil(points_in_span / N))) + 1
@@ -97,7 +98,7 @@ Random.seed!(1234)
     N = 32
     a = 0.25
     b = 0.5
-    test2 = grid_points(s, N, 1, [a, b])
+    test2 = grid_points(s, N, 1; span=[a, b])
     @test length(test2) == N
     @test test2[1] >= a
     @test test2[end] < b
