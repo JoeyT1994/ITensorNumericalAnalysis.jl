@@ -16,6 +16,7 @@ include("itensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 include("integration.jl")
+include("interpolation_functions.jl")
 
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
@@ -28,7 +29,8 @@ export AbstractIndexMap,
   calculate_ind_values,
   dimension,
   dimensions,
-  grid_points
+  grid_points,
+  rand_p
 export IndsNetworkMap,
   continuous_siteinds,
   complex_continuous_siteinds,
@@ -60,8 +62,21 @@ export const_itensornetwork,
   map_to_zero_operator,
   map_to_zeros,
   const_plane_op
+export fourier_itensornetwork,
+  chebyshev_itensornetwork, function_itensornetwork, data_itensornetwork
 export const_itn,
-  poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
+  poly_itn,
+  cosh_itn,
+  sinh_itn,
+  tanh_itn,
+  exp_itn,
+  sin_itn,
+  cos_itn,
+  rand_itn,
+  fourier_itn,
+  chebyshev_itn,
+  function_itn,
+  data_itn
 export evaluate
 export operate, operator_proj, multiply
 
