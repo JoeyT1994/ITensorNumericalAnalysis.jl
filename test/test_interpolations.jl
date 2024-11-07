@@ -1,7 +1,7 @@
 using Test
 using ITensorNumericalAnalysis
 using NamedGraphs.NamedGraphGenerators: named_comb_tree
-using Plots
+
 @testset "test interpolations" begin
   @testset "interpolate 1D function" begin
     L = 10
