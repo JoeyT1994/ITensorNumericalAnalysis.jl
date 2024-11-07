@@ -117,13 +117,6 @@ Random.seed!(1234)
     right = (b - test3[end])
     @test internal >= left && internal >= right
 
-    #test the rand_p() function to see if it succeeds
-    rng = Random.Xoshiro(42)
-    rand_gridpoint1 = rand_p(rng, s)
-    rand_gridpoint2 = rand_p(rng, s, 1)
-    default_rng_gridpoint1 = rand_p(s)
-    default_rng_gridpoint2 = rand_p(s, 1)
-
     #fourth set -- very large L
     L = 140
     base = 2
@@ -131,5 +124,12 @@ Random.seed!(1234)
     s = continuous_siteinds(g; map_dimension=2)
     n_grid = 16
     @test length(grid_points(s, n_grid, 1)) == n_grid
+
+    #test the rand_p() function to see if it succeeds on large L
+    rng = Random.Xoshiro(42)
+    rand_gridpoint1 = rand_p(rng, s)
+    rand_gridpoint2 = rand_p(rng, s, 1)
+    default_rng_gridpoint1 = rand_p(s)
+    default_rng_gridpoint2 = rand_p(s, 1)
   end
 end

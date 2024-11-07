@@ -186,5 +186,5 @@ function rand_p(rng::AbstractRNG, imap::RealIndexMap, d::Integer)
   @assert all(y -> y == first(dims), dims)
   base = dims[d]
   L = length(dimension_inds(imap, d))
-  return rand(rng, 0:(base^L - 1)) / base^L
+  return rand(rng, 0:(big(base)^L - 1)) / big(base)^L
 end

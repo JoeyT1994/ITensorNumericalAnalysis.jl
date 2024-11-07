@@ -4,9 +4,7 @@ using Interpolations: LinearInterpolation, Line, CubicSplineInterpolation
 
 """ Helper function for fourier_itensornetwork and fourier_2D_itensornetwork """
 function fourier_term(s::IndsNetworkMap, j::Integer, dim::Integer)
-  if j == 1
-    return const_itn(s)
-  elseif j % 2 == 0
+  if j % 2 == 0
     return sin_itn(s; k=j * π, dim)
   else
     return cos_itn(s; k=(j - 1) * π, dim)
@@ -47,7 +45,7 @@ function fourier_2D_itensornetwork(
     throw("coeffs must be nonempty")
   end
 
-  ψ = const_itn(s; c=0)
+  ψ = poly_itn(s, [0]; dim=dims[1])
   for j in 1:n
     for k in 1:m
       if abs(coeffs[j, k]) > min_threshold
@@ -72,13 +70,13 @@ function chebyshev_itensornetwork(
   end
 
   #Clenshaw Evaluation method - uses idea from https://arxiv.org/pdf/2407.09609
-  y_n = const_itn(s; c=0)
-  y_n1 = const_itn(s; c=0)
+  y_n = poly_itn(s, [0]; dim) #const_itn(s; c=0) 
+  y_n1 = poly_itn(s, [0]; dim) #const_itn(s; c=0)
 
   # y_n-1 = c_n-1 - y_n+1 + (4x-2) * y_n
   for d in n:-1:1
     old_y_n = truncate(y_n; cutoff)
-    y_n = coeffs[d] * const_itn(s) + (-1) * y_n1 + poly_itn(s, [-2, 4]; dim) * old_y_n
+    y_n = poly_itn(s, [coeffs[d]]; dim) + (-1) * y_n1 + poly_itn(s, [-2, 4]; dim) * old_y_n
     y_n1 = old_y_n
   end
 
@@ -96,18 +94,18 @@ function chebyshev_2D_itensornetwork(
   end
 
   #Clenshaw Evaluation method - uses idea from https://arxiv.org/pdf/2407.09609
-  y_n = const_itn(s; c=0)
-  y_n1 = const_itn(s; c=0)
+  y_n = poly_itn(s, [0]; dim=dims[2]) #const_itn(s; c=0) #
+  y_n1 = poly_itn(s, [0]; dim=dims[2]) #const_itn(s; c=0) #
 
   for j in m:-1:1
     #determine the weighted sum of chebyshev polynomials of x
-    x_n = const_itn(s; c=0)
-    x_n1 = const_itn(s; c=0)
+    x_n = poly_itn(s, [0]; dim=dims[1]) #const_itn(s; c=0) #
+    x_n1 = poly_itn(s, [0]; dim=dims[1]) #const_itn(s; c=0) #
     for i in n:-1:1
       # x_n-1 = c_n-1 - x_n+1 + (4x-2) * x_n
       old_x_n = truncate(x_n; cutoff)
       x_n =
-        coeffs[i, j] * const_itn(s) +
+        poly_itn(s, [coeffs[i, j]]; dim=dims[1]) + #coeffs[i, j] * const_itn(s) + #
         (-1) * x_n1 +
         poly_itn(s, [-2, 4]; dim=dims[1]) * old_x_n
       x_n1 = old_x_n
