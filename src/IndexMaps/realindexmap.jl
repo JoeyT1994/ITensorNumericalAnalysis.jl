@@ -176,6 +176,8 @@ function grid_points(imap::RealIndexMap, d::Int; kwargs...)
   return grid_points(imap, base^L, d; kwargs...)
 end
 
+grid_points(imap::RealIndexMap; kwargs...) = grid_points(imap, 1; kwargs...)
+
 """ 
   Picks a random grid point from `imap` given a dimension
 """

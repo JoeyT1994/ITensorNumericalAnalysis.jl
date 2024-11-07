@@ -25,8 +25,8 @@ y_vals = grid_points(s, length(x_vals), 2)
 
 f(x, y) = exp(-((x - 0.5)^2 + (y - 0.5)^2) / 0.05)
 
-ψ_f = function_itn(s, f; mode="fourier", cutoff=1e-3, max_coeffs=400, by_mag=true)
-ψ_c = function_itn(s, f; mode="chebyshev", cutoff=1e-3, max_coeffs=400, by_mag=true)
+ψ_f = function_itn(s, f; mode="fourier", chop_level=1e-3, max_coeffs=400, by_mag=true)
+ψ_c = function_itn(s, f; mode="chebyshev", chop_level=1e-3, max_coeffs=400, by_mag=true)
 
 ψ_f = truncate(ψ_f; cutoff=1e-16)
 ψ_c = truncate(ψ_c; cutoff=1e-16)

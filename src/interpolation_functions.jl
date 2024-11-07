@@ -264,17 +264,27 @@ function data_itensornetwork(
   s::IndsNetworkMap, data, domain=nothing, interpolation_mode=LinearInterpolation; kwargs...
 )
   dimensionality = length(size(data))
+  if dimensionality > 2
+    throw("cannot handle dimensionality > 2")
+  end
+
   if isnothing(domain)
     domain = Tuple([
       grid_points(s, size(data)[i], i; exact_grid=false) for i in 1:dimensionality
     ])
   end
-  if map(length, domain) != size(data)
+  if dimensionality == 1 && length(domain) != length(data) ||
+    dimensionality > 1 && map(length, domain) != size(data)
     throw("shape of data and domain do not match!")
   end
   # Specifies how the function should be defined between data points
   f = interpolation_mode(domain, data; extrapolation_bc=Line())
-  g = (x...) -> f(x...)
+
+  if dimensionality == 1
+    g = (x) -> f(x)
+  elseif dimensionality == 2
+    g = (x, y) -> f(x, y)
+  end
   return function_itensornetwork(s, g; kwargs...)
 end
 
