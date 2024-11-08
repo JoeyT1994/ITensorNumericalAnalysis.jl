@@ -62,14 +62,7 @@ export const_itensornetwork,
   map_to_zeros,
   const_plane_op
 export const_itn,
-  poly_itn,
-  cosh_itn,
-  sinh_itn,
-  tanh_itn,
-  exp_itn,
-  sin_itn,
-  cos_itn,
-  rand_itn
+  poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
 export evaluate
 export operate, operator_proj, multiply
 
