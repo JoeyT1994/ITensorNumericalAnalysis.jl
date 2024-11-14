@@ -103,62 +103,36 @@ function grid_points(
       "expected a two-element vector [a,b] with 0≤a<b≤1 as input span, instead found $span"
     )
   end
-
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
   base = first(dims)
   L = length(dimension_inds(imap, d))
 
-  if !exact_grid
-    grid_points = range(span[1], span[2] - (span[2] - span[1]) / N; length=N)
-  else #exact_grid = true
-    if span[1] == 0 && span[2] == 1
-      inv_step = min(Int(floor(log(base, N))), L)
-      if !(log(base, N) ≈ inv_step)
-        @warn "rounding $N down to $(Int(base^inv_step)) exact gridpoints!"
-      end
-      # now 1/inv_step should provide the step
-      grid_points = collect(span[1]:(1 / base^inv_step):span[2])[1:(end - 1)]
-
-    else
-
-      #get a count of the number of gridpoints within the span
-      points_in_span = floor(span[end] * base^L) - ceil(span[1] * base^L) + 1
-      #TODO: figure out a way to calculate this without exponentiating to the power of L
-
-      #exclude the endpoint in the count
-      if floor(span[end] * base^L) == span[end] * base^L
-        points_in_span = points_in_span - 1
-      end
-
-      if points_in_span <= 0
-        @warn "No exact gridpoints found in this span!"
-        grid_points = []
-      else
-        oldN = N
-        stepsize = ceil(points_in_span / N)
-        N = Int(floor(points_in_span / stepsize)) + 1
-        startval = ceil(span[1] * base^L) / base^L #startval is the smallest grid point ≥ span[1]
-
-        if startval + (N - 1) * stepsize / base^L >= span[2]
-          N = N - 1
-        end
-
-        if N < oldN
-          @warn "rounding $oldN down to $N exact gridpoints to maintain equal spacing."
-        end
-
-        grid_points = [startval + i * (stepsize / base^L) for i in 0:(N - 1)]
-      end
+  # generate grid_points within the span (exclusive of right endpoint)
+  grid_points = collect(range(span[1], span[2] - (span[2] - span[1]) / N; length=N))
+  if exact_grid
+    for (i, point) in enumerate(grid_points)
+      grid_points[i] = round_to_nearest_exact_point(point, L)
     end
+    # define lambda function
+    # round_near = point -> round_to_nearest_exact_point(point, L)
+    # grid_points = map(round_near, grid_points)
+    grid_points = unique(grid_points)
   end
 
-  #add enforced points
+  # add enforced points
   if !isempty(enforced)
-    grid_points = sort(vcat(grid_points, enforced_points)) 
+    grid_points = sort(unique(vcat(grid_points, enforced_points)))
   end
 
   return grid_points
+end
+
+function round_to_nearest_exact_point(point::Number, L::Int)
+  if point < 0 || point >= 1
+    throw("Input point must be between 0 and 1")
+  end
+  return round(point * 2.0^L) / 2.0^L
 end
 
 function grid_points(imap::RealIndexMap, d::Int; kwargs...)
@@ -174,7 +148,7 @@ grid_points(imap::RealIndexMap; kwargs...) = grid_points(imap, 1; kwargs...)
 #multi-dimensional grid_points
 function grid_points(imap::RealIndexMap, Ns::Vector{Int}, dims::Vector{Int}; kwargs...)
   if length(Ns) != length(dims)
-    @throw "length of Ns and dims do not match!"
+    throw("length of Ns and dims do not match!")
   end
   coords = [grid_points(imap, pair[1], pair[2]; kwargs...) for pair in zip(Ns, dims)]
   gp = Base.Iterators.product(coords...)

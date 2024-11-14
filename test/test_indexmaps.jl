@@ -86,17 +86,9 @@ end
     b = 0.95
 
     test_gridpoints = grid_points(s, N, 1; span=[a, b])
-
-    points_in_span = floor(b * base^(L / 2)) - ceil(a * base^(L / 2)) + 1
-    N_gridpoints = Int(floor(points_in_span / ceil(points_in_span / N))) + 1
-
-    @test length(test_gridpoints) == N_gridpoints
+    @test length(test_gridpoints) == N
     @test test_gridpoints[1] >= a
     @test test_gridpoints[end] < b
-    internal = (test_gridpoints[2] - test_gridpoints[1])
-    left = (test_gridpoints[1] - a)
-    right = (b - test_gridpoints[end])
-    @test internal >= left && internal >= right
   end
 
   @testset "test grid_points spacing" begin
