@@ -153,16 +153,9 @@ function grid_points(
     end
   end
 
-  #add enforced points in naively
-  for point in enforced
-    if point >= span[2] || point < span[1]
-      @warn "enforced point $point outside of span $span, not including it"
-      continue
-    end
-    nearest_idx = searchsortedfirst(grid_points, point)
-    if nearest_idx > length(grid_points) || grid_points[nearest_idx] != point
-      insert!(grid_points, nearest_idx, point)
-    end
+  #add enforced points
+  if !isempty(enforced)
+    grid_points = sort(vcat(grid_points, enforced_points)) 
   end
 
   return grid_points
@@ -177,6 +170,23 @@ function grid_points(imap::RealIndexMap, d::Int; kwargs...)
 end
 
 grid_points(imap::RealIndexMap; kwargs...) = grid_points(imap, 1; kwargs...)
+
+#multi-dimensional grid_points
+function grid_points(imap::RealIndexMap, Ns::Vector{Int}, dims::Vector{Int}; kwargs...)
+  if length(Ns) != length(dims)
+    @throw "length of Ns and dims do not match!"
+  end
+  coords = [grid_points(imap, pair[1], pair[2]; kwargs...) for pair in zip(Ns, dims)]
+  gp = Base.Iterators.product(coords...)
+  return [collect(point) for point in gp]
+end
+
+function grid_points(imap::RealIndexMap, dims::Vector{Int}; kwargs...)
+  coords = [grid_points(imap, d; kwargs...) for d in dims]
+  gp = Base.Iterators.product(coords...)
+  return [collect(point) for point in gp]
+end
+
 
 """ 
   Picks a random grid point from `imap` given a dimension
