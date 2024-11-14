@@ -70,7 +70,11 @@ Random.seed!(1234)
     xyzvals ≈ xyzvals_approx
   end
 
-  @testset "test grid_points" begin
+end
+
+@testset "grid_points tests" begin
+
+  @testset "test grid_points irregular span" begin
     L = 16
     base = 2
     g = named_comb_tree((2, L ÷ 2))
@@ -93,6 +97,12 @@ Random.seed!(1234)
     left = (test_gridpoints[1] - a)
     right = (b - test_gridpoints[end])
     @test internal >= left && internal >= right
+  end
+
+  @testset "test grid_points spacing" begin
+    L = 16
+    g = named_comb_tree((2, L ÷ 2))
+    s = continuous_siteinds(g; map_dimension=2)
 
     #second set
     N = 32
@@ -106,6 +116,14 @@ Random.seed!(1234)
     left = (test2[1] - a)
     right = (b - test2[end])
     @test internal >= left && internal >= right
+  end
+
+  @testset "test grid_points spacing 2" begin
+    L = 16
+    g = named_comb_tree((2, L ÷ 2))
+    s = continuous_siteinds(g; map_dimension=2)
+    a = 0.25
+    b = 0.5
 
     #third set
     test3 = grid_points(s, 1)
@@ -116,7 +134,9 @@ Random.seed!(1234)
     left = (test3[1] - a)
     right = (b - test3[end])
     @test internal >= left && internal >= right
+  end
 
+  @testset "test grid_points high precision" begin
     #fourth set -- very large L
     L = 140
     base = 2
@@ -124,12 +144,27 @@ Random.seed!(1234)
     s = continuous_siteinds(g; map_dimension=2)
     n_grid = 16
     @test length(grid_points(s, n_grid, 1)) == n_grid
-
-    #test the rand_p() function to see if it succeeds on large L
-    rng = Random.Xoshiro(42)
-    rand_gridpoint1 = rand_p(rng, s)
-    rand_gridpoint2 = rand_p(rng, s, 1)
-    default_rng_gridpoint1 = rand_p(s)
-    default_rng_gridpoint2 = rand_p(s, 1)
   end
+end
+
+@testset "test rand_p" begin
+  #test the rand_p() function to see if it succeeds on large L
+  L = 140
+  g = named_comb_tree((2, L ÷ 2))
+  s = continuous_siteinds(g; map_dimension=2)
+  ψ = cos_itn(s; dim=1) * cos_itn(s; dim=2)
+
+  #test the use of seedeed randomness
+  rng = Random.Xoshiro(42)
+  rand_gridpoint1 = rand_p(rng, s)
+  rand_gridpoint2 = rand_p(rng, s, 1)
+  x = real(ITensorNumericalAnalysis.evaluate(ψ, rand_gridpoint1))
+  @test x >= -1 && x <= 1 # check to make sure ψ can be evaluated at these points
+
+  #test the use of default rng
+  default_rng_gridpoint1 = rand_p(s)
+  default_rng_gridpoint2 = rand_p(s, 1)
+  y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
+  @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
+  
 end
