@@ -161,7 +161,6 @@ function grid_points(imap::RealIndexMap, dims::Vector{Int}; kwargs...)
   return [collect(point) for point in gp]
 end
 
-
 """ 
   Picks a random grid point from `imap` given a dimension
 """

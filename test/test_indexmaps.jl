@@ -69,11 +69,9 @@ Random.seed!(1234)
     xyzvals_approx = calculate_p(s, ind_to_ind_value_map, [i for i in 1:dimension(s)])
     xyzvals ≈ xyzvals_approx
   end
-
 end
 
 @testset "grid_points tests" begin
-
   @testset "test grid_points irregular span" begin
     L = 16
     base = 2
@@ -158,5 +156,4 @@ end
   default_rng_gridpoint2 = rand_p(s, 1)
   y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
   @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
-  
 end
