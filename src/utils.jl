@@ -1,7 +1,6 @@
 using Graphs: AbstractGraph
 using ITensors:
   ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds, permute
-using ITensors.ITensorMPS: ITensorMPS
 using ITensorNetworks:
   AbstractITensorNetwork,
   BeliefPropagationCache,

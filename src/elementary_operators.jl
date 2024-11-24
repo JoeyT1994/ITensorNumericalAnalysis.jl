@@ -11,12 +11,12 @@ using ITensors:
   truncate,
   replaceinds,
   delta,
-  add!,
   prime,
   sim,
   noprime!,
   contract,
   replaceinds
+using ITensorMPS: add!
 using ITensorNetworks:
   IndsNetwork,
   ITensorNetwork,
