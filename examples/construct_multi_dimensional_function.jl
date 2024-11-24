@@ -6,13 +6,8 @@ using NamedGraphs.NamedGraphGenerators: named_comb_tree
 using ITensors: siteinds, maxlinkdim, inds
 using Random: Random
 
-L = 12
-Random.seed!(1234)
-g = named_comb_tree((3, 4))
-s = complex_continuous_siteinds(g; map_dimension=3)
-
 println(
-  "Constructing the 3D complex function f(z1,z2,z3) = z1³(z2 + z2²) + cosh(πz3)^2 as a tensor network on a randomly chosen tree with $L vertices",
+  "Constructing the 3D complex function f(z1,z2,z3) = z1³(z2 + z2²) + cosh(πz3)^2 as a tensor network on a comb tree with $L vertices",
 )
 L = 12
 Random.seed!(1234)
