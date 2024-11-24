@@ -3,17 +3,18 @@ using ITensorNumericalAnalysis
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph
 using NamedGraphs.NamedGraphGenerators: named_comb_tree
-using ITensors: siteinds, maxlinkdim, inds
+using ITensors: siteinds, inds
+using ITensorNetworks: maxlinkdim
 using Random: Random
 
+L = 4
 println(
   "Constructing the 3D complex function f(z1,z2,z3) = z1³(z2 + z2²) + cosh(πz3)^2 as a tensor network on a comb tree with $L vertices",
 )
-L = 12
 Random.seed!(1234)
-g = named_comb_tree((3, 4))
-real_dim_vertices = [[(j, i) for i in 1:4] for j in 1:3]
-imag_dim_vertices = [[(j, i) for i in 4:-1:1] for j in 3:-1:1]
+g = named_comb_tree((3, L))
+real_dim_vertices = [[(j, i) for i in 1:L] for j in 1:3]
+imag_dim_vertices = [[(j, i) for i in L:-1:1] for j in 3:-1:1]
 s = complex_continuous_siteinds(g, real_dim_vertices, imag_dim_vertices)
 ψ_fz1 = poly_itn(s, [0.0, 0.0, 0.0, 1.0]; dim=1)
 ψ_fz2 = poly_itn(s, [0.0, 1.0, 1.0]; dim=2)
