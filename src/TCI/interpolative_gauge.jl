@@ -1,7 +1,8 @@
 using Graphs: AbstractEdge, src, dst
 using ITensors: norm, tags, uniqueinds
-using ITensorNetworks: AbstractITensorNetwork
+using ITensorNetworks: AbstractITensorNetwork, ortho_region, underlying_graph, ITensorNetwork
 using NamedGraphs.GraphsExtensions: bfs_tree, post_order_dfs_edges
+using Graphs: steiner_tree
 
 #
 # Possible improvements:
@@ -32,14 +33,26 @@ function interpolative_gauge(tn::AbstractITensorNetwork, edge::Pair; kwargs...)
 end
 
 """
-Bring an ITensorNetwork into interpolative gauge 
-towards a source vertex, treating
-the network as a tree spanned by a spanning tree.
+Bring a TreeTensorNetwork into interpolative gauge 
+towards a region
 """
-function interpolative_gauge(ψ::AbstractITensorNetwork, source_vertex)
-  spanning_tree_edges = post_order_dfs_edges(bfs_tree(ψ, source_vertex), source_vertex)
-  for e in spanning_tree_edges
-    ψ = interpolative_gauge(ψ, e)
+function interpolative_gauge(ψ::TreeTensorNetwork, region::Vector; kwargs...)
+  issetequal(region, ortho_region(ψ)) && return ψ
+  st = steiner_tree(ITensorNetwork(ψ), union(region, ortho_region(ψ)))
+  path = post_order_dfs_edges(st, first(region))
+  path = filter(e -> !((src(e) ∈ region) && (dst(e) ∈ region)), path)
+  if !isempty(path)
+    for e in path
+      ψ = typeof(ψ)(interpolative_gauge(ITensorNetwork(ψ), e; kwargs...))
+    end
   end
-  return ψ
+  return set_ortho_region(ψ, region)
+end
+
+"""
+Bring a TreeTensorNetwork into interpolative gauge 
+towards a region
+"""
+function interpolative_gauge(ψ::AbstractTTN, region)
+ return interpolative_gauge(ψ, [region])
 end

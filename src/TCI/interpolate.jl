@@ -20,9 +20,10 @@ using ITensorNetworks:
 using NamedGraphs.GraphsExtensions: is_leaf_vertex, incident_edges
 
 function interpolate_extracter(
-  state, projected_operator, region, gauge_center; internal_kwargs
+  state, projected_operator, region; internal_kwargs
 )
   @assert !(region isa AbstractEdge)
+  gauge_center = first(region)
   state = interpolative_gauge(state, gauge_center)
   local_tensor = prod(state[v] for v in region)
   return state, projected_operator, local_tensor
@@ -65,14 +66,14 @@ end
 function interpolate_inserter(
   state::AbstractTTN,
   Pi::ITensor,
-  region,
-  ortho_vert;
+  region;
   maxdim=nothing,
   mindim=nothing,
   cutoff=nothing,
   internal_kwargs,
 )
   state = copy(state)
+  ortho_vert = only(ortho_region(state))
   center_vert = only(setdiff(support(region), [ortho_vert]))
   e = edgetype(state)(ortho_vert, center_vert)
   col_inds = uniqueinds(state[ortho_vert], state[center_vert])

@@ -111,17 +111,6 @@ function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair{<:Index,<:Int}
   return out
 end
 
-function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair{<:Index,<:Int}})
-  ndim = dimension(imap)
-  out = zeros(scalartype(imap), ndim)
-  for (ind, value) in input
-    d = dimension(imap, ind)
-    out[d] += index_value_to_scalar(imap, ind, value - 1)
-  end
-  length(out) == 1 && return first(out)
-  return out
-end
-
 function calculate_p(
   imap::AbstractIndexMap, ind_to_ind_value_map, dims::Vector{Int}=dimensions(imap)
 )
