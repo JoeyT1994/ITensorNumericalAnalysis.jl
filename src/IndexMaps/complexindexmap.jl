@@ -1,5 +1,5 @@
 using Base: Base
-using Dictionaries: Dictionary, set!
+using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim, hastags
 using ITensorNetworks: IndsNetwork, vertex_data
 
@@ -24,14 +24,15 @@ end
 scalartype(imap::ComplexIndexMap) = ComplexF64
 
 function index_value_to_scalar(imap::ComplexIndexMap, ind::Index, value::Int)
+  invb = float(dim(ind))^-digit(imap, ind)
   return if is_real(imap, ind)
-    (value) / (dim(ind)^digit(imap, ind))
+    (value) * invb
   else
-    im * (value) / (dim(ind)^digit(imap, ind))
+    im * (value) * invb
   end
 end
 function Base.copy(imap::ComplexIndexMap)
-  return IndexMap(
+  return ComplexIndexMap(
     copy(index_digit(imap)), copy(index_dimension(imap)), copy(index_real(imap))
   )
 end
@@ -51,6 +52,22 @@ function ind(imap::ComplexIndexMap, dim::Int, digit::Int, real_ind::Bool=true)
   )
 end
 
+function rem_index(imap::ComplexIndexMap, ind::Index)
+  imap_r = copy(imap)
+  delete!(index_digit(imap_r), ind)
+  delete!(index_dimension(imap_r), ind)
+  delete!(index_real(imap_r), ind)
+  return imap_r
+end
+
+function Dictionaries.merge(imap1::ComplexIndexMap, imap2::ComplexIndexMap)
+  return ComplexIndexMap(
+    merge(index_digit(imap1), index_digit(imap2)),
+    merge(index_dimension(imap1), index_dimension(imap2)),
+    merge(index_real(imap1), index_real(imap2)),
+  )
+end
+
 """
 Indices that reflect real valued digits should have the "Real" tag in IndsNetwork,
 whilst imaginary valued digits should have the "Imag" tag. The complex_continuous_siteinds(...)
@@ -62,11 +79,11 @@ function ComplexIndexMap(
   imag_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s),
 ) where {V}
   real_dimension_indices = Vector{Index}[
-    filter(i -> hastags(i, "Real"), inds(s, vertices)) for
+    !isempty(vertices) ? filter(i -> hastags(i, "Real"), inds(s, vertices)) : Index[] for
     vertices in real_dimension_vertices
   ]
   imag_dimension_indices = Vector{Index}[
-    filter(i -> hastags(i, "Imag"), inds(s, vertices)) for
+    !isempty(vertices) ? filter(i -> hastags(i, "Imag"), inds(s, vertices)) : Index[] for
     vertices in imag_dimension_vertices
   ]
   return ComplexIndexMap(real_dimension_indices, imag_dimension_indices)
@@ -118,7 +135,7 @@ end
 function grid_points(imap::ComplexIndexMap, N::Int, d::Int)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
-  base = first(dims)
+  base = float(first(dims))
   Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
   are, aim = round(base^Lre / N), round(base^Lim / N)
   grid_points = [
