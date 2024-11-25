@@ -7,8 +7,9 @@ using ITensorNetworks:
   data_graph_type,
   scalar,
   inner,
-  TreeTensorNetwork
-using ITensors: ITensor, dim, contract, siteinds, onehot, maxlinkdim
+  TreeTensorNetwork,
+  maxlinkdim
+using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 
 default_contraction_alg() = "bp"
