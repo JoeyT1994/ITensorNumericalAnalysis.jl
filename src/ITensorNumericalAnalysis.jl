@@ -16,6 +16,7 @@ include("itensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 include("integration.jl")
+include("TCI/tci.jl")
 
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
