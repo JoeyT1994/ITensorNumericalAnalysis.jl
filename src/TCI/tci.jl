@@ -16,8 +16,7 @@ function interpolate(f, s::IndsNetworkMap; kwargs...)
 
   tn = const_itn(s_renamed; linkdim=1)
   initial_pivot =
-    random_initial_pivot(s_renamed), 
-    #Call out to function in ITensorsTCI.jl is here
+    random_initial_pivot(s_renamed),     #Call out to function in ITensorsTCI.jl is here
     tn = interpolate(
       input -> f(input_to_scalars(input)), ttn(itensornetwork(tn)); initial_pivot, kwargs...
     )
