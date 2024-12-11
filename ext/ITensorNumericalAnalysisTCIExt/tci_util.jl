@@ -18,7 +18,7 @@ random_initial_pivot(s::IndsNetworkMap) = [v => rand(1:dim(v)) for v in vertices
 
 #f should be an ndimensional function that maps a vector of scalars of length ndimensional to a scalar
 function ITensorTCI.interpolate(
-  f, s::IndsNetworkMap; initial_state=nothing, initial_pivot=nothing, kwargs...
+  f::Function, s::IndsNetworkMap; initial_state=nothing, initial_pivot=nothing, kwargs...
 )
   @assert is_tree(s)
 
@@ -41,7 +41,7 @@ function ITensorTCI.interpolate(
   end
 
   tn = ITensorTCI.interpolate(
-    input -> f(input_to_scalars(input; b=float(base(s)))),
+    input -> f(input_to_scalars(input; base=float(base(s)))),
     ttn(itensornetwork(tn));
     initial_pivot,
     kwargs...,
@@ -53,13 +53,13 @@ function ITensorTCI.interpolate(
 end
 
 #Takes a vector of [(dimension, digit) => bit] and converts to vector of scalars
-function input_to_scalars(input; b=2.0)
+function input_to_scalars(input; base=2.0)
   ndims = maximum(first.(input))
   x = zeros(ndims)
   for pair in input
     (i, j) = pair[1]
     bit = pair[2] - 1
-    x[i] += bit / b^j
+    x[i] += bit / base^j
   end
   return x
 end
