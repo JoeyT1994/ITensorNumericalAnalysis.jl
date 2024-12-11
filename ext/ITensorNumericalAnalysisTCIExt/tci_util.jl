@@ -41,7 +41,7 @@ function ITensorTCI.interpolate(
   end
 
   tn = ITensorTCI.interpolate(
-    input -> f(input_to_scalars(input; b=base(s))),
+    input -> f(input_to_scalars(input; b=float(base(s)))),
     ttn(itensornetwork(tn));
     initial_pivot,
     kwargs...,
