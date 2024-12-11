@@ -1,6 +1,6 @@
 using Base: Base
 using Graphs: Graphs
-using NamedGraphs: NamedGraphs
+using NamedGraphs: NamedGraphs, rename_vertices
 using NamedGraphs.GraphsExtensions: rem_vertex
 using ITensors: ITensors
 using ITensorNetworks:
@@ -153,4 +153,8 @@ function ITensorNetworks.union_all_inds(inm1::IndsNetworkMap, inm2::IndsNetworkM
   s = union_all_inds(indsnetwork(inm1), indsnetwork(inm2))
   imap = merge(indexmap(inm1), indexmap(inm2))
   return IndsNetworkMap(s, imap)
+end
+
+function NamedGraphs.rename_vertices(f::Function, inm::IndsNetworkMap)
+  return IndsNetworkMap(rename_vertices(f, indsnetwork(inm)), indexmap(inm))
 end

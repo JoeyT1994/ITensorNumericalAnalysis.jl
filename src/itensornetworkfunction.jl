@@ -115,3 +115,9 @@ function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)
   ψ = truncate(ttn(itensornetwork(fitn)); kwargs...)
   return ITensorNetworkFunction(ITensorNetwork(ψ), indsnetworkmap(fitn))
 end
+
+function NamedGraphs.rename_vertices(f::Function, fitn::ITensorNetworkFunction)
+  return ITensorNetworkFunction(
+    rename_vertices(f, itensornetwork(fitn)), rename_vertices(f, indsnetworkmap(fitn))
+  )
+end
