@@ -1,9 +1,9 @@
 module ITensorNumericalAnalysis
 
-function __init__()
-  include(joinpath(@__DIR__, "fixes.jl"))
-  return nothing
-end
+#function __init__()
+#  include(joinpath(@__DIR__, "fixes.jl"))
+#  return nothing
+#end
 
 include("utils.jl")
 include("digit_inds.jl")
@@ -16,7 +16,7 @@ include("itensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 include("integration.jl")
-include("TCI/tci.jl")
+#include("TCI/tci.jl")
 
 export continuous_siteinds
 export ITensorNetworkFunction, itensornetwork, dimension_vertices
