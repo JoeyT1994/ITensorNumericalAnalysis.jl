@@ -1,7 +1,7 @@
 using Graphs: is_tree, vertices
 using ITensors: dim
 using ITensorNetworks: ITensorNetwork, ttn
-using Dictionaries::Dictionary
+using Dictionaries: Dictionary
 
 random_initial_pivot(s::IndsNetworkMap) = [v => rand(1:dim(ind)) for v in vertices(s)]
 
