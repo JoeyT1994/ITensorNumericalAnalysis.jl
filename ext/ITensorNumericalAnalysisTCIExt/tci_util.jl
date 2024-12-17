@@ -12,9 +12,10 @@ using ITensorNumericalAnalysis:
   const_itn,
   ITensorNetworkFunction,
   itensornetwork,
-  base
+  base,
+  dimension
 
-random_initial_pivot(s::IndsNetworkMap) = [v => rand(1:dim(v)) for v in vertices(s)]
+random_initial_pivot(s::IndsNetworkMap) = [v => rand(1:dim(s[v])) for v in vertices(s)]
 
 #f should be an ndimensional function that maps a vector of scalars of length ndimensional to a scalar
 function ITensorTCI.interpolate(
@@ -41,7 +42,7 @@ function ITensorTCI.interpolate(
   end
 
   tn = ITensorTCI.interpolate(
-    input -> f(input_to_scalars(input; base=float(base(s)))),
+    input -> f(input_to_scalars(input; ndims=dimension(s), base=float(base(s)))),
     ttn(itensornetwork(tn));
     initial_pivot,
     kwargs...,
@@ -53,8 +54,7 @@ function ITensorTCI.interpolate(
 end
 
 #Takes a vector of [(dimension, digit) => bit] and converts to vector of scalars
-function input_to_scalars(input; base=2.0)
-  ndims = maximum(first.(input))
+function input_to_scalars(input; ndims, base=2.0)
   x = zeros(ndims)
   for pair in input
     (i, j) = pair[1]
