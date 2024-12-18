@@ -38,7 +38,8 @@ function ITensorTCI.interpolate(
     initial_pivot = random_initial_pivot(s_renamed)
   else
     # manually rename
-    initial_pivot = [forward_dict[v] => initial_pivot[v] for v in vertices(s)]
+    # assuming from calculate_ind_values
+    initial_pivot = [forward_dict[v] => initial_pivot[only(s[v])] + 1 for v in vertices(s)]
   end
 
   tn = ITensorTCI.interpolate(
