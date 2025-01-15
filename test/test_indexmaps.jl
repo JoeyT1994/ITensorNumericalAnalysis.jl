@@ -103,12 +103,12 @@ end
     @test length(test2) == N
     @test test2[1] >= a
     @test test2[end] < b
-    
+
     # test that the spacing between all points is the same
     spacing_equal = true
     gap = (test2[2] - test2[1])
-    for i in 2:(N-1)
-      if !(test2[i+1] - test2[i] ≈ gap)
+    for i in 2:(N - 1)
+      if !(test2[i + 1] - test2[i] ≈ gap)
         spacing_equal = false
       end
     end
@@ -122,10 +122,10 @@ end
     a = 0.25
     b = 0.6
 
-    test3 = grid_points(s, 1, span=[a,b], exact_grid=true)
+    test3 = grid_points(s, 1; span=[a, b], exact_grid=true)
 
     # tests that the number of points generated matches the number of exact gridpoints that fall in the range [a,b).
-    @test length(test3) == round(b*2^(L÷2)-0.5) - round(a*2^(L÷2)) + 1
+    @test length(test3) == round(b * 2^(L ÷ 2) - 0.5) - round(a * 2^(L ÷ 2)) + 1
     @test test3[1] >= a
     @test test3[end] < b
   end
@@ -158,7 +158,7 @@ end
   rand_gridpoint2 = rand_p(rng, s, 2)
   x2 = real(ITensorNumericalAnalysis.evaluate(ψ, [rand_gridpoint1, rand_gridpoint2]))
   @test x2 >= -1 && x2 <= 1 # check to make sure ψ can be evaluated at these points
-  
+
   #test the use of default rng
   default_rng_gridpoint1 = rand_p(s)
   y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
@@ -180,10 +180,9 @@ end
   rand_gridpoint2 = rand_p(rng, s, 2)
   x2 = real(ITensorNumericalAnalysis.evaluate(ψ, [rand_gridpoint1, rand_gridpoint2]))
   @test x2 >= -1 && x2 <= 1 # check to make sure ψ can be evaluated at these points
-  
+
   #test the use of default rng
   default_rng_gridpoint1 = rand_p(s)
   y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
   @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
-
 end

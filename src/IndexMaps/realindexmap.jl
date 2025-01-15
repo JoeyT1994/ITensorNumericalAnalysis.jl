@@ -125,7 +125,9 @@ function grid_points(
   return grid_points
 end
 
-round_to_nearest_exact_point(point::Number, L::Int) = round(point * 2.0^min(63,L)) / 2.0^min(63,L)
+function round_to_nearest_exact_point(point::Number, L::Int)
+  return round(point * 2.0^min(63, L)) / 2.0^min(63, L)
+end
 #TODO: avoid using 2.0^min(63,L) to prevent overflow
 
 function grid_points(imap::RealIndexMap, d::Int; kwargs...)
