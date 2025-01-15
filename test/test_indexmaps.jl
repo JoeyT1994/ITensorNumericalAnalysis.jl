@@ -142,47 +142,64 @@ end
 end
 
 @testset "test rand_p" begin
-  #test the rand_p() function to see if it succeeds on large L
-  L = 140
-  g = named_comb_tree((2, L ÷ 2))
-  s = continuous_siteinds(g; map_dimension=2)
-  ψ = cos_itn(s; dim=1) * cos_itn(s; dim=2)
+  @testset "test rand_p for realindexmaps" begin
+    #test the rand_p() function to see if it succeeds on large L
+    L = 140
+    g = named_comb_tree((2, L ÷ 2))
+    s = continuous_siteinds(g; map_dimension=2)
+    ψ = cos_itn(s; dim=1) * cos_itn(s; dim=2)
 
-  #test the use of seedeed randomness
-  rng = Random.Xoshiro(42)
-  rand_gridpoint = rand_p(rng, s)
-  x1 = real(ITensorNumericalAnalysis.evaluate(ψ, rand_gridpoint))
-  @test x1 >= -1 && x1 <= 1 # check to make sure ψ can be evaluated at these points
+    #test the use of seedeed randomness
+    rng = Random.Xoshiro(42)
+    rand_gridpoint = rand_p(rng, s)
+    x1 = real(ITensorNumericalAnalysis.evaluate(ψ, rand_gridpoint))
+    @test x1 >= -1 && x1 <= 1 # check to make sure ψ can be evaluated at these points
 
-  rand_gridpoint1 = rand_p(rng, s, 1)
-  rand_gridpoint2 = rand_p(rng, s, 2)
-  x2 = real(ITensorNumericalAnalysis.evaluate(ψ, [rand_gridpoint1, rand_gridpoint2]))
-  @test x2 >= -1 && x2 <= 1 # check to make sure ψ can be evaluated at these points
+    rand_gridpoint1 = rand_p(rng, s, 1)
+    rand_gridpoint2 = rand_p(rng, s, 2)
+    x2 = real(ITensorNumericalAnalysis.evaluate(ψ, [rand_gridpoint1, rand_gridpoint2]))
+    @test x2 >= -1 && x2 <= 1 # check to make sure ψ can be evaluated at these points
 
-  #test the use of default rng
-  default_rng_gridpoint1 = rand_p(s)
-  y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
-  @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
+    #test the use of default rng
+    default_rng_gridpoint1 = rand_p(s)
+    y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
+    @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
 
-  # same things but with smaller L as well
-  L = 12
-  g = named_comb_tree((2, L ÷ 2))
-  s = continuous_siteinds(g; map_dimension=2)
-  ψ = cos_itn(s; dim=1) * cos_itn(s; dim=2)
+    # same things but with smaller L as well
+    L = 12
+    g = named_comb_tree((2, L ÷ 2))
+    s = continuous_siteinds(g; map_dimension=2)
+    ψ = cos_itn(s; dim=1) * cos_itn(s; dim=2)
 
-  #test the use of seedeed randomness
-  rng = Random.Xoshiro(42)
-  rand_gridpoint = rand_p(rng, s)
-  x1 = real(ITensorNumericalAnalysis.evaluate(ψ, rand_gridpoint))
-  @test x1 >= -1 && x1 <= 1 # check to make sure ψ can be evaluated at these points
+    #test the use of seedeed randomness
+    rng = Random.Xoshiro(42)
+    rand_gridpoint = rand_p(rng, s)
+    x1 = real(ITensorNumericalAnalysis.evaluate(ψ, rand_gridpoint))
+    @test x1 >= -1 && x1 <= 1 # check to make sure ψ can be evaluated at these points
 
-  rand_gridpoint1 = rand_p(rng, s, 1)
-  rand_gridpoint2 = rand_p(rng, s, 2)
-  x2 = real(ITensorNumericalAnalysis.evaluate(ψ, [rand_gridpoint1, rand_gridpoint2]))
-  @test x2 >= -1 && x2 <= 1 # check to make sure ψ can be evaluated at these points
+    rand_gridpoint1 = rand_p(rng, s, 1)
+    rand_gridpoint2 = rand_p(rng, s, 2)
+    x2 = real(ITensorNumericalAnalysis.evaluate(ψ, [rand_gridpoint1, rand_gridpoint2]))
+    @test x2 >= -1 && x2 <= 1 # check to make sure ψ can be evaluated at these points
 
-  #test the use of default rng
-  default_rng_gridpoint1 = rand_p(s)
-  y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
-  @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
+    #test the use of default rng
+    default_rng_gridpoint1 = rand_p(s)
+    y = real(ITensorNumericalAnalysis.evaluate(ψ, default_rng_gridpoint1))
+    @test y >= -1 && y <= 1 # check to make sure ψ can be evaluated at these points
+  end
+
+  @testset "test rand_p for complexindexmaps" begin
+    L = 16
+    g = named_comb_tree((2,L÷2))
+    vs = collect(vertices(g))
+    split = div(length(vs), 2)
+    real_vs = [vs[1:split]]
+    imag_vs = [vs[split+1:end]]
+    s = complex_continuous_siteinds(g, real_vs, imag_vs)
+    ψ = poly_itn(s, [0, 0, 1])
+
+    rand_gridpoint = rand_p(s)
+    x = ITensorNumericalAnalysis.evaluate(ψ, rand_gridpoint)
+    @test real(x) >= -1 && real(x) <= 1 && imag(x) >= -1 && imag(x) <= 1
+  end
 end

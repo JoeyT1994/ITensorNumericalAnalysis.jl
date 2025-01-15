@@ -136,7 +136,7 @@ function grid_points(imap::ComplexIndexMap, N::Int, d::Int)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
   base = float(first(dims))
-  Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
+  Lre, Lim = length(real_indices(imap, d)), length(imaginary_indices(imap, d))
   are, aim = round(base^Lre / N), round(base^Lim / N)
   grid_points = [
     i * (are / base^Lre) + im * j * (aim / base^Lim) for i in 0:(N + 1) for j in 0:(N + 1)
@@ -151,7 +151,9 @@ function rand_p(rng::AbstractRNG, imap::ComplexIndexMap, d::Integer)
   dims = dim.(dimension_inds(imap, d))
   @assert all(y -> y == first(dims), dims)
   base = float(first(dims))
-  Lre, Lim = length(real_indices(imap, d)), length(imag_indices(imap, d))
-  return rand(rng, 0:(big(base)^Lre - 1)) / big(base)^Lre +
-         im * rand(rng, 0:(big(base)^Lim - 1)) / big(base)^Lim
+  Lre, Lim = length(real_indices(imap, d)), length(imaginary_indices(imap, d))
+
+  real_part = Lre > 63 ? rand(rng, 0:(big(base)^Lre - 1)) / big(base)^Lre : rand(rng, 0:(base^Lre - 1)) / base^Lre 
+  imag_part = Lim > 63 ? im * rand(rng, 0:(big(base)^Lim - 1)) / big(base)^Lim : im * rand(rng, 0:(base^Lim - 1)) / base^Lim
+  return real_part + imag_part
 end

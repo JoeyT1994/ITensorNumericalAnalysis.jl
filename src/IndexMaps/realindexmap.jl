@@ -113,7 +113,7 @@ function grid_points(
 
   # if exact_grid is true, round to exact gridpoints
   if exact_grid
-    grid_points = round_to_nearest_exact_point.(grid_points, (L,))
+    grid_points = round_to_nearest_exact_point.(grid_points, (L,), (base,))
     grid_points = unique(grid_points)
   end
 
@@ -125,8 +125,8 @@ function grid_points(
   return grid_points
 end
 
-function round_to_nearest_exact_point(point::Number, L::Int)
-  return round(point * 2.0^min(63, L)) / 2.0^min(63, L)
+function round_to_nearest_exact_point(point::Number, L::Int, base::Int = 2)
+  return round(point * Float64(base)^min(63, L)) / Float64(base)^min(63, L)
 end
 #TODO: avoid using 2.0^min(63,L) to prevent overflow
 
