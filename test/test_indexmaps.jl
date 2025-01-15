@@ -190,11 +190,11 @@ end
 
   @testset "test rand_p for complexindexmaps" begin
     L = 16
-    g = named_comb_tree((2,L÷2))
+    g = named_comb_tree((2, L ÷ 2))
     vs = collect(vertices(g))
     split = div(length(vs), 2)
     real_vs = [vs[1:split]]
-    imag_vs = [vs[split+1:end]]
+    imag_vs = [vs[(split + 1):end]]
     s = complex_continuous_siteinds(g, real_vs, imag_vs)
     ψ = poly_itn(s, [0, 0, 1])
 

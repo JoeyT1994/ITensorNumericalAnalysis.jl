@@ -125,7 +125,7 @@ function grid_points(
   return grid_points
 end
 
-function round_to_nearest_exact_point(point::Number, L::Int, base::Int = 2)
+function round_to_nearest_exact_point(point::Number, L::Int, base::Int=2)
   return round(point * Float64(base)^min(63, L)) / Float64(base)^min(63, L)
 end
 #TODO: avoid using 2.0^min(63,L) to prevent overflow

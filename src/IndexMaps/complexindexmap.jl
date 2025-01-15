@@ -153,7 +153,15 @@ function rand_p(rng::AbstractRNG, imap::ComplexIndexMap, d::Integer)
   base = float(first(dims))
   Lre, Lim = length(real_indices(imap, d)), length(imaginary_indices(imap, d))
 
-  real_part = Lre > 63 ? rand(rng, 0:(big(base)^Lre - 1)) / big(base)^Lre : rand(rng, 0:(base^Lre - 1)) / base^Lre 
-  imag_part = Lim > 63 ? im * rand(rng, 0:(big(base)^Lim - 1)) / big(base)^Lim : im * rand(rng, 0:(base^Lim - 1)) / base^Lim
+  real_part = if Lre > 63
+    rand(rng, 0:(big(base)^Lre - 1)) / big(base)^Lre
+  else
+    rand(rng, 0:(base^Lre - 1)) / base^Lre
+  end
+  imag_part = if Lim > 63
+    im * rand(rng, 0:(big(base)^Lim - 1)) / big(base)^Lim
+  else
+    im * rand(rng, 0:(base^Lim - 1)) / base^Lim
+  end
   return real_part + imag_part
 end
