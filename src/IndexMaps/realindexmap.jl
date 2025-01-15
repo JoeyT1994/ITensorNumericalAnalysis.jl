@@ -110,13 +110,10 @@ function grid_points(
 
   # generate grid_points within the span (exclusive of right endpoint)
   grid_points = collect(range(span[1], span[2] - (span[2] - span[1]) / N; length=N))
+
+  # if exact_grid is true, round to exact gridpoints
   if exact_grid
-    for (i, point) in enumerate(grid_points)
-      grid_points[i] = round_to_nearest_exact_point(point, L)
-    end
-    # define lambda function
-    # round_near = point -> round_to_nearest_exact_point(point, L)
-    # grid_points = map(round_near, grid_points)
+    grid_points = round_to_nearest_exact_point.(grid_points, (L,))
     grid_points = unique(grid_points)
   end
 
@@ -128,12 +125,8 @@ function grid_points(
   return grid_points
 end
 
-function round_to_nearest_exact_point(point::Number, L::Int)
-  if point < 0 || point >= 1
-    throw("Input point must be between 0 and 1")
-  end
-  return round(point * 2.0^L) / 2.0^L
-end
+round_to_nearest_exact_point(point::Number, L::Int) = round(point * 2.0^min(63,L)) / 2.0^min(63,L)
+#TODO: avoid using 2.0^min(63,L) to prevent overflow
 
 function grid_points(imap::RealIndexMap, d::Int; kwargs...)
   dims = dim.(dimension_inds(imap, d))
@@ -152,13 +145,13 @@ function grid_points(imap::RealIndexMap, Ns::Vector{Int}, dims::Vector{Int}; kwa
   end
   coords = [grid_points(imap, pair[1], pair[2]; kwargs...) for pair in zip(Ns, dims)]
   gp = Base.Iterators.product(coords...)
-  return [collect(point) for point in gp]
+  return collect.(gp)
 end
 
 function grid_points(imap::RealIndexMap, dims::Vector{Int}; kwargs...)
   coords = [grid_points(imap, d; kwargs...) for d in dims]
   gp = Base.Iterators.product(coords...)
-  return [collect(point) for point in gp]
+  return collect.(gp)
 end
 
 """ 
@@ -169,5 +162,9 @@ function rand_p(rng::AbstractRNG, imap::RealIndexMap, d::Integer)
   @assert all(y -> y == first(dims), dims)
   base = dims[d]
   L = length(dimension_inds(imap, d))
-  return rand(rng, 0:(big(base)^L - 1)) / big(base)^L
+  if L > 63
+    return rand(rng, 0:(big(base)^L - 1)) / big(base)^L
+  else
+    return rand(rng, 0:(base^L - 1)) / base^L
+  end
 end
