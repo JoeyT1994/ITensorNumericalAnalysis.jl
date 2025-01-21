@@ -7,8 +7,9 @@ using ITensorNetworks:
   data_graph_type,
   scalar,
   inner,
-  TreeTensorNetwork
-using ITensors: ITensor, dim, contract, siteinds, onehot, maxlinkdim
+  TreeTensorNetwork,
+  maxlinkdim
+using ITensors: ITensor, dim, contract, siteinds, onehot
 using Graphs: Graphs
 
 default_contraction_alg() = "bp"
@@ -113,4 +114,10 @@ function ITensorNetworks.truncate(fitn::ITensorNetworkFunction; kwargs...)
   @assert is_tree(fitn)
   ψ = truncate(ttn(itensornetwork(fitn)); kwargs...)
   return ITensorNetworkFunction(ITensorNetwork(ψ), indsnetworkmap(fitn))
+end
+
+function NamedGraphs.rename_vertices(f::Function, fitn::ITensorNetworkFunction)
+  return ITensorNetworkFunction(
+    rename_vertices(f, itensornetwork(fitn)), rename_vertices(f, indsnetworkmap(fitn))
+  )
 end

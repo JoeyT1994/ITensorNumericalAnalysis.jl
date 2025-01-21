@@ -6,19 +6,68 @@ using Random: AbstractRNG, default_rng
 abstract type AbstractIndexMap{VB,VD} end
 
 #These functions need to be defined on the concrete type for implementation
-index_digit(imap::AbstractIndexMap) = not_implemented()
-index_dimension(imap::AbstractIndexMap) = not_implemented()
-Base.copy(imap::AbstractIndexMap) = not_implemented()
-index_value_to_scalar(imap::AbstractIndexMap, ind::Index, value::Int) = not_implemented()
-ITensors.inds(imap::AbstractIndexMap) = not_implemented()
-ind(imap::AbstractIndexMap, args...) = not_implemented()
-function calculate_ind_values(
-  imap::AbstractIndexMap, xs::Vector, dims::Vector{Int}; kwargs...
-)
-  return not_implemented()
-end
 
-rem_index(imap::AbstractIndexMap, ind::Index) = not_implemented()
+"""
+  index_digit(imap::AbstractIndexMap)
+
+Return the mapping from indices to digit number
+"""
+function index_digit end
+
+"""
+  index_dimension(imap::AbstractIndexMap)
+
+Return the mapping from index to corresponding dimension
+"""
+function index_dimension end
+
+#function Base.copy(imap::AbstractIndexMap) end
+
+"""
+  index_value_to_scalar(imap::AbstractIndexMap, ind::Index, value::Int)
+
+Calculate the corresponding grid point given an Index
+with a setting of value to its corresponding grid value
+
+calculate_ind_values and index_value_to_scalar should match input/outputs
+"""
+function index_value_to_scalar end
+
+#function ITensors.inds(imap::AbstractIndexMap) end
+
+"""
+  ind(imap::AbstractIndexMap, args...)
+
+Return the matching index given args (e.g. dim, digit)
+
+"""
+function ind end
+
+"""
+  calculate_ind_values(
+    imap::AbstractIndexMap, xs::Vector, dims::Vector{Int}; kwargs...
+    )
+
+Given a set of points xs with corresponding dimensions dims,
+return a dictionary mapping each index value to a setting
+
+calculate_ind_values and index_value_to_scalar should match input/outputs
+"""
+function calculate_ind_values end
+
+"""
+  grid_points(imap::AbstractIndexMap, N::Int, d::Int)
+
+Convenience function, return N uniform grid points of the dimension d
+"""
+function grid_points end
+
+"""
+  rem_index(imap::AbstractIndexMap, ind::Index)
+
+Remove an index from the index map
+"""
+function rem_index end
 
 dimensions(imap::AbstractIndexMap) = Int64.(unique(collect(values(index_dimension(imap)))))
 dimension(imap::AbstractIndexMap) = maximum(dimensions(imap))
