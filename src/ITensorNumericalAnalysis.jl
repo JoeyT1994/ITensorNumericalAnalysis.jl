@@ -29,8 +29,7 @@ export AbstractIndexMap,
   calculate_ind_values,
   dimension,
   dimensions,
-  grid_points,
-  rand_p
+  grid_points
 export IndsNetworkMap,
   continuous_siteinds,
   complex_continuous_siteinds,

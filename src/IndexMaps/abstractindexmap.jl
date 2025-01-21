@@ -2,7 +2,6 @@ using Base: Base
 using Dictionaries: Dictionary, set!
 using ITensors: ITensors, Index, dim
 using ITensorNetworks: IndsNetwork, vertex_data
-using Random: AbstractRNG, default_rng
 abstract type AbstractIndexMap{VB,VD} end
 
 #These functions need to be defined on the concrete type for implementation
@@ -153,9 +152,3 @@ function grid_points(imap::AbstractIndexMap, d::Int)
   L = length(dimension_inds(imap, d))
   return grid_points(imap, base^L, d)
 end
-
-function rand_p(rng::AbstractRNG, imap::AbstractIndexMap)
-  return [rand_p(rng, imap, i) for i in 1:dimension(imap)]
-end
-
-rand_p(imap::AbstractIndexMap, args...) = rand_p(default_rng(), imap, args...)
