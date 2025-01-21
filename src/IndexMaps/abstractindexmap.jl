@@ -2,6 +2,7 @@ using Base: Base
 using Dictionaries: Dictionary, set!
 using ITensors: ITensors, Index, dim
 using ITensorNetworks: IndsNetwork, vertex_data
+
 abstract type AbstractIndexMap{VB,VD} end
 
 #These functions need to be defined on the concrete type for implementation

@@ -84,4 +84,3 @@ function grid_points(imap::RealIndexMap, N::Int, d::Int)
   grid_points = [i * (a / base^L) for i in 0:(N + 1)]
   return filter(x -> x < 1, grid_points)
 end
-
