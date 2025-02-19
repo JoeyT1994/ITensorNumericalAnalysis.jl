@@ -55,7 +55,7 @@ function RealIndsNetworkMap(s::IndsNetwork, args...; kwargs...)
 end
 
 function RealIndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
-  s = digit_siteinds(g, args...; base)
+  s = digit_siteinds(g, args...; base, kwargs...)
   return RealIndsNetworkMap(s, args...; kwargs...)
 end
 
@@ -68,7 +68,7 @@ function ComplexIndsNetworkMap(s::IndsNetwork, args...; kwargs...)
 end
 
 function ComplexIndsNetworkMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
-  s = complex_digit_siteinds(g, args...; base)
+  s = complex_digit_siteinds(g, args...; base, kwargs...)
   return ComplexIndsNetworkMap(s, args...; kwargs...)
 end
 
