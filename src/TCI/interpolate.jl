@@ -19,9 +19,7 @@ using ITensorNetworks:
   default_sweep_plans
 using NamedGraphs.GraphsExtensions: is_leaf_vertex, incident_edges
 
-function interpolate_extracter(
-  state, projected_operator, region; internal_kwargs
-)
+function interpolate_extracter(state, projected_operator, region; internal_kwargs)
   @assert !(region isa AbstractEdge)
   gauge_center = first(region)
   state = interpolative_gauge(state, gauge_center)

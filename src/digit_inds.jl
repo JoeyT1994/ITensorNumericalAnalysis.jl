@@ -70,10 +70,7 @@ function real_digit_tag(vertex, dim::Int, digit::Int)
 end
 
 function digit_siteinds(
-  g::AbstractGraph,
-  dimension_vertices::Vector{Vector{V}}=[[]];
-  base=2,
-  kwargs...,
+  g::AbstractGraph, dimension_vertices::Vector{Vector{V}}=[[]]; base=2, kwargs...
 ) where {V}
   if isempty(dimension_vertices[1])
     dimension_vertices = default_dimension_vertices(g; kwargs...)
