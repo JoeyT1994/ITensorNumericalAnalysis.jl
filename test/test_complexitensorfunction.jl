@@ -1,5 +1,7 @@
 using Test
-using ITensorNumericalAnalysis
+
+include("../src/ITensorNumericalAnalysis.jl")
+using .ITensorNumericalAnalysis
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, vertices, rename_vertices
