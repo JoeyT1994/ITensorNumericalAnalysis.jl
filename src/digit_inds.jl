@@ -96,10 +96,10 @@ function complex_digit_siteinds(
   kwargs...,
 ) where {V}
   if isempty(real_dimension_vertices[1])
-    dimension_vertices = default_dimension_vertices(g; kwargs...)
+    real_dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
   if isempty(imag_dimension_vertices[1])
-    dimension_vertices = default_dimension_vertices(g; kwargs...)
+    imag_dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
   is = IndsNetwork(g; site_space=Dictionary(vertices(g), [Index[] for v in vertices(g)]))
   for (dim, verts) in enumerate(real_dimension_vertices)
