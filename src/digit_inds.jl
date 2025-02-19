@@ -73,7 +73,7 @@ function digit_siteinds(
   g::AbstractGraph,
   dimension_vertices::Vector{Vector{V}}=[[]];
   base=2,
-  kwargs...
+  kwargs...,
 ) where {V}
   if isempty(dimension_vertices[1])
     dimension_vertices = default_dimension_vertices(g; kwargs...)
@@ -93,13 +93,13 @@ function complex_digit_siteinds(
   real_dimension_vertices::Vector{Vector{V}}=[[]],
   imag_dimension_vertices::Vector{Vector{V}}=[[]];
   base=2,
-  kwargs...
+  kwargs...,
 ) where {V}
-  if isempty(dimension_vertices[1])
-    real_dimension_vertices = default_dimension_vertices(g; kwargs...)
+  if isempty(real_dimension_vertices[1])
+    dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
-  if isempty(dimension_vertices[1])
-    imag_dimension_vertices = default_dimension_vertices(g; kwargs...)
+  if isempty(imag_dimension_vertices[1])
+    dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
   is = IndsNetwork(g; site_space=Dictionary(vertices(g), [Index[] for v in vertices(g)]))
   for (dim, verts) in enumerate(real_dimension_vertices)
