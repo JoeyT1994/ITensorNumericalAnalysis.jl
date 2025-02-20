@@ -1,6 +1,7 @@
 using Graphs: AbstractEdge, src, dst
 using ITensors: norm, tags, uniqueinds
-using ITensorNetworks: AbstractITensorNetwork, ortho_region, underlying_graph, ITensorNetwork
+using ITensorNetworks:
+  AbstractITensorNetwork, ortho_region, underlying_graph, ITensorNetwork
 using NamedGraphs.GraphsExtensions: bfs_tree, post_order_dfs_edges
 using Graphs: steiner_tree
 
@@ -54,5 +55,5 @@ Bring a TreeTensorNetwork into interpolative gauge
 towards a region
 """
 function interpolative_gauge(ψ::AbstractTTN, region)
- return interpolative_gauge(ψ, [region])
+  return interpolative_gauge(ψ, [region])
 end
