@@ -109,7 +109,7 @@ function grid_points(
   L = length(dimension_inds(imap, d))
 
   # generate grid_points within the span (exclusive of right endpoint)
-  grid_points = collect(range(span[1], span[2] - (span[2] - span[1]) / N; length=N))
+  grid_points = collect(range(Float64(span[1]), Float64(span[2]) - (Float64(span[2]) - Float64(span[1])) / N; length=N))
 
   # if exact_grid is true, round to exact gridpoints
   if exact_grid
@@ -125,7 +125,7 @@ function grid_points(
   return grid_points
 end
 
-function round_to_nearest_exact_point(point::Number, L::Int, base::Int=2)
+function round_to_nearest_exact_point(point::Float64, L::Int, base::Int=2)
   return round(point * Float64(base)^min(63, L)) / Float64(base)^min(63, L)
 end
 #TODO: avoid using 2.0^min(63,L) to prevent overflow
@@ -164,9 +164,8 @@ function rand_p(rng::AbstractRNG, imap::RealIndexMap, d::Integer)
   @assert all(y -> y == first(dims), dims)
   base = dims[d]
   L = length(dimension_inds(imap, d))
-  if L > 63
-    return rand(rng, 0:(big(base)^L - 1)) / big(base)^L
-  else
-    return rand(rng, 0:(base^L - 1)) / base^L
-  end
+  # generate a random bitstring of length L, converts to decimal
+  bitstring = rand(rng, [j for j in 0:(base-1)], L)
+  decimal = sum(((i, b),) -> b * ((base * 1.0)^-i), enumerate(bitstring))
+  return decimal
 end
