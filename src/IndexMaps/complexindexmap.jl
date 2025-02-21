@@ -154,11 +154,11 @@ function rand_p(rng::AbstractRNG, imap::ComplexIndexMap, d::Integer)
   Lre, Lim = length(real_indices(imap, d)), length(imaginary_indices(imap, d))
 
   # generate a random bitstring of length Lre, convert to decimal
-  bitstring_real = rand(rng, [j for j in 0:(base-1)], Lre)
+  bitstring_real = rand(rng, [j for j in 0:(base - 1)], Lre)
   real_part = sum(((i, b),) -> b * ((base * 1.0)^-i), enumerate(bitstring_real))
 
   # generate a random bitstring of length Lim, convert to decimal
-  bitstring_imag = rand(rng, [j for j in 0:(base-1)], Lim)
+  bitstring_imag = rand(rng, [j for j in 0:(base - 1)], Lim)
   imag_part = sum(((i, b),) -> b * ((base * 1.0)^-i), enumerate(bitstring_imag))
 
   return real_part + im * imag_part
