@@ -39,7 +39,7 @@ end
 vals = zeros((length(x_vals), length(y_vals)))
 for (i, x) in enumerate(x_vals)
   for (j, y) in enumerate(y_vals)
-    vals[i, j] = real(evaluate(ϕ_fxy, [x, y]; alg="exact"))
+    vals[i, j] = real(evaluate(ϕ_fxy, [x, y]))
   end
 end
 
@@ -49,7 +49,7 @@ display(heatmap(vals; xfact=1 / 32, yfact=1 / 32, xoffset=0, yoffset=0, colormap
 y = 0.5
 vals2 = zeros(length(x_vals))
 for (i, x) in enumerate(x_vals)
-  vals2[i] = real(evaluate(ϕ_fxy, [x, y]; alg="exact"))
+  vals2[i] = real(evaluate(ϕ_fxy, [x, y]))
 end
 
 lp = lineplot(x_vals, vals2; name="cut y=$y")
@@ -57,7 +57,7 @@ lp = lineplot(x_vals, vals2; name="cut y=$y")
 x = 0.5
 vals3 = zeros(length(y_vals))
 for (i, y) in enumerate(y_vals)
-  vals3[i] = real(evaluate(ϕ_fxy, [x, y]; alg="exact"))
+  vals3[i] = real(evaluate(ϕ_fxy, [x, y]))
 end
 
 println("Here is a cut of the function at x = $x or y = $y")

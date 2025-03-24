@@ -1,5 +1,6 @@
 using Test
 using ITensorNumericalAnalysis
+using TensorOperations: TensorOperations
 
 using ITensors: siteinds
 using ITensorNetworks: ITensorNetwork, maxlinkdim, ttn, inner

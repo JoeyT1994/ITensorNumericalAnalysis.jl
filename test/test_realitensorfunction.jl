@@ -1,5 +1,6 @@
 using Test
 using ITensorNumericalAnalysis
+using TensorOperations: TensorOperations
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, vertices, rename_vertices
@@ -44,7 +45,7 @@ Random.seed!(1234)
       ψ_fx = const_itn(s; c)
 
       x = 0.5
-      fx_x = evaluate(ψ_fx, x; alg="exact")
+      fx_x = evaluate(ψ_fx, x)
       @test fx_x ≈ c
 
       # link dims section
