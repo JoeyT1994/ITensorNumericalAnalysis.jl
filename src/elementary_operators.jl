@@ -3,7 +3,6 @@ using NamedGraphs.GraphsExtensions: undirected_graph
 using ITensors:
   OpSum,
   SiteType,
-  siteinds,
   noprime,
   op,
   Op,
@@ -24,7 +23,8 @@ using ITensorNetworks:
   combine_linkinds,
   ttn,
   union_all_inds,
-  map_inds
+  map_inds,
+  siteinds
 default_boundary() = "Dirichlet"
 
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
