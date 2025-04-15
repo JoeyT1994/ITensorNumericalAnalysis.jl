@@ -1,5 +1,6 @@
 using Test
 using ITensorNumericalAnalysis
+using TensorOperations: TensorOperations
 
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, vertices, rename_vertices
@@ -44,7 +45,7 @@ Random.seed!(1234)
       ψ_fz = const_itn(s; c)
 
       z = 0.5 + 0.625 * im
-      fz_z = evaluate(ψ_fz, z; alg="exact")
+      fz_z = evaluate(ψ_fz, z) # exact
       @test fz_z ≈ c
 
       # link dims section

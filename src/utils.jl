@@ -10,13 +10,12 @@ using ITensorNetworks:
   random_tensornetwork,
   environment,
   update,
-  factor,
+  factors,
   tensornetwork,
   partitioned_tensornetwork,
   operator_vertex,
   messages,
   default_message,
-  optimal_contraction_sequence,
   norm,
   is_multi_edge,
   linkinds
@@ -30,7 +29,7 @@ function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
   inds = [Index(base, "$i") for i in 1:L]
   dims = Tuple([base for i in 1:L])
   array = zeros(dims)
-  for i in 0:(base^(L) - 1)
+  for i in 0:(base ^ (L) - 1)
     xis = digits(i; base, pad=L)
     x = sum([xis[i] / (base^i) for i in 1:L])
     array[Tuple(xis + ones(Int, (L)))...] = fx(x)
@@ -90,7 +89,7 @@ function two_site_rdm(
     ψIψ_bpc_mod, path; message_update=ms -> default_message_update(ms; normalize=false)
   )
   incoming_mts = environment(ψIψ_bpc_mod, [PartitionVertex(v2)])
-  local_state = factor(ψIψ_bpc_mod, PartitionVertex(v2))
+  local_state = only(factors(ψIψ_bpc_mod, PartitionVertex(v2)))
   rdm = contract(vcat(incoming_mts, local_state); sequence="automatic")
   s = siteinds(ψ)
   rdm = permute(rdm, reduce(vcat, [s[v1], s[v2], s[v1]', s[v2]']))
