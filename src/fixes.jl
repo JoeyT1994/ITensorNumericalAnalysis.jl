@@ -1,6 +1,5 @@
 using Graphs: AbstractGraph
 using ITensors: ITensors, ITensor, Index, dim, inds, combiner, array, tr, tags, uniqueinds
-using ITensorMPS: ITensorMPS
 using ITensorNetworks:
   AbstractITensorNetwork,
   BeliefPropagationCache,
@@ -10,14 +9,13 @@ using ITensorNetworks:
   random_tensornetwork,
   environment,
   update,
-  factor,
+  factors,
   default_message_update,
   tensornetwork,
   partitioned_tensornetwork,
   operator_vertex,
   messages,
   default_message,
-  optimal_contraction_sequence,
   norm,
   is_multi_edge,
   linkinds
@@ -38,7 +36,7 @@ function edges_equal(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
   return true
 end
 
-function ITensorMPS.add(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
+function ITensorNetworks.add(tn1::AbstractITensorNetwork, tn2::AbstractITensorNetwork)
   @assert issetequal(vertices(tn1), vertices(tn2))
 
   tn1 = combine_linkinds(tn1; edges=filter(is_multi_edge(tn1), edges(tn1)))

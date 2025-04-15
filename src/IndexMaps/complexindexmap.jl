@@ -44,8 +44,8 @@ function ind(imap::ComplexIndexMap, dim::Int, digit::Int, real_ind::Bool=true)
     filter(
       i ->
         index_dimension(imap)[i] == dim &&
-          index_digit(imap)[i] == digit &&
-          (real_ind == is_real(imap, i)),
+        index_digit(imap)[i] == digit &&
+        (real_ind == is_real(imap, i)),
       inds(imap),
     ),
   )

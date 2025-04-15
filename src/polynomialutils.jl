@@ -53,7 +53,7 @@ function transfer_tensor(phys_inds::Vector{Index}, beta_ind::Index, alpha_inds::
   for i in CartesianIndices(Tuple(dim.(phys_inds)))
     for j in 0:(dim(beta_ind) - 1)
       if !isempty(alpha_inds)
-        for k in 0:((first(virt_dims))^(N) - 1)
+        for k in 0:((first(virt_dims)) ^ (N) - 1)
           is = Base.digits(k; base=first(virt_dims), pad=N)
           if sum(is) == j
             T_array[(Tuple(i)..., j + 1, Tuple(is + ones(Int, (N)))...)...] = 1.0
