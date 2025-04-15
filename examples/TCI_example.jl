@@ -14,6 +14,8 @@ using ITensorNumericalAnalysis:
   IndsNetworkMap,
   complex_continuous_siteinds
 
+using TensorOperations
+
 function two_soliton(x, y)
   num = 12 * (3 + 4 * cosh(2 * x - 8 * y) + cosh(4 * x - 64 * y))
   den = 3 * cosh(x - 28 * y) + cosh(3 * x - 36 * y)
