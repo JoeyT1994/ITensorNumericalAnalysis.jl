@@ -1,14 +1,10 @@
 using Test
 using ITensorNumericalAnalysis
 
-using NamedGraphs: vertices
-using NamedGraphs.NamedGraphGenerators: named_grid
-using NamedGraphs.GraphsExtensions: is_tree
-using ITensors: siteinds, inds
+using TensorNetworkQuantumSimulator
+using ITensors: inds
 using Dictionaries: Dictionary
 using Random
-using ITensorNetworks: union_all_inds, subgraph
-using ITensorNumericalAnalysis: reduced_indsnetworkmap
 
 Random.seed!(1234)
 
@@ -21,8 +17,8 @@ Random.seed!(1234)
     s = continuous_siteinds(g)
 
     @test dimension(s) == 1
-    @test isa(indexmap(s), RealIndexMap)
-    @test indexmaptype(s) <: AbstractIndexMap
+    @test isa(s, RealIndexMap)
+    @test typeof(s) <: AbstractIndexMap
 
     x = 0.625
     ind_to_ind_value_map = calculate_ind_values(s, x)
@@ -38,8 +34,8 @@ Random.seed!(1234)
     s = complex_continuous_siteinds(g)
 
     @test dimension(s) == 1
-    @test isa(indexmap(s), ComplexIndexMap)
-    @test indexmaptype(s) <: AbstractIndexMap
+    @test isa(s, ComplexIndexMap)
+    @test typeof(s) <: AbstractIndexMap
 
     z = 0.625 + 0.5 * im
     ind_to_ind_value_map = calculate_ind_values(s, z)
@@ -52,10 +48,6 @@ Random.seed!(1234)
     g = named_grid((L, L))
     dimension_vertices = [[(i, j) for i in 1:L] for j in 1:L]
     s = complex_continuous_siteinds(g, dimension_vertices, dimension_vertices)
-
-    s4 = reduced_indsnetworkmap(s, 4)
-    @test is_tree(s4)
-    @test issetequal(inds(s4), dimension_inds(s, 4))
 
     z1, z2 = 0.5 + 0.125 * im, 0.75 + 0.625 * im
     ind_to_ind_value_map = calculate_ind_values(s, [z1, z2], [1, 2])

@@ -1,9 +1,9 @@
 using Base: Base
 using Dictionaries: Dictionary, set!
 using ITensors: ITensors, Index, dim
-using ITensorNetworks: IndsNetwork, vertex_data
+using Graphs
 
-abstract type AbstractIndexMap{VB,VD} end
+abstract type AbstractIndexMap{V} end
 
 #These functions need to be defined on the concrete type for implementation
 
@@ -75,6 +75,8 @@ dimension(imap::AbstractIndexMap, ind::Index) = index_dimension(imap)[ind]
 dimensions(imap::AbstractIndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(imap::AbstractIndexMap, ind::Index) = index_digit(imap)[ind]
 digits(imap::AbstractIndexMap, inds::Vector{Index}) = digit.(inds)
+siteinds(imap::AbstractIndexMap, vertex) = siteinds(imap)[vertex]
+Graphs.vertices(imap::AbstractIndexMap) = collect(keys(siteinds(imap)))
 
 function index_values_to_scalars(imap::AbstractIndexMap, ind::Index)
   return [index_value_to_scalar(imap, ind, i) for i in 0:(dim(ind) - 1)]

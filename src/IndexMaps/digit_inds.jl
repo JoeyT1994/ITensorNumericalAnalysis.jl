@@ -1,4 +1,4 @@
-using Graphs: AbstractGraph
+using Graphs: AbstractGraph, vertices
 using ITensors:
   ITensors,
   Index,
@@ -12,12 +12,22 @@ using ITensors:
   StateName,
   SiteType,
   op
-using ITensorNetworks: IndsNetwork, vertex_tag
+using TensorNetworkQuantumSimulator
+
+
+function default_dimension_vertices(vs::Vector; map_dimension::Int64=1)
+  L = length(vs)
+  return [[v for v in vs[i:map_dimension:L]] for i in 1:map_dimension]
+end
+
+function default_dimension_vertices(siteinds::Dictionary; map_dimension::Int64=1)
+  vs = collect(keys(siteinds))
+  return default_dimension_vertices(vs; map_dimension=map_dimension)
+end
 
 function default_dimension_vertices(g::AbstractGraph; map_dimension::Int64=1)
   vs = collect(vertices(g))
-  L = length(vs)
-  return [[v for v in vs[i:map_dimension:L]] for i in 1:map_dimension]
+  return default_dimension_vertices(vs; map_dimension=map_dimension)
 end
 
 # reuse Qudit definitions for now
@@ -58,15 +68,15 @@ function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
 end
 
 function digit_tag(vertex, dim::Int, digit::Int)
-  return "Digit, V$(vertex_tag(vertex)), Dim$(dim), Dig$(digit)"
+  return "Digit, Dim$(dim), Dig$(digit)"
 end
 
 function imag_digit_tag(vertex, dim::Int, digit::Int)
-  return "Digit, Imag, V$(vertex_tag(vertex)), Dim$(dim), Dig$(digit)"
+  return "Digit, Imag, Dim$(dim), Dig$(digit)"
 end
 
 function real_digit_tag(vertex, dim::Int, digit::Int)
-  return "Digit, Real, V$(vertex_tag(vertex)), Dim$(dim), Dig$(digit)"
+  return "Digit, Real, Dim$(dim), Dig$(digit)"
 end
 
 function digit_siteinds(
@@ -75,10 +85,10 @@ function digit_siteinds(
   if isempty(dimension_vertices[1])
     dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
-  is = IndsNetwork(g; site_space=Dictionary(vertices(g), [Index[] for v in vertices(g)]))
+  is = Dictionary(vertices(g), [Index[] for v in vertices(g)])
   for (dim, verts) in enumerate(dimension_vertices)
     for (digit, v) in enumerate(verts)
-      is[v] = vcat(is[v], Index(base, digit_tag(v, dim, digit)))
+      set!(is, v, vcat(is[v], Index(base, digit_tag(v, dim, digit))))
     end
   end
 
@@ -98,16 +108,16 @@ function complex_digit_siteinds(
   if isempty(imag_dimension_vertices[1])
     imag_dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
-  is = IndsNetwork(g; site_space=Dictionary(vertices(g), [Index[] for v in vertices(g)]))
+  is = Dictionary(vertices(g), [Index[] for v in vertices(g)])
   for (dim, verts) in enumerate(real_dimension_vertices)
     for (digit, v) in enumerate(verts)
-      is[v] = vcat(is[v], Index(base, real_digit_tag(v, dim, digit)))
+      set!(is, v, vcat(is[v], Index(base, real_digit_tag(v, dim, digit))))
     end
   end
 
   for (dim, verts) in enumerate(imag_dimension_vertices)
     for (digit, v) in enumerate(verts)
-      is[v] = vcat(is[v], Index(base, imag_digit_tag(v, dim, digit)))
+      set!(is, v, vcat(is[v], Index(base, imag_digit_tag(v, dim, digit))))
     end
   end
 

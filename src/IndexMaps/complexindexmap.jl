@@ -1,17 +1,18 @@
 using Base: Base
 using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim, hastags
-using ITensorNetworks: IndsNetwork, vertex_data
 
-struct ComplexIndexMap{VB,VD,VR} <: AbstractIndexMap{VB,VD}
-  index_digit::VB
-  index_dimension::VD
-  index_real::VR
+struct ComplexIndexMap{V} <: AbstractIndexMap{V}
+  siteinds::Dictionary{V, Vector{Index}}
+  index_digit::Dictionary{Index, Integer}
+  index_dimension::Dictionary{Index, Integer}
+  index_real::Dictionary{Index, Bool}
 end
 
 index_digit(imap::ComplexIndexMap) = imap.index_digit
 index_dimension(imap::ComplexIndexMap) = imap.index_dimension
 index_real(imap::ComplexIndexMap) = imap.index_real
+siteinds(imap::ComplexIndexMap) = imap.siteinds
 is_real(imap::ComplexIndexMap, ind::Index) = index_real(imap)[ind]
 real_indices(imap::ComplexIndexMap) = filter(i -> is_real(imap, i), inds(imap))
 imaginary_indices(imap::ComplexIndexMap) = filter(i -> !is_real(imap, i), inds(imap))
@@ -73,27 +74,27 @@ whilst imaginary valued digits should have the "Imag" tag. The complex_continuou
 constructor will do this by default
 """
 function ComplexIndexMap(
-  s::IndsNetwork,
-  real_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s),
-  imag_dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s),
+  siteinds::Dictionary,
+  real_dimension_vertices::Vector{Vector{V}},
+  imag_dimension_vertices::Vector{Vector{V}},
 ) where {V}
   real_dimension_indices = Vector{Index}[
-    !isempty(vertices) ? filter(i -> hastags(i, "Real"), inds(s, vertices)) : Index[] for
+    !isempty(vertices) ? filter(i -> hastags(i, "Real"), inds(siteinds, vertices)) : Index[] for
     vertices in real_dimension_vertices
   ]
   imag_dimension_indices = Vector{Index}[
-    !isempty(vertices) ? filter(i -> hastags(i, "Imag"), inds(s, vertices)) : Index[] for
+    !isempty(vertices) ? filter(i -> hastags(i, "Imag"), inds(siteinds, vertices)) : Index[] for
     vertices in imag_dimension_vertices
   ]
-  return ComplexIndexMap(real_dimension_indices, imag_dimension_indices)
+  return ComplexIndexMap(siteinds, real_dimension_indices, imag_dimension_indices)
 end
 
 function ComplexIndexMap(
-  real_dimension_indices::Vector{Vector{I}}, imag_dimension_indices::Vector{Vector{I}}
+  siteinds::Dictionary, real_dimension_indices::Vector{Vector{I}}, imag_dimension_indices::Vector{Vector{I}}
 ) where {I<:Index}
-  index_digit = Dictionary()
-  index_dimension = Dictionary()
-  index_real = Dictionary()
+  index_digit = Dictionary{Index, Integer}()
+  index_dimension = Dictionary{Index, Integer}()
+  index_real = Dictionary{Index, Bool}()
 
   for (d, real_indices) in enumerate(real_dimension_indices)
     for (bit, real_ind) in enumerate(real_indices)
@@ -110,7 +111,20 @@ function ComplexIndexMap(
       set!(index_real, imag_ind, false)
     end
   end
-  return ComplexIndexMap(index_digit, index_dimension, index_real)
+  return ComplexIndexMap(siteinds, index_digit, index_dimension, index_real)
+end
+
+function ComplexIndexMap(g::AbstractGraph, args...; base::Int=2, kwargs...)
+  s = complex_digit_siteinds(g, args...; base, kwargs...)
+  return ComplexIndexMap(s, args...; kwargs...)
+end
+
+function ComplexIndexMap(siteinds::Dictionary; map_dimension::Int64=1)
+  return ComplexIndexMap(
+    siteinds,
+    default_dimension_vertices(siteinds; map_dimension),
+    default_dimension_vertices(siteinds; map_dimension),
+  )
 end
 
 function calculate_ind_values(imap::ComplexIndexMap, xs::Vector, dims::Vector{Int})
@@ -142,3 +156,5 @@ function grid_points(imap::ComplexIndexMap, N::Int, d::Int)
   ]
   return filter(x -> real(x) < 1 && imag(x) < 1, grid_points)
 end
+
+const complex_continuous_siteinds = ComplexIndexMap
