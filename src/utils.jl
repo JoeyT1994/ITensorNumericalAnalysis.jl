@@ -25,7 +25,7 @@ end
 """Build the tensor C such that C_{phys_ind, virt_inds...} = delta_{virt_inds...}"""
 function c_tensor(phys_inds::Vector, virt_inds::Vector)
   @assert allequal(dim.(virt_inds))
-  T = delta(Int64, virt_inds)
+  T = ITensors.delta(Int64, virt_inds)
   T = T * ITensor(1, phys_inds...)
   return T
 end

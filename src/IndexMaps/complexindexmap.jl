@@ -2,17 +2,17 @@ using Base: Base
 using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim, hastags
 
-struct ComplexIndexMap{V} <: AbstractIndexMap{V}
-  siteinds::Dictionary{V, Vector{Index}}
-  index_digit::Dictionary{Index, Integer}
-  index_dimension::Dictionary{Index, Integer}
-  index_real::Dictionary{Index, Bool}
+struct ComplexIndexMap{V, I <: Index} <: AbstractIndexMap{V}
+  siteinds::Dictionary{V, Vector{I}}
+  index_digit::Dictionary{I, Integer}
+  index_dimension::Dictionary{I, Integer}
+  index_real::Dictionary{I, Bool}
 end
 
 index_digit(imap::ComplexIndexMap) = imap.index_digit
 index_dimension(imap::ComplexIndexMap) = imap.index_dimension
 index_real(imap::ComplexIndexMap) = imap.index_real
-siteinds(imap::ComplexIndexMap) = imap.siteinds
+TensorNetworkQuantumSimulator.siteinds(imap::ComplexIndexMap) = imap.siteinds
 is_real(imap::ComplexIndexMap, ind::Index) = index_real(imap)[ind]
 real_indices(imap::ComplexIndexMap) = filter(i -> is_real(imap, i), inds(imap))
 imaginary_indices(imap::ComplexIndexMap) = filter(i -> !is_real(imap, i), inds(imap))
@@ -33,7 +33,7 @@ function index_value_to_scalar(imap::ComplexIndexMap, ind::Index, value::Int)
 end
 function Base.copy(imap::ComplexIndexMap)
   return ComplexIndexMap(
-    copy(index_digit(imap)), copy(index_dimension(imap)), copy(index_real(imap))
+    copy(siteinds(imap)), copy(index_digit(imap)), copy(index_dimension(imap)), copy(index_real(imap))
   )
 end
 function ITensors.inds(imap::ComplexIndexMap)

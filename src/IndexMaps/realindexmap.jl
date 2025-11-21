@@ -3,19 +3,19 @@ using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim
 
 struct RealIndexMap{V} <: AbstractIndexMap{V}
-  siteinds::Dictionary{V, Vector{Index}}
+  siteinds::Dictionary{V, Vector{<:Index}}
   index_digit::Dictionary{Index, Integer}
   index_dimension::Dictionary{Index, Integer}
 end
 
 index_digit(imap::RealIndexMap) = imap.index_digit
 index_dimension(imap::RealIndexMap) = imap.index_dimension
-siteinds(imap::RealIndexMap) = imap.siteinds
+TensorNetworkQuantumSimulator.siteinds(imap::RealIndexMap) = imap.siteinds
 function index_value_to_scalar(imap::RealIndexMap, ind::Index, value::Int)
   return (value) * (float(dim(ind))^-digit(imap, ind))
 end
 function Base.copy(imap::RealIndexMap)
-  return RealIndexMap(copy(index_digit(imap)), copy(index_dimension(imap)))
+  return RealIndexMap(copy(siteinds(imap)), copy(index_digit(imap)), copy(index_dimension(imap)))
 end
 function ITensors.inds(imap::RealIndexMap)
   @assert keys(index_dimension(imap)) == keys(index_digit(imap))

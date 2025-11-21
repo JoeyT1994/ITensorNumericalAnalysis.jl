@@ -85,7 +85,7 @@ function digit_siteinds(
   if isempty(dimension_vertices[1])
     dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
-  is = Dictionary(vertices(g), [Index[] for v in vertices(g)])
+  is = Dictionary(vertices(g), Vector{<:Index}[Index[] for v in vertices(g)])
   for (dim, verts) in enumerate(dimension_vertices)
     for (digit, v) in enumerate(verts)
       set!(is, v, vcat(is[v], Index(base, digit_tag(v, dim, digit))))
@@ -108,7 +108,7 @@ function complex_digit_siteinds(
   if isempty(imag_dimension_vertices[1])
     imag_dimension_vertices = default_dimension_vertices(g; kwargs...)
   end
-  is = Dictionary(vertices(g), [Index[] for v in vertices(g)])
+  is = Dictionary(vertices(g), Vector{<:Index}[Index[] for v in vertices(g)])
   for (dim, verts) in enumerate(real_dimension_vertices)
     for (digit, v) in enumerate(verts)
       set!(is, v, vcat(is[v], Index(base, real_digit_tag(v, dim, digit))))

@@ -10,10 +10,9 @@ include("IndexMaps/digit_inds.jl")
 include("IndexMaps/abstractindexmap.jl")
 include("IndexMaps/realindexmap.jl")
 include("IndexMaps/complexindexmap.jl")
-# include("indsnetworkmap.jl")
-# include("polynomialutils.jl")
-# include("tensornetworkfunction.jl")
-# include("elementary_functions.jl")
+include("polynomialutils.jl")
+include("tensornetworkfunction.jl")
+include("elementary_functions.jl")
 # include("elementary_operators.jl")
 # include("integration.jl")
 
@@ -28,7 +27,21 @@ export AbstractIndexMap,
   calculate_ind_values,
   dimension,
   dimensions,
-  grid_points
+  grid_points,
+  indexmap,
+  dimension_vertices,
+  vertex_dimension,
+  vertex_digit,
+  vertices_dimensions,
+  vertices_digits
+export TensorNetworkFunction,
+  evaluate,
+  const_tnf,
+  exp_tnf,
+  cosh_tnf,
+  sinh_tnf,
+  cos_tnf,
+  sin_tnf
 # export IndsNetworkMap,
 #   continuous_siteinds,
 #   complex_continuous_siteinds,

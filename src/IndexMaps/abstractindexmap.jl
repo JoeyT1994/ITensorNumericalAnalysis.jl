@@ -75,7 +75,7 @@ dimension(imap::AbstractIndexMap, ind::Index) = index_dimension(imap)[ind]
 dimensions(imap::AbstractIndexMap, inds::Vector{Index}) = dimension.(inds)
 digit(imap::AbstractIndexMap, ind::Index) = index_digit(imap)[ind]
 digits(imap::AbstractIndexMap, inds::Vector{Index}) = digit.(inds)
-siteinds(imap::AbstractIndexMap, vertex) = siteinds(imap)[vertex]
+TensorNetworkQuantumSimulator.siteinds(imap::AbstractIndexMap, vertex) = siteinds(imap)[vertex]
 Graphs.vertices(imap::AbstractIndexMap) = collect(keys(siteinds(imap)))
 
 function index_values_to_scalars(imap::AbstractIndexMap, ind::Index)
@@ -154,4 +154,43 @@ function grid_points(imap::AbstractIndexMap, d::Int)
   base = first(dims)
   L = length(dimension_inds(imap, d))
   return grid_points(imap, base^L, d)
+end
+
+base(imap::AbstractIndexMap) = base(siteinds(imap))
+
+function vertices_dimensions(imap::AbstractIndexMap, verts::Vector)
+  return [dimension(imap, i) for i in siteinds(imap, verts)]
+end
+
+function vertices_digits(imap::AbstractIndexMap, verts::Vector)
+  return [digit(imap, i) for i in siteinds(imap, verts)]
+end
+
+function vertex_dimension(imap::AbstractIndexMap, v)
+  return dimension(imap, only(siteinds(imap, v)))
+end
+
+function vertex_dimensions(imap::AbstractIndexMap, v)
+  return [dimension(imap, i) for i in siteinds(imap, v)]
+end
+
+function vertex_digits(imap::AbstractIndexMap, v)
+  return [digit(imap, i) for i in siteinds(imap, v)]
+end
+
+function vertex_digit(imap::AbstractIndexMap, v)
+  return digit(imap, only(siteinds(imap, v)))
+end
+
+function dimension_vertices(imap::AbstractIndexMap, dimension::Int)
+  return filter(v -> dimension ∈ vertex_dimensions(imap, v), vertices(imap))
+end
+
+function dimension_vertices(imap::AbstractIndexMap, dims::Vector{Int})
+  return filter(v -> vertex_dimension(imap, v) in dims, vertices(imap))
+end
+
+function vertex(imap::AbstractIndexMap, dimension::Int, digit::Int)
+  index = ind(imap, dimension, digit)
+  return only(filter(v -> index ∈ imap[v], vertices(inm)))
 end
