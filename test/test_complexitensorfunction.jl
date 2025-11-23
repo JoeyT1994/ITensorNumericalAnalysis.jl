@@ -5,7 +5,7 @@ using TensorOperations: TensorOperations
 using Graphs: SimpleGraph, uniform_tree
 using NamedGraphs: NamedGraph, vertices, rename_vertices
 using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
-using ITensors: siteinds
+using TensorNetworkQuantumSimulator
 using Dictionaries: Dictionary
 using Random: Random
 
@@ -18,18 +18,18 @@ Random.seed!(1234)
     g = named_grid((L, 1))
     s = complex_continuous_siteinds(g)
 
-    ψ = random_itensornetwork(s; link_space=2)
+    ψ = random_tensornetworkstate(g, siteinds(s); bond_dimension = 2)
 
-    fψ = ITensorNetworkFunction(ψ)
+    fψ = TensorNetworkFunction(ψ)
 
-    @test dimension_vertices(fψ, 1) == vertices(fψ)
+    @test dimension_vertices(fψ, 1) == collect(vertices(fψ))
     @test dimension(fψ) == 1
 
     dim_vertices = [
       collect(filter(v -> first(v) < Int(0.5 * L), vertices(ψ))),
       collect(filter(v -> first(v) >= Int(0.5 * L), vertices(ψ))),
     ]
-    fψ = ITensorNetworkFunction(ψ, dim_vertices, dim_vertices)
+    fψ = TensorNetworkFunction(ψ, dim_vertices, dim_vertices)
     @test union(Set(dimension_vertices(fψ, 1)), Set(dimension_vertices(fψ, 2))) ==
       Set(vertices(fψ))
     @test dimension(fψ) == 2
@@ -42,24 +42,24 @@ Random.seed!(1234)
       s = complex_continuous_siteinds(g)
       c = 1.5
 
-      ψ_fz = const_itn(s; c)
+      ψ_fz = const_tnf(g, s; c)
 
       z = 0.5 + 0.625 * im
       fz_z = evaluate(ψ_fz, z) # exact
       @test fz_z ≈ c
 
       # link dims section
-      ψ_fz = const_itn(s; c, linkdim=4)
+      ψ_fz = const_tnf(g, s; c, bond_dimension=4)
 
       fz_z = evaluate(ψ_fz, z; alg="exact")
       @test fz_z ≈ c
     end
     funcs = [
-      ("cosh", cosh_itn, cosh),
-      ("sinh", sinh_itn, sinh),
-      ("exp", exp_itn, exp),
-      ("cos", cos_itn, cos),
-      ("sin", sin_itn, sin),
+      ("cosh", cosh_tnf, cosh),
+      ("sinh", sinh_tnf, sinh),
+      ("exp", exp_tnf, exp),
+      ("cos", cos_tnf, cos),
+      ("sin", sin_tnf, sin),
     ]
     for (name, net_func, func) in funcs
       @testset "test $name in binary" begin
@@ -75,18 +75,18 @@ Random.seed!(1234)
         s = complex_continuous_siteinds(g, real_dimension_vertices, imag_dimension_vertices)
 
         z = 0.625 + 0.25 * im
-        ψ_fz = net_func(s; k, a, c)
+        ψ_fz = net_func(g, s; k, a, c)
         fz_z = evaluate(ψ_fz, z)
         @test c * func(k * z + a) ≈ fz_z
       end
     end
 
     funcs = [
-      ("cosh", cosh_itn, cosh),
-      ("sinh", sinh_itn, sinh),
-      ("exp", exp_itn, exp),
-      ("cos", cos_itn, cos),
-      ("sin", sin_itn, sin),
+      ("cosh", cosh_tnf, cosh),
+      ("sinh", sinh_tnf, sinh),
+      ("exp", exp_tnf, exp),
+      ("cos", cos_tnf, cos),
+      ("sin", sin_tnf, sin),
     ]
     for (name, net_func, func) in funcs
       @testset "test $name in trinary" begin
@@ -104,7 +104,7 @@ Random.seed!(1234)
         )
 
         z = (5.0 / 9.0) + (4.0 / 9.0) * im
-        ψ_fz = net_func(s; k, a, c)
+        ψ_fz = net_func(g, s; k, a, c)
         fz_z = evaluate(ψ_fz, z)
         @test c * func(k * z + a) ≈ fz_z
       end
@@ -123,7 +123,7 @@ Random.seed!(1234)
       s = complex_continuous_siteinds(g, real_dimension_vertices, imag_dimension_vertices)
 
       z = 0.625 + 0.125 * im
-      ψ_fz = tanh_itn(s; k, a, c, nterms)
+      ψ_fz = tanh_tnf(g, s; k, a, c, nterms)
       fz_z = evaluate(ψ_fz, z)
 
       @test c * tanh(k * z + a) ≈ fz_z
@@ -147,7 +147,7 @@ Random.seed!(1234)
         coeffs = [rand() + im * rand() for i in 1:(deg + 1)]
 
         z = 0.875 + 0.25 * im
-        ψ_fz = poly_itn(s, coeffs; k, c)
+        ψ_fz = poly_tnf(g, s, coeffs; k, c)
         fz_z = evaluate(ψ_fz, z)
 
         fx_exact = c * sum([coeffs[i] * ((k * z)^(i - 1)) for i in 1:(deg + 1)])
@@ -164,7 +164,7 @@ Random.seed!(1234)
 
       c = 1.5
 
-      ψ_fzyz = const_itn(s; c)
+      ψ_fzyz = const_tnf(g, s; c)
 
       z1, z2, z3 = 0.5 + 0.125 * im, 0.25 + 0.875 * im, 0.0
 
@@ -174,11 +174,11 @@ Random.seed!(1234)
 
     #Two dimensional functions as sum of two 1D functions
     funcs = [
-      ("cosh", cosh_itn, cosh),
-      ("sinh", sinh_itn, sinh),
-      ("exp", exp_itn, exp),
-      ("cos", cos_itn, cos),
-      ("sin", sin_itn, sin),
+      ("cosh", cosh_tnf, cosh),
+      ("sinh", sinh_tnf, sinh),
+      ("exp", exp_tnf, exp),
+      ("cos", cos_tnf, cos),
+      ("sin", sin_tnf, sin),
     ]
     L = 10
     g = named_grid((L, 1))
@@ -197,8 +197,8 @@ Random.seed!(1234)
         k = rand() + im * rand()
         c = rand() + im * rand()
 
-        ψ_fz1 = net_func(s; k, a, c, dim=1)
-        ψ_fz2 = net_func(s; k, a, c, dim=2)
+        ψ_fz1 = net_func(g, s; k, a, c, dim=1)
+        ψ_fz2 = net_func(g, s; k, a, c, dim=2)
 
         ψ_fz = ψ_fz1 + ψ_fz2
         fz_z = evaluate(ψ_fz, [z1, z2], [1, 2])
@@ -217,8 +217,8 @@ Random.seed!(1234)
       s = complex_continuous_siteinds(g; map_dimension=2)
 
       z1, z2 = 0.5 + 0.125 * im, 0.625 + 0.25 * im
-      ψ_fz1 = tanh_itn(s; k, a, c, nterms, dim=1)
-      ψ_fz2 = tanh_itn(s; k, a, c, nterms, dim=2)
+      ψ_fz1 = tanh_tnf(g, s; k, a, c, nterms, dim=1)
+      ψ_fz2 = tanh_tnf(g, s; k, a, c, nterms, dim=2)
 
       ψ_fz = ψ_fz1 + ψ_fz2
       fz_z = evaluate(ψ_fz, [z1, z2], [1, 2]; alg="exact")
@@ -235,13 +235,13 @@ Random.seed!(1234)
     lastDigit = 1 - delta
     zs = [0.0, delta, 0.25 + 0.5 * im, 0.5, 0.625 * im, 0.875, lastDigit + lastDigit * im]
     @testset "test single point" begin
-      ψ = delta_p(s, [z10, z20])
+      ψ = delta_p(g, s, [z10, z20])
       @test evaluate(ψ, [z10, z20], [1, 2]) ≈ 1
       # test another point
       @test evaluate(ψ, [z20, z10], [1, 2]) ≈ 0
     end
     @testset "test plane" begin
-      ψ = delta_p(s, [z20], [2])
+      ψ = delta_p(g, s, [z20], [2])
 
       # should be 1 in the plane
       for z in zs
@@ -254,7 +254,7 @@ Random.seed!(1234)
     end
     @testset "test sums of points" begin
       points = [[z10, z20], [z20, z10]]
-      ψ = delta_p(s, points)
+      ψ = delta_p(g, s, points)
       @test evaluate(ψ, [z10, z20], [1, 2]) ≈ 1
       @test evaluate(ψ, [z20, z10], [1, 2]) ≈ 1
       # test other points
@@ -266,7 +266,7 @@ Random.seed!(1234)
       p0 = 0.5 + 0.5 * im
       points = [[z10, z20], [p0]]
       dims = [[1, 2], [2]]
-      ψ = delta_p(s, points, dims)
+      ψ = delta_p(g, s, points, dims)
       @test evaluate(ψ, [z10, z20], [1, 2]) ≈ 1
       for z in zs
         @test evaluate(ψ, [z, p0], [1, 2]) ≈ 1

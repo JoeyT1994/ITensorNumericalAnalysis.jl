@@ -37,9 +37,12 @@ function TensorNetworkFunction(
   real_dimension_vertices::Vector{Vector{V}},
   imag_dimension_vertices::Vector{Vector{V}},
 ) where {V}
+  if tn isa TensorNetworkState
+    tn = tensornetwork(tn)
+  end
   s = siteinds(tn)
   return TensorNetworkFunction(
-    itn, ComplexIndexMap(s, real_dimension_vertices, imag_dimension_vertices)
+    tn, ComplexIndexMap(s, real_dimension_vertices, imag_dimension_vertices)
   )
 end
 

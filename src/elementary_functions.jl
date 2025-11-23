@@ -2,7 +2,7 @@ using Graphs: nv, vertices, edges, neighbors
 using NamedGraphs: NamedEdge, AbstractGraph, a_star
 using NamedGraphs.GraphsExtensions:
   random_bfs_tree, rem_edges, add_edges, leaf_vertices, undirected_graph
-using TensorNetworkQuantumSimulator: setindex_preserve!
+using TensorNetworkQuantumSimulator: setindex_preserve!, virtualinds, insert_virtualinds!
 using ITensors: dim, commoninds, delta
 
 default_c_value() = 1
@@ -151,180 +151,184 @@ function sin_tensornetworkfunction(
   return ψ1 + ψ2
 end
 
-# """Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i} on the graph structure specified
-# by indsnetwork"""
-# function polynomial_itensornetwork(
-#   s::IndsNetworkMap,
-#   coeffs::Vector;
-#   dim::Int=default_dim(),
-#   k=default_k_value(),
-#   c=default_c_value(),
-# )
-#   n = length(coeffs)
-#   n == 1 && return const_itn(s; c=first(coeffs))
+"""Build a representation of the function f(x) = sum_{i=0}^{n}coeffs[i+1]*(x)^{i}"""
+function polynomial_tensornetworkfunction(
+  g::NamedGraph,
+  s::AbstractIndexMap,
+  coeffs::Vector;
+  dim::Int=default_dim(),
+  k=default_k_value(),
+  c=default_c_value(),
+)
+  n = length(coeffs)
+  n == 1 && return const_itn(s; c=first(coeffs))
 
-#   coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
-#   #First treeify the index network (ignore edges that form loops)
-#   _s = indsnetwork(s)
-#   g = underlying_graph(_s)
-#   g_tree = undirected_graph(random_bfs_tree(g, first(vertices(g))))
-#   s_tree = add_edges(rem_edges(_s, edges(g)), edges(g_tree))
-#   s_tree = IndsNetworkMap(s_tree, indexmap(s))
-#   eltype = indexmaptype(s) == RealIndsNetworkMap ? Float64 : ComplexF64
+  coeffs = [c * (k^(i - 1)) for (i, c) in enumerate(coeffs)]
+  #First treeify the index network (ignore edges that form loops)
+  g_tree = undirected_graph(random_bfs_tree(g, first(vertices(g))))
+  eltype = s isa RealIndexMap ? Float64 : ComplexF64
 
-#   ψ = const_itensornetwork(s_tree; linkdim=n)
-#   dim_vertices = dimension_vertices(ψ, dim)
-#   source_vertex = first(dim_vertices)
+  ψ = const_tensornetworkfunction(g_tree, s; bond_dimension=n)
+  dim_vertices = dimension_vertices(ψ, dim)
+  source_vertex = first(dim_vertices)
 
-#   for v in dim_vertices
-#     sinds = inds(s_tree, v)
-#     sinds_dim = filter(i -> dimension(s, i) == dim, sinds)
-#     sinds_not_dim = filter(i -> dimension(s, i) != dim, sinds)
-#     if v != source_vertex
-#       e = get_edge_toward_vertex(g_tree, v, source_vertex)
-#       betaindex = only(commoninds(ψ, e))
-#       alphas = setdiff(inds(ψ[v]), [sinds_dim; sinds_not_dim; betaindex])
-#       ψ[v] = Q_N_tensor(
-#         eltype,
-#         length(neighbors(g_tree, v)),
-#         sinds_dim,
-#         alphas,
-#         betaindex,
-#         index_values_to_scalars.((s_tree,), sinds_dim),
-#       )
-#       ψ[v] *= ITensor(1, sinds_not_dim)
-#     elseif v == source_vertex
-#       betaindex = Index(n, "DummyInd")
-#       alphas = setdiff(inds(ψ[v]), sinds)
-#       ψv = Q_N_tensor(
-#         eltype,
-#         length(neighbors(g_tree, v)) + 1,
-#         sinds_dim,
-#         alphas,
-#         betaindex,
-#         index_values_to_scalars.((s_tree,), sinds_dim),
-#       )
-#       ψ[v] = ψv * ITensor(coeffs, betaindex) * ITensor(1, sinds_not_dim)
-#     end
-#   end
+  for v in dim_vertices
+    sinds = siteinds(s, v)
+    sinds_dim = filter(i -> dimension(s, i) == dim, sinds)
+    sinds_not_dim = filter(i -> dimension(s, i) != dim, sinds)
+    if v != source_vertex
+      e = get_edge_toward_vertex(g_tree, v, source_vertex)
+      betaindex = only(virtualinds(ψ, e))
+      alphas = setdiff(inds(ψ[v]), [sinds_dim; sinds_not_dim; betaindex])
+      ψv = Q_N_tensor(
+        eltype,
+        length(neighbors(g_tree, v)),
+        sinds_dim,
+        alphas,
+        betaindex,
+        index_values_to_scalars.((s,), sinds_dim),
+      )
+      ψv *= ITensor(1, sinds_not_dim)
+      setindex_preserve!(ψ, ψv, v)
+    elseif v == source_vertex
+      betaindex = Index(n, "DummyInd")
+      alphas = setdiff(inds(ψ[v]), sinds)
+      ψv = Q_N_tensor(
+        eltype,
+        length(neighbors(g_tree, v)) + 1,
+        sinds_dim,
+        alphas,
+        betaindex,
+        index_values_to_scalars.((s,), sinds_dim),
+      )
+      ψv = ψv * ITensor(coeffs, betaindex) * ITensor(1, sinds_not_dim)
+      setindex_preserve!(ψ, ψv, v)
+    end
+  end
 
-#   ψ[first(dim_vertices)] *= c
+  setindex_preserve!(ψ, ψ[first(dim_vertices)]*c, first(dim_vertices))
 
-#   #Put the transfer tensors in, these are special tensors that
-#   # go on the digits (sites) that don't correspond to the desired dimension
-#   for v in setdiff(vertices(ψ), dim_vertices)
-#     sinds = inds(s_tree, v)
-#     e = get_edge_toward_vertex(g_tree, v, source_vertex)
-#     betaindex = only(commoninds(ψ, e))
-#     alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
-#     ψ[v] = transfer_tensor(sinds, betaindex, alphas)
-#   end
+  #Put the transfer tensors in, these are special tensors that
+  # go on the digits (sites) that don't correspond to the desired dimension
+  for v in setdiff(vertices(ψ), dim_vertices)
+    sinds = siteinds(s, v)
+    e = get_edge_toward_vertex(g_tree, v, source_vertex)
+    betaindex = only(commoninds(ψ, e))
+    alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
+    setindex_preserve!(ψ, transfer_tensor(sinds, betaindex, alphas), v)
+  end
 
-#   return ψ
-# end
+  return ψ
+end
 
-# "Create a product state of a given bit configuration. Will make planes if all dims not specificed"
-# function delta_p(
-#   s::IndsNetworkMap,
-#   xs::Vector{<:Number},
-#   dims::Vector{Int}=[i for i in 1:length(xs)];
-#   kwargs...,
-# )
-#   ivmap = calculate_ind_values(s, xs, dims)
-#   vs = collect(vertices(s))
-#   ts = ITensor[
-#     prod([
-#       sind ∈ keys(ivmap) ? onehot(sind => ivmap[sind] + 1) : ITensor(1, sind) for
-#       sind in s[v]
-#     ]) for v in vs
-#   ]
-#   tn = ITensorNetwork(vs, ts)
-#   tn = insert_linkinds(add_edges(tn, edges(s)))
-#   return ITensorNetworkFunction(tn, s)
-# end
+"Create a product state of a given bit configuration. Will make planes if all dims not specificed"
+function delta_p(
+  g::NamedGraph,
+  s::AbstractIndexMap,
+  xs::Vector{<:Number},
+  dims::Vector{Int}=[i for i in 1:length(xs)];
+  c = default_c_value(),
+  kwargs...,
+)
+  ivmap = calculate_ind_values(s, xs, dims)
+  vs = collect(vertices(g))
+  ts = Dictionary(vs, ITensor[
+    prod([
+      sind ∈ keys(ivmap) ? onehot(sind => ivmap[sind] + 1) : ITensor(1, sind) for
+      sind in siteinds(s, v)
+    ]) for v in vs
+  ])
+  set!(ts, first(vs), ts[first(vs)]*c)
 
-# "Create a product state of a given bit configuration of a 1D function"
-# function delta_p(s::IndsNetworkMap, x::Number, kwargs...)
-#   @assert dimension(s) == 1
-#   return delta_p(s, [x], [1]; kwargs...)
-# end
+  tn = TensorNetwork(ts, g)
+  insert_virtualinds!(tn)
+  return TensorNetworkFunction(tn, s)
+end
 
-# function delta_p(
-#   s::IndsNetworkMap,
-#   points::Vector{<:Vector},
-#   points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
-#   kwargs...,
-# )
-#   @assert length(points) != 0
-#   @assert length(points) == length(points_dims)
-#   ψ = reduce(
-#     +, [delta_p(s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
-#   )
-#   return ψ
-# end
+"Create a product state of a given bit configuration of a 1D function"
+function delta_p(g::NamedGraph, s::AbstractIndexMap, x::Number, kwargs...)
+  @assert dimension(s) == 1
+  return delta_p(g, s, [x], [1]; kwargs...)
+end
 
-# " Function to manipulate delta functions. Defaults to map_to_zero behavior"
-# function delta_kernel(
-#   s::IndsNetworkMap,
-#   points::Vector{<:Vector},
-#   points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
-#   remove_overlap=true,
-#   coeff::Number=-1,
-#   include_identity=true,
-#   truncate_kwargs...,
-# )
-#   ψ = coeff * delta_p(s, points, points_dims; truncate_kwargs...)
+function delta_p(
+  g::NamedGraph,
+  s::AbstractIndexMap,
+  points::Vector{<:Vector},
+  points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  kwargs...,
+)
+  @assert length(points) != 0
+  @assert length(points) == length(points_dims)
+  ψ = reduce(
+    +, [delta_p(g, s, xs, dims; kwargs...) for (xs, dims) in zip(points, points_dims)]
+  )
+  return ψ
+end
 
-#   if include_identity
-#     ψ = const_itn(s) + ψ
-#   end
+" Function to manipulate delta functions. Defaults to map_to_zero behavior"
+function delta_kernel(
+  g::NamedGraph,
+  s::AbstractIndexMap,
+  points::Vector{<:Vector},
+  points_dims::Vector{<:Vector}=[[i for i in 1:length(xs)] for xs in points];
+  remove_overlap=true,
+  coeff::Number=-1,
+  include_identity=true,
+  truncate_kwargs...,
+)
+  ψ = delta_p(s, points, points_dims; c = coeff, truncate_kwargs...)
 
-#   if remove_overlap && length(points) > 1
-#     overlap_points, overlap_dims = Vector{Vector}(), Vector{Vector}()
-#     # determine intersection of any points, 
-#     # and remove them with the opposite sign
-#     for i in 1:length(points)
-#       p1, d1 = points[i], points_dims[i]
-#       for j in (i + 1):length(points)
-#         p2, d2 = points[j], points_dims[j]
+  if include_identity
+    ψ = const_tnf(g, s) + ψ
+  end
 
-#         # same dimensions, and no point overlap,
-#         # can safely ignore
-#         (all(d1 .≈ d2) && !all(p1 .≈ p2)) && continue
+  if remove_overlap && length(points) > 1
+    overlap_points, overlap_dims = Vector{Vector}(), Vector{Vector}()
+    # determine intersection of any points, 
+    # and remove them with the opposite sign
+    for i in 1:length(points)
+      p1, d1 = points[i], points_dims[i]
+      for j in (i + 1):length(points)
+        p2, d2 = points[j], points_dims[j]
 
-#         # check if dims are the same. 
-#         # If they are, check the corresponding dim
-#         ps_ = [p1; p2]
-#         ds_ = [d1; d2]
-#         order = sortperm(ds_)
-#         ps, ds = [ps_[order[1]]], [ds_[order[1]]]
-#         for k in 2:length(ds_)
-#           if (ds_[order[k]] != ds_[order[k - 1]])
-#             push!(ps, ps_[order[k]])
-#             push!(ds, ds_[order[k]])
-#             continue
-#           end
-#           # found two matching elements
-#           if ps_[k] ≈ ps_[k - 1]
-#             continue # added previously
-#           else # there's no overap here, continue
-#             ps, ds = [], []
-#             break
-#           end
-#         end
-#         #(length(Set(ds)) != length(ds)) && continue
-#         (length(ds) == 0) && continue
-#         push!(overlap_points, Vector(ps))
-#         push!(overlap_dims, Vector(ds))
-#       end
-#     end
-#     if length(overlap_points) != 0
-#       ψ = ψ + -coeff * delta_p(s, overlap_points, overlap_dims; truncate_kwargs...)
-#     end
-#   end
+        # same dimensions, and no point overlap,
+        # can safely ignore
+        (all(d1 .≈ d2) && !all(p1 .≈ p2)) && continue
 
-#   return ψ
-# end
+        # check if dims are the same. 
+        # If they are, check the corresponding dim
+        ps_ = [p1; p2]
+        ds_ = [d1; d2]
+        order = sortperm(ds_)
+        ps, ds = [ps_[order[1]]], [ds_[order[1]]]
+        for k in 2:length(ds_)
+          if (ds_[order[k]] != ds_[order[k - 1]])
+            push!(ps, ps_[order[k]])
+            push!(ds, ds_[order[k]])
+            continue
+          end
+          # found two matching elements
+          if ps_[k] ≈ ps_[k - 1]
+            continue # added previously
+          else # there's no overap here, continue
+            ps, ds = [], []
+            break
+          end
+        end
+        #(length(Set(ds)) != length(ds)) && continue
+        (length(ds) == 0) && continue
+        push!(overlap_points, Vector(ps))
+        push!(overlap_dims, Vector(ds))
+      end
+    end
+    if length(overlap_points) != 0
+      ψ = ψ + delta_p(g, s, overlap_points, overlap_dims; c = -coeff, truncate_kwargs...)
+    end
+  end
+
+  return ψ
+end
 const random_tnf = random_tensornetworkfunction
 const const_tnf = const_tensornetworkfunction
 const exp_tnf = exp_tensornetworkfunction
@@ -333,5 +337,4 @@ const sinh_tnf = sinh_tensornetworkfunction
 const tanh_tnf = tanh_tensornetworkfunction
 const cos_tnf = cos_tensornetworkfunction
 const sin_tnf = sin_tensornetworkfunction
-
-# const poly_itn = polynomial_itensornetwork
+const poly_tnf = polynomial_tensornetworkfunction

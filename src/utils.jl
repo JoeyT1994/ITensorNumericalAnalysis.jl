@@ -6,7 +6,7 @@ using NamedGraphs.GraphsExtensions: rem_vertex
 using NamedGraphs.PartitionedGraphs:
   PartitionEdge, partitionvertices, PartitionVertex
 using Dictionaries: Dictionary, collect, values, keys
-using TensorNetworkQuantumSimulator: AbstractTensorNetwork
+using TensorNetworkQuantumSimulator: AbstractTensorNetwork, add_tensor!
 
 """Build the order L tensor corresponding to fx(x): x ∈ [0,1], default decomposition is binary"""
 function build_full_rank_tensor(L::Int, fx::Function; base::Int=2)
@@ -83,9 +83,12 @@ function merge_internal_tensors(tn::AbstractTensorNetwork)
   for v in internal_vertices
     vns = neighbors(tn, v)
     if !isempty(vns)
-      tn = contract(tn, v => first(vns))
+      tnvn = tn[v] * tn[first(vns)]
+      rem_vertex!(tn, v)
+      rem_vertex!(tn, first(vns))
+      add_tensor!(tn, tnvn, first(vns))
     else
-      setindex!(tn, first(external_vertices), tn[first(external_vertices)] * (tn[v][]))
+      setindex_preserve!(tn, tn[first(external_vertices)] * (tn[v][]), first(external_vertices))
       rem_vertex!(tn, v)
     end
   end

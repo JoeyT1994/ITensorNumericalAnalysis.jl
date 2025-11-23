@@ -13,8 +13,8 @@ include("IndexMaps/complexindexmap.jl")
 include("polynomialutils.jl")
 include("tensornetworkfunction.jl")
 include("elementary_functions.jl")
-# include("elementary_operators.jl")
-# include("integration.jl")
+include("elementary_operators.jl")
+include("integration.jl")
 
 export continuous_siteinds, complex_continuous_siteinds
 # export tensorNetworkFunction, tensornetwork, dimension_vertices
@@ -41,7 +41,13 @@ export TensorNetworkFunction,
   cosh_tnf,
   sinh_tnf,
   cos_tnf,
-  sin_tnf
+  sin_tnf,
+  tanh_tnf,
+  poly_tnf,
+  delta_p,
+  integrate,
+  partial_integrate,
+  operator_proj
 # export IndsNetworkMap,
 #   continuous_siteinds,
 #   complex_continuous_siteinds,
@@ -54,12 +60,6 @@ export TensorNetworkFunction,
 #   vertices_dimensions,
 #   vertices_digits
 # export const_tensornetwork,
-#   exp_tensornetwork,
-#   cosh_tensornetwork,
-#   sinh_tensornetwork,
-#   tanh_tensornetwork,
-#   cos_tensornetwork,
-#   sin_tensornetwork,
 #   get_edge_toward_root,
 #   polynomial_tensornetwork,
 #   random_tensornetwork,
@@ -73,8 +73,6 @@ export TensorNetworkFunction,
 #   map_to_zero_operator,
 #   map_to_zeros,
 #   const_plane_op
-# export const_itn,
-#   poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
 # export evaluate
 # export operate, operator_proj, multiply
 

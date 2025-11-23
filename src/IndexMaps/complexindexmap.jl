@@ -2,11 +2,11 @@ using Base: Base
 using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim, hastags
 
-struct ComplexIndexMap{V, I <: Index} <: AbstractIndexMap{V}
-  siteinds::Dictionary{V, Vector{I}}
-  index_digit::Dictionary{I, Integer}
-  index_dimension::Dictionary{I, Integer}
-  index_real::Dictionary{I, Bool}
+struct ComplexIndexMap{V} <: AbstractIndexMap{V}
+  siteinds::Dictionary{V, Vector{<:Index}}
+  index_digit::Dictionary{Index, Integer}
+  index_dimension::Dictionary{Index, Integer}
+  index_real::Dictionary{Index, Bool}
 end
 
 index_digit(imap::ComplexIndexMap) = imap.index_digit
@@ -62,6 +62,7 @@ end
 
 function Dictionaries.merge(imap1::ComplexIndexMap, imap2::ComplexIndexMap)
   return ComplexIndexMap(
+    merge(siteinds(imap1), merge(siteinds(imap2))),
     merge(index_digit(imap1), index_digit(imap2)),
     merge(index_dimension(imap1), index_dimension(imap2)),
     merge(index_real(imap1), index_real(imap2)),

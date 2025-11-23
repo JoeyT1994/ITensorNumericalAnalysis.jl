@@ -70,6 +70,7 @@ end
 
 function Dictionaries.merge(imap1::RealIndexMap, imap2::RealIndexMap)
   return RealIndexMap(
+    merge(siteinds(imap1), siteinds(imap2)),
     merge(index_digit(imap1), index_digit(imap2)),
     merge(index_dimension(imap1), index_dimension(imap2)),
   )
