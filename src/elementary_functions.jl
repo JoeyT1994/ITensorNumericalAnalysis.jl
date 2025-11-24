@@ -213,7 +213,7 @@ function polynomial_tensornetworkfunction(
   for v in setdiff(vertices(ψ), dim_vertices)
     sinds = siteinds(s, v)
     e = get_edge_toward_vertex(g_tree, v, source_vertex)
-    betaindex = only(commoninds(ψ, e))
+    betaindex = only(virtualinds(ψ, e))
     alphas = setdiff(inds(ψ[v]), [sinds; betaindex])
     setindex_preserve!(ψ, transfer_tensor(sinds, betaindex, alphas), v)
   end
@@ -277,7 +277,7 @@ function delta_kernel(
   include_identity=true,
   truncate_kwargs...,
 )
-  ψ = delta_p(s, points, points_dims; c = coeff, truncate_kwargs...)
+  ψ = delta_p(g, s, points, points_dims; c = coeff, truncate_kwargs...)
 
   if include_identity
     ψ = const_tnf(g, s) + ψ

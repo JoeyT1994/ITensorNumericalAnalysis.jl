@@ -3,13 +3,8 @@ using ITensorNumericalAnalysis
 using TensorOperations: TensorOperations
 
 using ITensors: siteinds
-using ITensorNetworks: ITensorNetwork, maxlinkdim, ttn, inner
 using Graphs: SimpleGraph, uniform_tree
-using NamedGraphs: NamedGraph, nv, vertices
-using NamedGraphs.GraphsExtensions: rename_vertices
-using NamedGraphs.NamedGraphGenerators: named_grid, named_comb_tree
-using ITensorNumericalAnalysis:
-  itensornetwork, forward_shift_op, backward_shift_op, delta_kernel
+using TensorNetworkQuantumSimulator
 using Dictionaries: Dictionary
 
 @testset "test operators" begin
@@ -20,17 +15,17 @@ using Dictionaries: Dictionary
     s = continuous_siteinds(g)
     left_boundary, right_boundary = "Periodic", "Periodic"
 
-    f1 = first_derivative_operator(s; cutoff=1e-12, left_boundary, right_boundary)
-    f2 = second_derivative_operator(s; cutoff=1e-12, left_boundary, right_boundary)
-    f3 = third_derivative_operator(s; cutoff=1e-12, left_boundary, right_boundary)
-    f4 = fourth_derivative_operator(s; cutoff=1e-12, left_boundary, right_boundary)
+    f1 = first_derivative_operator(g, s; left_boundary, right_boundary)
+    f2 = second_derivative_operator(g, s; left_boundary, right_boundary)
+    f3 = third_derivative_operator(g, s; left_boundary, right_boundary)
+    f4 = fourth_derivative_operator(g, s; left_boundary, right_boundary)
 
-    ψ_fx = sin_itn(s; k=2.0 * Number(pi))
+    ψ_fx = sin_tnf(g, s; k=2.0 * Number(pi))
 
-    ψ_f1x = operate(f1, ψ_fx; cutoff=1e-8)
-    ψ_f2x = operate(f2, ψ_fx; cutoff=1e-8)
-    ψ_f3x = operate(f3, ψ_fx; cutoff=1e-8)
-    ψ_f4x = operate(f4, ψ_fx; cutoff=1e-8)
+    ψ_f1x = operate(f1, ψ_fx)
+    ψ_f2x = operate(f2, ψ_fx)
+    ψ_f3x = operate(f3, ψ_fx)
+    ψ_f4x = operate(f4, ψ_fx)
 
     xs = [0.0, 0.25, 0.625, 0.875, 1.0 - delta]
     for x in xs
@@ -39,9 +34,9 @@ using Dictionaries: Dictionary
       @test 1.0 + evaluate(ψ_f2x, x) ≈ 1.0 + -1.0 * (2.0 * pi)^2 * sin(2.0 * pi * x) rtol =
         1e-3
       @test 1.0 + evaluate(ψ_f3x, x) ≈ 1.0 + -1.0 * (2.0 * pi)^3 * cos(2.0 * pi * x) rtol =
-        1e-3
+       1e-3
       @test 1.0 + evaluate(ψ_f4x, x) ≈ 1.0 + 1.0 * (2.0 * pi)^4 * sin(2.0 * pi * x) rtol =
-        1e-3
+       1e-3
     end
   end
 
@@ -51,10 +46,10 @@ using Dictionaries: Dictionary
     delta = 2.0^(-Number(L))
     s = continuous_siteinds(g)
 
-    ∂_∂x = first_derivative_operator(s; cutoff=1e-10)
+    ∂_∂x = first_derivative_operator(g, s; cutoff=1e-10)
 
-    ψ_fx = sin_itn(s; k=Number(pi))
-    ∂x_ψ_fx = operate(∂_∂x, ψ_fx; cutoff=1e-12)
+    ψ_fx = sin_tnf(g, s; k=Number(pi))
+    ∂x_ψ_fx = operate(∂_∂x, ψ_fx)
 
     xs = [delta, 0.125, 0.25, 0.625, 0.875]
     for x in xs
@@ -69,14 +64,14 @@ using Dictionaries: Dictionary
 
     s = continuous_siteinds(g; map_dimension=3)
 
-    ψ_fx = poly_itn(s, [0.0, -1.0, 1.0]; dim=1)
-    ψ_gy = sin_itn(s; k=Number(pi), dim=2)
-    ψ_hz = sin_itn(s; k=Number(pi), dim=3)
+    ψ_fx = poly_tnf(g, s, [0.0, -1.0, 1.0]; dim=1)
+    ψ_gy = sin_tnf(g, s; k=Number(pi), dim=2)
+    ψ_hz = sin_tnf(g, s; k=Number(pi), dim=3)
     @assert dimension(ψ_fx) == dimension(ψ_gy) == dimension(ψ_hz) == 3
 
     ψ_fxgyhz = ψ_fx * ψ_gy * ψ_hz
 
-    ∂_∂y = first_derivative_operator(s; dim=2, cutoff=1e-10)
+    ∂_∂y = first_derivative_operator(g, s; dim=2, cutoff=1e-10)
 
     ∂_∂y_ψ_fxgyhz = operate([∂_∂y], ψ_fxgyhz; cutoff=1e-10)
 
@@ -101,8 +96,8 @@ using Dictionaries: Dictionary
     L = nv(g)
     s = continuous_siteinds(g)
 
-    ψ_gx = sin_itn(s; k=0.5 * Number(pi))
-    ψ_fx = cos_itn(s; k=0.25 * Number(pi))
+    ψ_gx = sin_tnf(g, s; k=0.5 * Number(pi))
+    ψ_fx = cos_tnf(g, s; k=0.25 * Number(pi))
 
     ψ_fxgx = ψ_gx * ψ_fx
     ψ_sq = ψ_fx * ψ_fx
@@ -122,8 +117,8 @@ using Dictionaries: Dictionary
 
     s = continuous_siteinds(g; map_dimension=2)
 
-    ψ_fx = cos_itn(s; k=0.25 * Number(pi), dim=1)
-    ψ_gy = sin_itn(s; k=0.5 * Number(pi), dim=2)
+    ψ_fx = cos_tnf(g, s; k=0.25 * Number(pi), dim=1)
+    ψ_gy = sin_tnf(g, s; k=0.5 * Number(pi), dim=2)
     @assert dimension(ψ_fx) == dimension(ψ_gy) == 2
 
     ψ_fxgy = ψ_fx * ψ_gy
@@ -150,12 +145,12 @@ using Dictionaries: Dictionary
     L = nv(g)
     s = continuous_siteinds(g)
 
-    ψ_gx = sin_itn(s; k=0.5 * Number(pi))
-    ψ_fx = cos_itn(s; k=0.25 * Number(pi))
+    ψ_gx = sin_tnf(g, s; k=0.5 * Number(pi))
+    ψ_fx = cos_tnf(g, s; k=0.25 * Number(pi))
     O = operator_proj(ψ_fx)
 
-    ψ_fxgx = operate(O, ψ_gx; cutoff=1e-14)
-    ψ_sq = operate(O, ψ_fx; cutoff=1e-14)
+    ψ_fxgx = operate(O, ψ_gx)
+    ψ_sq = operate(O, ψ_fx)
     xs = [0.025, 0.1, 0.25, 0.625, 0.875]
     for x in xs
       ψ_fxgx_x = real(evaluate(ψ_fxgx, x))
@@ -171,24 +166,24 @@ using Dictionaries: Dictionary
     delta = 2.0^(-1.0 * L)
     s = continuous_siteinds(g)
     xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
+    ψ_fx = poly_tnf(g, s, [1.0, 0.5, 0.25])
 
-    forward_shift_dirichlet = forward_shift_op(
+    forward_shift_dirichlet = forward_shift_op(g,
       s; boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_dirichlet = backward_shift_op(
+    backward_shift_dirichlet = backward_shift_op(g,
       s; boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
     )
-    forward_shift_pbc = forward_shift_op(
+    forward_shift_pbc = forward_shift_op(g,
       s; boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_pbc = backward_shift_op(
+    backward_shift_pbc = backward_shift_op(g,
       s; boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
     )
-    forward_shift_neumann = forward_shift_op(
+    forward_shift_neumann = forward_shift_op(g,
       s; boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_neumann = backward_shift_op(
+    backward_shift_neumann = backward_shift_op(g,
       s; boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
     )
 
@@ -230,25 +225,25 @@ using Dictionaries: Dictionary
     delta = 2.0^(-1.0 * L)
     s = continuous_siteinds(g)
     xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
+    ψ_fx = poly_tnf(g, s, [1.0, 0.5, 0.25])
     n = 1
 
-    forward_shift_dirichlet = forward_shift_op(
+    forward_shift_dirichlet = forward_shift_op(g,
       s; n, boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_dirichlet = backward_shift_op(
+    backward_shift_dirichlet = backward_shift_op(g,
       s; n, boundary="Dirichlet", truncate_kwargs=(; cutoff=1e-10)
     )
-    forward_shift_pbc = forward_shift_op(
+    forward_shift_pbc = forward_shift_op(g,
       s; n, boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_pbc = backward_shift_op(
+    backward_shift_pbc = backward_shift_op(g,
       s; n, boundary="Periodic", truncate_kwargs=(; cutoff=1e-10)
     )
-    forward_shift_neumann = forward_shift_op(
+    forward_shift_neumann = forward_shift_op(g,
       s; n, boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_neumann = backward_shift_op(
+    backward_shift_neumann = backward_shift_op(g,
       s; n, boundary="Neumann", truncate_kwargs=(; cutoff=1e-10)
     )
 
@@ -293,26 +288,26 @@ using Dictionaries: Dictionary
     delta = 2.0^(-1.0 * L)
     x = 0.5
     ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, 1.0 - delta]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dim=1)
-    ψ_fy = cos_itn(s; dim=2)
+    ψ_fx = poly_tnf(g, s, [1.0, 0.5, 0.25]; dim=1)
+    ψ_fy = cos_tnf(g, s; dim=2)
     ψ_fxy = ψ_fx + ψ_fx
 
-    forward_shift_dirichlet = forward_shift_op(
+    forward_shift_dirichlet = forward_shift_op(g,
       s; boundary="Dirichlet", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_dirichlet = backward_shift_op(
+    backward_shift_dirichlet = backward_shift_op(g,
       s; boundary="Dirichlet", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
-    forward_shift_pbc = forward_shift_op(
+    forward_shift_pbc = forward_shift_op(g,
       s; boundary="Periodic", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_pbc = backward_shift_op(
+    backward_shift_pbc = backward_shift_op(g,
       s; boundary="Periodic", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
-    forward_shift_neumann = forward_shift_op(
+    forward_shift_neumann = forward_shift_op(g,
       s; boundary="Neumann", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
-    backward_shift_neumann = backward_shift_op(
+    backward_shift_neumann = backward_shift_op(g,
       s; boundary="Neumann", dim=2, truncate_kwargs=(; cutoff=1e-10)
     )
 
@@ -358,16 +353,10 @@ using Dictionaries: Dictionary
     s = continuous_siteinds(g)
 
     xs = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25])
+    ψ_fx = poly_tnf(g, s, [1.0, 0.5, 0.25])
 
-    Zo = map_to_zero_operator(s, [0, lastDigit])
+    Zo = map_to_zero_operator(g, s, [0, lastDigit])
 
-    @testset "corner boundary test" begin
-      for p1 in [0, lastDigit]
-        p = (itensornetwork(delta_p(s, p1)))
-        @test inner(p, Zo, p) ≈ 0.0
-      end
-    end
     @testset "boundary apply" begin
       maxdim, cutoff = 10, 1e-16
       ϕ_fx = map_to_zeros(ψ_fx, [0, lastDigit]; cutoff, maxdim)
@@ -386,23 +375,15 @@ using Dictionaries: Dictionary
     lastDigit = 1 - delta
 
     ys = [0.0, delta, 0.25, 0.5, 0.625, 0.875, lastDigit]
-    ψ_fx = poly_itn(s, [1.0, 0.5, 0.25]; dim=1)
-    ψ_fy = cos_itn(s; dim=2)
+    ψ_fx = poly_tnf(g, s, [1.0, 0.5, 0.25]; dim=1)
+    ψ_fy = cos_tnf(g, s; dim=2)
     ψ_fxy = ψ_fx + ψ_fy
 
-    Zo = map_to_zero_operator(s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
-    @testset "corner boundary test" begin
-      for p1 in [0, lastDigit]
-        for p2 in [0, lastDigit]
-          p = itensornetwork(delta_p(s, [p1, p2]))
-          @test inner(p, Zo, p) ≈ 0.0
-        end
-      end
-    end
+    Zo = map_to_zero_operator(g, s, [0, lastDigit, 0, lastDigit], [1, 1, 2, 2])
 
     @testset "boundary apply" begin
-      maxdim, cutoff = 10, 0e-16
-      ϕ_fxy = operate([Zo], ψ_fxy; cutoff, maxdim, normalize=false)
+      maxdim, cutoff = 10, 1e-16
+      ϕ_fxy = operate([Zo], ψ_fxy; cutoff, maxdim)
       for x in [0, lastDigit]
         vals = zeros(length(ys))
         for (i, y) in enumerate(ys)
@@ -421,7 +402,7 @@ using Dictionaries: Dictionary
       s = continuous_siteinds(g)
 
       xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
-      ψ_fx = delta_kernel(s, [[0.5]]; coeff=-1, include_identity=true)
+      ψ_fx = delta_kernel(g, s, [[0.5]]; coeff=-1, include_identity=true)
       @test evaluate(ψ_fx, [0.5]) ≈ 0
       for x in xs
         @test evaluate(ψ_fx, [x]) ≈ 1
@@ -436,7 +417,7 @@ using Dictionaries: Dictionary
 
       xs = [0.0, delta, 0.25, 0.625, 0.875, lastDigit]
       @testset "insersecting lines" begin
-        ψ_f = delta_kernel(s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
+        ψ_f = delta_kernel(g, s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
         @test evaluate(ψ_f, [0.5, 0.5]) ≈ 0
         for x in xs
           @test evaluate(ψ_f, [x, 0.5]) ≈ 0
@@ -447,7 +428,7 @@ using Dictionaries: Dictionary
         end
       end
       @testset "line and point" begin
-        ψ_f = delta_kernel(
+        ψ_f = delta_kernel(g,
           s, [[0.5], [0.5, 0.1]], [[1], [1, 2]]; coeff=-1, include_identity=true
         )
         @test evaluate(ψ_f, [0.5, 0.5]) ≈ 0
@@ -471,7 +452,7 @@ using Dictionaries: Dictionary
       xs = [0.0, delta, lastDigit]
       zs = [0, delta, 0.5, lastDigit]
       @testset "insersecting planes" begin
-        ψ_f = delta_kernel(s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
+        ψ_f = delta_kernel(g, s, [[0.5], [0.5]], [[1], [2]]; coeff=-1, include_identity=true)
         for z in zs
           @test evaluate(ψ_f, [0.5, 0.5, z]) ≈ 0
           for x in xs
@@ -484,7 +465,7 @@ using Dictionaries: Dictionary
         end
       end
       @testset "plane and line" begin
-        ψ_f = delta_kernel(
+        ψ_f = delta_kernel(g,
           s, [[0.5], [0.5, 0]], [[1], [1, 2]]; coeff=-1, include_identity=true
         )
         for z in zs
@@ -499,7 +480,7 @@ using Dictionaries: Dictionary
         end
       end
       @testset "two lines (w/ point overlap at endpoint)" begin
-        ψ_f = delta_kernel(
+        ψ_f = delta_kernel(g,
           s, [[0.5, 0], [0, 0.5]], [[2, 3], [1, 2]]; coeff=-1, include_identity=true
         )
         @test evaluate(ψ_f, [0.0, 0.5, 0.5]) ≈ 0

@@ -192,5 +192,6 @@ end
 
 function vertex(imap::AbstractIndexMap, dimension::Int, digit::Int)
   index = ind(imap, dimension, digit)
-  return only(filter(v -> index ∈ imap[v], vertices(inm)))
+  sinds = siteinds(imap)
+  return only(filter(v -> index ∈ sinds[v], vertices(imap)))
 end

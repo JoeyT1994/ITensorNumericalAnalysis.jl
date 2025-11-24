@@ -107,7 +107,7 @@ function TensorNetworkQuantumSimulator.truncate(tnf::TensorNetworkFunction; kwar
   tnf = copy(tnf)
   tn = TensorNetworkState(tensornetwork(tnf), siteinds(tnf))
   tn = truncate(tn; kwargs...)
-  return TensorNetworkFunction(tn, indexmap(tnf))
+  return TensorNetworkFunction(tensornetwork(tn), indexmap(tnf))
 end
 
 function NamedGraphs.rename_vertices(f::Function, tnf::TensorNetworkFunction)
@@ -117,7 +117,7 @@ function NamedGraphs.rename_vertices(f::Function, tnf::TensorNetworkFunction)
 end
 
 function TensorNetworkQuantumSimulator.add(tnf1::TensorNetworkFunction, tnf2::TensorNetworkFunction)
-  @assert indexmap(tnf1) == indexmap(tnf2)
+  @assert siteinds(tnf1) == siteinds(tnf2)
   return TensorNetworkFunction(
     add(tensornetwork(tnf1), tensornetwork(tnf2)), indexmap(tnf1)
   )

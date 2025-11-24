@@ -35,17 +35,17 @@ seed!(42)
     @test ans ≈ correct atol = 1e-4
   end
 
-  # @testset "simple integration 2D" begin
-  #   L = 30
-  #   g = named_comb_tree((3, L ÷ 3))
-  #   s = continuous_siteinds(g; map_dimension=2)
-  #   ψ_fxy = exp_tnf(g, s; dim=1) * exp_tnf(g, s; dim=2)
+  @testset "simple integration 2D" begin
+    L = 30
+    g = named_comb_tree((3, L ÷ 3))
+    s = continuous_siteinds(g; map_dimension=2)
+    ψ_fxy = exp_tnf(g, s; dim=1) * exp_tnf(g, s; dim=2)
 
-  #   ans = integrate(ψ_fxy)
-  #   correct = (exp(1) - 1)^2
-  #   # The integral ∫₀¹ exp(x+y) dxdy
-  #   @test ans ≈ correct atol = 1e-4
-  # end
+    ans = integrate(ψ_fxy)
+    correct = (exp(1) - 1)^2
+    # The integral ∫₀¹ exp(x+y) dxdy
+    @test ans ≈ correct atol = 1e-4
+  end
 
   @testset "partial integration 3D" begin
     L = 90

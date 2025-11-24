@@ -16,11 +16,25 @@ using ITensors:
   contract,
   replaceinds
 using ITensorMPS: add!
-using TensorNetworkQuantumSimulator: map_virtualinds!
-using ITensorNetworks: ITensorNetworks
+using TensorNetworkQuantumSimulator: map_virtualinds!, combine_virtualinds!
+using ITensorNetworks: ITensorNetworks, underlying_graph
 default_boundary() = "Dirichlet"
 
 ## TODO: turn this into a proper system ala sites which can be externally overloaded
+
+function ITensorNetworks.IndsNetwork(g::NamedGraph, site_space::Dictionary)
+  s = ITensorNetworks.IndsNetwork(g)
+  for v in vertices(g)
+    s[v] = site_space[v]
+  end
+  return s
+end
+
+function TensorNetworkQuantumSimulator.TensorNetwork(ttn::ITensorNetworks.TTN)
+  g = underlying_graph(ttn)
+  t_dict=  Dictionary(collect(vertices(g)), [ttn[v] for v in vertices(g)])
+  return TensorNetwork(t_dict, g)
+end
 
 function boundary_term(g::NamedGraph,
   s::AbstractIndexMap, boundary::String, dim, isfwd::Bool, n::Int=0)
@@ -69,7 +83,7 @@ function forward_shift_opsum(
     add!(ttn_op, 1.0, (string_site...)...)
   end
 
-  ttn_op += boundary_term(s, boundary, dim, true, n)
+  ttn_op += boundary_term(g, s, boundary, dim, true, n)
 
   return ttn_op
 end
@@ -107,14 +121,16 @@ end
 
 function backward_shift_op(g::NamedGraph, s::AbstractIndexMap; truncate_kwargs=(;), kwargs...)
   ttn_opsum = backward_shift_opsum(g, s; kwargs...)
-  t = ITensorNetworks.ttn(ttn_opsum, siteinds(s); truncate_kwargs...)
-  return TensorNetwork(tensornetwork(t))
+  sinds_network = ITensorNetworks.IndsNetwork(g, siteinds(s))
+  t = ITensorNetworks.ttn(ttn_opsum, sinds_network; truncate_kwargs...)
+  return TensorNetwork(t)
 end
 
 function forward_shift_op(g::NamedGraph, s::AbstractIndexMap; truncate_kwargs=(;), kwargs...)
   ttn_opsum = forward_shift_opsum(g, s; kwargs...)
-  t = ITensorNetworks.ttn(ttn_opsum, siteinds(s); truncate_kwargs...)
-  return TensorNetwork(tensornetwork(t))
+  sinds_network = ITensorNetworks.IndsNetwork(g, siteinds(s))
+  t = ITensorNetworks.ttn(ttn_opsum, sinds_network; truncate_kwargs...)
+  return TensorNetwork(t)
 end
 
 function stencil(
@@ -146,8 +162,9 @@ function stencil(
       stencil_opsum += shifts[i] * backward_shift_opsum(g, s; dim, boundary=left_boundary, n)
     end
   end
+  sinds_network = ITensorNetworks.IndsNetwork(g, siteinds(s))
 
-  stencil_op = ITensorNetworks.ttn(stencil_opsum, siteinds(s); kwargs...)
+  stencil_op = ITensorNetworks.ttn(stencil_opsum, sinds_network; kwargs...)
 
   if scale
     for v in dimension_vertices(s, dim)
@@ -155,7 +172,7 @@ function stencil(
     end
   end
 
-  return stencil_op
+  return TensorNetwork(stencil_op)
 end
 
 function first_derivative_operator(g::NamedGraph, s::AbstractIndexMap; kwargs...)
@@ -234,8 +251,8 @@ end
 
 " Take |f> and create an operator |f><δ| "
 function operator_proj(fx::TensorNetworkFunction)
-  fx = copy(fx)
-  operator = tensornetwork(fx)
+  operator = copy(fx)
+  map_virtualinds!(sim, operator)
   s = siteinds(operator)
   for v in vertices(operator)
     sind = s[v]
@@ -243,7 +260,7 @@ function operator_proj(fx::TensorNetworkFunction)
     ov = replaceinds(operator[v], sind, sindsim)
     setindex_preserve!(operator, ov * delta(vcat(sind, sindsim, sind')), v)
   end
-  return operator
+  return tensornetwork(operator)
 end
 
 function multiply(g::TensorNetworkFunction, f::TensorNetworkFunction)
@@ -251,7 +268,7 @@ function multiply(g::TensorNetworkFunction, f::TensorNetworkFunction)
   g, f = copy(tensornetwork(g)), copy(tensornetwork(f))
   g = map_virtualinds!(sim, g)
   verts = union(vertices(g), vertices(f))
-  tensors = Dictionary()
+  tensors = Dictionary{vertextype(g), ITensor}()
   for v in verts
     if v ∉ vertices(g)
       set!(tensors, v, f[v])
@@ -266,7 +283,7 @@ function multiply(g::TensorNetworkFunction, f::TensorNetworkFunction)
   end
   fg = TensorNetwork(tensors)
   fg = combine_virtualinds!(fg)
-  return TensorNetworkFunction(fg, inmap)
+  return TensorNetworkFunction(fg, imap)
 end
 
 function multiply(
@@ -281,8 +298,8 @@ end
 Base.:*(fs::TensorNetworkFunction...) = multiply(fs...)
 
 function operate(
-  operators::Vector{AbstractTensorNetwork{V}}, ψ::TensorNetworkFunction; kwargs...
-) where {V}
+  operators::Vector{<:AbstractTensorNetwork}, ψ::TensorNetworkFunction; kwargs...
+)
   ψ = copy(ψ)
   for op in operators
     ψ = operate(op, ψ; kwargs...)
@@ -290,12 +307,14 @@ function operate(
   return ψ
 end
 
-function operate(operator::AbstractTensorNetwork, ψ::TensorNetworkFunction; truncate_kwargs...)
+function operate(operator::AbstractTensorNetwork, ψ::TensorNetworkFunction; maxdim = maxvirtualdim(operator)*maxvirtualdim(ψ), cutoff = nothing)
   ψ = copy(ψ)
   for v in vertices(ψ)
     ψv = noprime(ψ[v] * operator[v])
     setindex_preserve!(ψ, ψv, v)
   end
   combine_virtualinds!(ψ)
-  return truncate(ψ; truncate_kwargs...)
+  return ψ
+  #TODO: Enable truncation
+  #return truncate(ψ; alg = "bp", maxdim, cutoff)
 end
