@@ -13,9 +13,9 @@ using ITensors:
   inner,
   Op,
   op
-using Dictionaries: Dictionary
+using Dictionaries: Dictionary, set!
 using Random: seed!
-using TensorNetworkQuantumSimulator: setindex_preserve!, siteinds
+using TensorNetworkQuantumSimulator: setindex_preserve!, siteinds, tensors, tensornetwork, TensorNetwork, insert_virtualinds!
 
 function main()
 
@@ -46,17 +46,16 @@ function main()
 
   c1, c2 = exp_tnf(g, s; dim=1), exp_tnf(g, s; dim=2)
 
-  niter = 5
+  niter = 20
   for iter in 1:niter
     ψ = ψ * gxy
 
-    for v in dimension_vertices(s, dim_ψ)
-      setindex_preserve!(ψ, ψ[v]*ITensors.ITensor([0.5, 0.5], only(siteinds(s)[v])), v)
-    end
+    ψ = partial_integrate(ψ, [dim_ψ])
 
-    for v in dimension_vertices(s, dim_ψ)
-      setindex_preserve!(ψ, ψ[v]*ITensors.ITensor([1, 1], only(siteinds(s)[v])), v)
-    end
+    new_tensors = Dictionary(dimension_vertices(s, dim_ψ), [ITensors.ITensor([1, 1], only(siteinds(s)[v])) for v in dimension_vertices(s, dim_ψ)])
+    ψ = TensorNetwork(merge(new_tensors, tensors(tensornetwork(ψ))), g)
+    ψ = TensorNetworkFunction(ψ, s)
+    insert_virtualinds!(ψ)
 
     dim_ψ = dim_ψ == 1 ? 2 : 1
 
@@ -67,7 +66,7 @@ function main()
 
   n_grid = 100
   x_vals = grid_points(s, n_grid, 1)
-  ψ_vals = [real(evaluate(ψ, [x, 0.5])) for x in x_vals]
+  ψ_vals = dim_ψ == 1 ? [real(evaluate(ψ, [x, 0.5])) for x in x_vals] : [real(evaluate(ψ, [0.5, x])) for x in x_vals]
   correct_vals = (3 / 2) * x_vals + exp.(x_vals)
 
   avg_err = sum(abs.(correct_vals - ψ_vals)) / n_grid
