@@ -18,7 +18,7 @@ Random.seed!(1234)
     g = named_grid((L, 1))
     s = complex_continuous_siteinds(g)
 
-    ψ = random_tensornetworkstate(g, siteinds(s); bond_dimension = 2)
+    ψ = random_tensornetworkstate(g, TensorNetworkQuantumSimulator.siteinds(s); bond_dimension = 2)
 
     fψ = TensorNetworkFunction(ψ)
 

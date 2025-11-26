@@ -103,10 +103,15 @@ function evaluate(
   return evaluate(tnf, [x], [dim]; kwargs...)
 end
 
-function TensorNetworkQuantumSimulator.truncate(tnf::TensorNetworkFunction; kwargs...)
+function TensorNetworkQuantumSimulator.truncate(tnf::TensorNetworkFunction; alg = is_tree(tnf) ? "bp" : nothing, kwargs...)
   tnf = copy(tnf)
   tn = TensorNetworkState(tensornetwork(tnf), siteinds(tnf))
-  tn = truncate(tn; kwargs...)
+  if alg == "boundarymps"
+    tn = truncate(tn; alg, normalize_tensors = false, gauge_state = false, kwargs...)
+  else
+    tn = truncate(tn; alg, normalize_tensors = false, kwargs...)
+  end
+
   return TensorNetworkFunction(tensornetwork(tn), indexmap(tnf))
 end
 
