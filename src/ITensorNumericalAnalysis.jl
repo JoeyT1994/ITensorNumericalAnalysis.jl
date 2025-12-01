@@ -1,10 +1,7 @@
 module ITensorNumericalAnalysis
 
-#function __init__()
-#  include(joinpath(@__DIR__, "fixes.jl"))
-#  return nothing
-#end
 
+include("imports.jl")
 include("utils.jl")
 include("IndexMaps/digit_inds.jl")
 include("IndexMaps/abstractindexmap.jl")
@@ -17,7 +14,6 @@ include("elementary_operators.jl")
 include("integration.jl")
 
 export continuous_siteinds, complex_continuous_siteinds
-# export tensorNetworkFunction, tensornetwork, dimension_vertices
 export AbstractIndexMap,
     RealIndexMap,
     ComplexIndexMap,
