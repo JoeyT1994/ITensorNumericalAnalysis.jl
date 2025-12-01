@@ -1,73 +1,66 @@
 module ITensorNumericalAnalysis
 
+#function __init__()
+#  include(joinpath(@__DIR__, "fixes.jl"))
+#  return nothing
+#end
+
 include("utils.jl")
-include("digit_inds.jl")
+include("IndexMaps/digit_inds.jl")
 include("IndexMaps/abstractindexmap.jl")
 include("IndexMaps/realindexmap.jl")
 include("IndexMaps/complexindexmap.jl")
-include("indsnetworkmap.jl")
 include("polynomialutils.jl")
-include("itensornetworkfunction.jl")
+include("tensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 include("integration.jl")
 
-include("TCI/pivot_index.jl")
-include("TCI/interpolate.jl")
-include("TCI/interpolative_gauge.jl")
-include("TCI/interpolative.jl")
-include("TCI/lu.jl")
-include("TCI/networkfunction.jl")
-
-export continuous_siteinds
-export ITensorNetworkFunction, itensornetwork, dimension_vertices
+export continuous_siteinds, complex_continuous_siteinds
+# export tensorNetworkFunction, tensornetwork, dimension_vertices
 export AbstractIndexMap,
-  RealIndexMap,
-  ComplexIndexMap,
-  default_dimension_vertices,
-  dimension_inds,
-  calculate_p,
-  calculate_ind_values,
-  dimension,
-  dimensions,
-  grid_points,
-  is_real,
-  imaginary_inds,
-  real_inds
-export IndsNetworkMap,
-  continuous_siteinds,
-  complex_continuous_siteinds,
-  real_continuous_siteinds,
-  indsnetwork,
-  indexmap,
-  indexmaptype,
-  vertex_dimension,
-  vertex_digit,
-  vertices_dimensions,
-  vertices_digits
-export const_itensornetwork,
-  exp_itensornetwork,
-  cosh_itensornetwork,
-  sinh_itensornetwork,
-  tanh_itensornetwork,
-  cos_itensornetwork,
-  sin_itensornetwork,
-  get_edge_toward_root,
-  polynomial_itensornetwork,
-  random_itensornetwork,
-  laplacian_operator,
-  first_derivative_operator,
-  second_derivative_operator,
-  third_derivative_operator,
-  fourth_derivative_operator,
-  identity_operator,
-  delta_p,
-  map_to_zero_operator,
-  map_to_zeros,
-  const_plane_op
-export const_itn,
-  poly_itn, cosh_itn, sinh_itn, tanh_itn, exp_itn, sin_itn, cos_itn, rand_itn
-export evaluate
-export operate, operator_proj, multiply
+    RealIndexMap,
+    ComplexIndexMap,
+    default_dimension_vertices,
+    dimension_inds,
+    calculate_p,
+    calculate_ind_values,
+    dimension,
+    dimensions,
+    grid_points,
+    indexmap,
+    dimension_vertices,
+    vertex_dimension,
+    vertex_digit,
+    vertices_dimensions,
+    vertices_digits
+export TensorNetworkFunction,
+    evaluate,
+    const_tnf,
+    exp_tnf,
+    cosh_tnf,
+    sinh_tnf,
+    cos_tnf,
+    sin_tnf,
+    tanh_tnf,
+    poly_tnf,
+    delta_p,
+    integrate,
+    partial_integrate,
+    operator_proj,
+    forward_shift_op,
+    backward_shift_op,
+    first_derivative_operator,
+    second_derivative_operator,
+    third_derivative_operator,
+    fourth_derivative_operator,
+    identity_operator,
+    map_to_zero_operator,
+    map_to_zeros,
+    const_plane_op,
+    multiply,
+    operate,
+    delta_kernel,
+    reduced_indexmap
 
 end

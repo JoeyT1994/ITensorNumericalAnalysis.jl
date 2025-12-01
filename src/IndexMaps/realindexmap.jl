@@ -1,72 +1,102 @@
 using Base: Base
-using Dictionaries: Dictionary, set!
+using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim
-using ITensorNetworks: IndsNetwork, vertex_data
 
-struct RealIndexMap{VB,VD} <: AbstractIndexMap{VB,VD}
-  index_digit::VB
-  index_dimension::VD
+struct RealIndexMap{V} <: AbstractIndexMap{V}
+    siteinds::Dictionary{V, Vector{<:Index}}
+    index_digit::Dictionary{Index, Integer}
+    index_dimension::Dictionary{Index, Integer}
 end
 
 index_digit(imap::RealIndexMap) = imap.index_digit
 index_dimension(imap::RealIndexMap) = imap.index_dimension
+TensorNetworkQuantumSimulator.siteinds(imap::RealIndexMap) = imap.siteinds
 function index_value_to_scalar(imap::RealIndexMap, ind::Index, value::Int)
-  return (value) / (dim(ind)^digit(imap, ind))
+    return (value) * (float(dim(ind))^-digit(imap, ind))
 end
 function Base.copy(imap::RealIndexMap)
-  return IndexMap(copy(index_digit(imap)), copy(index_dimension(imap)))
+    return RealIndexMap(copy(siteinds(imap)), copy(index_digit(imap)), copy(index_dimension(imap)))
 end
 scalartype(imap::RealIndexMap) = Float64
 function ITensors.inds(imap::RealIndexMap)
-  @assert keys(index_dimension(imap)) == keys(index_digit(imap))
-  return collect(keys(index_dimension(imap)))
+    @assert keys(index_dimension(imap)) == keys(index_digit(imap))
+    return collect(keys(index_dimension(imap)))
 end
 function ind(imap::RealIndexMap, dim::Int, digit::Int)
-  return only(
-    filter(
-      i -> index_dimension(imap)[i] == dim && index_digit(imap)[i] == digit,
-      keys(index_dimension(imap)),
-    ),
-  )
+    return only(
+        filter(
+            i -> index_dimension(imap)[i] == dim && index_digit(imap)[i] == digit,
+            keys(index_dimension(imap)),
+        ),
+    )
+end
+
+function rem_index(imap::RealIndexMap, ind::Index)
+    imap_r = copy(imap)
+    delete!(index_digit(imap_r), ind)
+    delete!(index_dimension(imap_r), ind)
+    return imap_r
 end
 
 function RealIndexMap(
-  s::IndsNetwork, dimension_vertices::Vector{Vector{V}}=default_dimension_vertices(s)
-) where {V}
-  dimension_indices = Vector{Index}[inds(s, vertices) for vertices in dimension_vertices]
-  return RealIndexMap(dimension_indices)
+        siteinds::Dictionary, dimension_vertices::Vector{Vector{V}}
+    ) where {V}
+    dimension_indices = Vector{Index}[
+        !isempty(vertices) ? inds(siteinds, vertices) : Index[] for vertices in dimension_vertices
+    ]
+    return RealIndexMap(siteinds, dimension_indices)
 end
 
-function RealIndexMap(dimension_indices::Vector{Vector{V}}) where {V<:Index}
-  index_digit = Dictionary()
-  index_dimension = Dictionary()
-  for (d, indices) in enumerate(dimension_indices)
-    for (bit, ind) in enumerate(indices)
-      set!(index_digit, ind, bit)
-      set!(index_dimension, ind, d)
+function RealIndexMap(siteinds::Dictionary, dimension_indices::Vector{Vector{V}}) where {V <: Index}
+    index_digit = Dictionary{Index, Integer}()
+    index_dimension = Dictionary{Index, Integer}()
+    for (d, indices) in enumerate(dimension_indices)
+        for (bit, ind) in enumerate(indices)
+            set!(index_digit, ind, bit)
+            set!(index_dimension, ind, d)
+        end
     end
-  end
-  return RealIndexMap(index_digit, index_dimension)
+    return RealIndexMap(siteinds, index_digit, index_dimension)
+end
+
+function RealIndexMap(g::AbstractGraph, args...; base::Int = 2, kwargs...)
+    s = digit_siteinds(g, args...; base, kwargs...)
+    return RealIndexMap(s, args...; kwargs...)
+end
+
+function RealIndexMap(siteinds::Dictionary; map_dimension::Int64 = 1)
+    return RealIndexMap(siteinds, default_dimension_vertices(siteinds; map_dimension))
+end
+
+
+function Dictionaries.merge(imap1::RealIndexMap, imap2::RealIndexMap)
+    return RealIndexMap(
+        merge(siteinds(imap1), siteinds(imap2)),
+        merge(index_digit(imap1), index_digit(imap2)),
+        merge(index_dimension(imap1), index_dimension(imap2)),
+    )
 end
 
 function calculate_ind_values(imap::RealIndexMap, xs::Vector, dims::Vector{Int})
-  @assert length(xs) == length(dims)
-  ind_to_ind_value_map = Dictionary()
-  for (i, x) in enumerate(xs)
-    d = dims[i]
-    indices = dimension_inds(imap, d)
-    sorted_inds = sort(indices; by=indices -> digit(imap, indices))
-    set_ind_values!(ind_to_ind_value_map, imap, sorted_inds, x)
-  end
-  return ind_to_ind_value_map
+    @assert length(xs) == length(dims)
+    ind_to_ind_value_map = Dictionary()
+    for (d, x) in zip(dims, xs)
+        indices = dimension_inds(imap, d)
+        sorted_inds = sort(indices; by = indices -> digit(imap, indices))
+        set_ind_values!(ind_to_ind_value_map, imap, sorted_inds, x)
+    end
+    return ind_to_ind_value_map
 end
 
 function grid_points(imap::RealIndexMap, N::Int, d::Int)
-  dims = dim.(dimension_inds(imap, d))
-  @assert all(y -> y == first(dims), dims)
-  base = first(dims)
-  L = length(dimension_inds(imap, d))
-  a = round(base^L / N)
-  grid_points = [i * (a / base^L) for i in 0:(N + 1)]
-  return filter(x -> x < 1, grid_points)
+    dims = dim.(dimension_inds(imap, d))
+    @assert all(y -> y == first(dims), dims)
+    base = float(first(dims))
+    L = length(dimension_inds(imap, d))
+    a = round(base^L / N)
+    grid_points = [i * (a / base^L) for i in 0:(N + 1)]
+    return filter(x -> x < 1, grid_points)
 end
+
+const continuous_siteinds = RealIndexMap
+const real_continuous_siteinds = RealIndexMap
