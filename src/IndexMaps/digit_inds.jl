@@ -1,125 +1,125 @@
 using Graphs: AbstractGraph, vertices
 using ITensors:
-  ITensors,
-  Index,
-  dim,
-  inds,
-  @OpName_str,
-  @SiteType_str,
-  val,
-  state,
-  ValName,
-  StateName,
-  SiteType,
-  op
+    ITensors,
+    Index,
+    dim,
+    inds,
+    @OpName_str,
+    @SiteType_str,
+    val,
+    state,
+    ValName,
+    StateName,
+    SiteType,
+    op
 using TensorNetworkQuantumSimulator
 
 
-function default_dimension_vertices(vs::Vector; map_dimension::Int64=1)
-  L = length(vs)
-  return [[v for v in vs[i:map_dimension:L]] for i in 1:map_dimension]
+function default_dimension_vertices(vs::Vector; map_dimension::Int64 = 1)
+    L = length(vs)
+    return [[v for v in vs[i:map_dimension:L]] for i in 1:map_dimension]
 end
 
-function default_dimension_vertices(siteinds::Dictionary; map_dimension::Int64=1)
-  vs = collect(keys(siteinds))
-  return default_dimension_vertices(vs; map_dimension=map_dimension)
+function default_dimension_vertices(siteinds::Dictionary; map_dimension::Int64 = 1)
+    vs = collect(keys(siteinds))
+    return default_dimension_vertices(vs; map_dimension = map_dimension)
 end
 
-function default_dimension_vertices(g::AbstractGraph; map_dimension::Int64=1)
-  vs = collect(vertices(g))
-  return default_dimension_vertices(vs; map_dimension=map_dimension)
+function default_dimension_vertices(g::AbstractGraph; map_dimension::Int64 = 1)
+    vs = collect(vertices(g))
+    return default_dimension_vertices(vs; map_dimension = map_dimension)
 end
 
 # reuse Qudit definitions for now
 function ITensors.val(::ValName{N}, ::SiteType"Digit") where {N}
-  return parse(Int, String(N)) + 1
+    return parse(Int, String(N)) + 1
 end
 
 function ITensors.state(::StateName{N}, ::SiteType"Digit", s::Index) where {N}
-  n = parse(Int, String(N))
-  st = zeros(dim(s))
-  st[n + 1] = 1.0
-  return ITensor(st, s)
+    n = parse(Int, String(N))
+    st = zeros(dim(s))
+    st[n + 1] = 1.0
+    return ITensor(st, s)
 end
 
 function ITensors.op(::OpName"D+", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 1] = 1
-  return ITensor(o, s, s')
+    d = dim(s)
+    o = zeros(d, d)
+    o[2, 1] = 1
+    return ITensor(o, s, s')
 end
 function ITensors.op(::OpName"D-", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 2] = 1
-  return ITensor(o, s, s')
+    d = dim(s)
+    o = zeros(d, d)
+    o[1, 2] = 1
+    return ITensor(o, s, s')
 end
 function ITensors.op(::OpName"Ddn", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[1, 1] = 1
-  return ITensor(o, s, s')
+    d = dim(s)
+    o = zeros(d, d)
+    o[1, 1] = 1
+    return ITensor(o, s, s')
 end
 function ITensors.op(::OpName"Dup", ::SiteType"Digit", s::Index)
-  d = dim(s)
-  o = zeros(d, d)
-  o[2, 2] = 1
-  return ITensor(o, s, s')
+    d = dim(s)
+    o = zeros(d, d)
+    o[2, 2] = 1
+    return ITensor(o, s, s')
 end
 
 function digit_tag(vertex, dim::Int, digit::Int)
-  return "Digit, Dim$(dim), Dig$(digit)"
+    return "Digit, Dim$(dim), Dig$(digit)"
 end
 
 function imag_digit_tag(vertex, dim::Int, digit::Int)
-  return "Digit, Imag, Dim$(dim), Dig$(digit)"
+    return "Digit, Imag, Dim$(dim), Dig$(digit)"
 end
 
 function real_digit_tag(vertex, dim::Int, digit::Int)
-  return "Digit, Real, Dim$(dim), Dig$(digit)"
+    return "Digit, Real, Dim$(dim), Dig$(digit)"
 end
 
 function digit_siteinds(
-  g::AbstractGraph, dimension_vertices::Vector{Vector{V}}=[[]]; base=2, kwargs...
-) where {V}
-  if isempty(dimension_vertices[1])
-    dimension_vertices = default_dimension_vertices(g; kwargs...)
-  end
-  is = Dictionary(vertices(g), Vector{<:Index}[Index[] for v in vertices(g)])
-  for (dim, verts) in enumerate(dimension_vertices)
-    for (digit, v) in enumerate(verts)
-      set!(is, v, vcat(is[v], Index(base, digit_tag(v, dim, digit))))
+        g::AbstractGraph, dimension_vertices::Vector{Vector{V}} = [[]]; base = 2, kwargs...
+    ) where {V}
+    if isempty(dimension_vertices[1])
+        dimension_vertices = default_dimension_vertices(g; kwargs...)
     end
-  end
+    is = Dictionary(vertices(g), Vector{<:Index}[Index[] for v in vertices(g)])
+    for (dim, verts) in enumerate(dimension_vertices)
+        for (digit, v) in enumerate(verts)
+            set!(is, v, vcat(is[v], Index(base, digit_tag(v, dim, digit))))
+        end
+    end
 
-  return is
+    return is
 end
 
 function complex_digit_siteinds(
-  g::AbstractGraph,
-  real_dimension_vertices::Vector{Vector{V}}=[[]],
-  imag_dimension_vertices::Vector{Vector{V}}=[[]];
-  base=2,
-  kwargs...,
-) where {V}
-  if isempty(real_dimension_vertices[1])
-    real_dimension_vertices = default_dimension_vertices(g; kwargs...)
-  end
-  if isempty(imag_dimension_vertices[1])
-    imag_dimension_vertices = default_dimension_vertices(g; kwargs...)
-  end
-  is = Dictionary(vertices(g), Vector{<:Index}[Index[] for v in vertices(g)])
-  for (dim, verts) in enumerate(real_dimension_vertices)
-    for (digit, v) in enumerate(verts)
-      set!(is, v, vcat(is[v], Index(base, real_digit_tag(v, dim, digit))))
+        g::AbstractGraph,
+        real_dimension_vertices::Vector{Vector{V}} = [[]],
+        imag_dimension_vertices::Vector{Vector{V}} = [[]];
+        base = 2,
+        kwargs...,
+    ) where {V}
+    if isempty(real_dimension_vertices[1])
+        real_dimension_vertices = default_dimension_vertices(g; kwargs...)
     end
-  end
-
-  for (dim, verts) in enumerate(imag_dimension_vertices)
-    for (digit, v) in enumerate(verts)
-      set!(is, v, vcat(is[v], Index(base, imag_digit_tag(v, dim, digit))))
+    if isempty(imag_dimension_vertices[1])
+        imag_dimension_vertices = default_dimension_vertices(g; kwargs...)
     end
-  end
+    is = Dictionary(vertices(g), Vector{<:Index}[Index[] for v in vertices(g)])
+    for (dim, verts) in enumerate(real_dimension_vertices)
+        for (digit, v) in enumerate(verts)
+            set!(is, v, vcat(is[v], Index(base, real_digit_tag(v, dim, digit))))
+        end
+    end
 
-  return is
+    for (dim, verts) in enumerate(imag_dimension_vertices)
+        for (digit, v) in enumerate(verts)
+            set!(is, v, vcat(is[v], Index(base, imag_digit_tag(v, dim, digit))))
+        end
+    end
+
+    return is
 end
