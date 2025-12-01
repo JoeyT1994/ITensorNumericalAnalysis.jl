@@ -1,6 +1,5 @@
 using Test
 using Glob
-using ITensorNetworks
 using ITensorNumericalAnalysis
 
 # https://discourse.julialang.org/t/rdir-search-recursive-for-files-with-a-given-name-pattern/75605/12
