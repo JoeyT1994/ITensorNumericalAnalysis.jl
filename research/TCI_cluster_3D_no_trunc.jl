@@ -8,12 +8,19 @@ using ITensorNetworks: maxlinkdim
 using NamedGraphs.GraphsExtensions: add_edges, nv, eccentricity, disjoint_union, degree
 using NamedGraphs.NamedGraphGenerators: named_comb_tree, named_grid, named_binary_tree
 using Random: Random, rand
-using LinearAlgebra: diagind, diagm
+using LinearAlgebra: diagind, diagm, det, BLAS
 using NPZ
 using MKL
-using Distributions: Uniform
+using Distributions: Uniform, LKJ
 
-using ITensorNumericalAnalysis: interpolate
+using ITensorNumericalAnalysis: interpolate, integrate
+
+using Base.Threads
+
+BLAS.set_num_threads(min(64, Sys.CPU_THREADS))
+println("Julia is using "*string(nthreads()))
+println("BLAS is using "*string(BLAS.get_num_threads()))
+@show BLAS.get_config()
 
 Random.seed!(1234)
 
@@ -46,7 +53,7 @@ function siteinds_constructor(mode::String, L::Int64; map_dimension = 3, is_comp
   end
 end
 
-function get_function(mode::String)
+function get_function(mode::String; η)
   if mode == "RandPlaneWaves"
     nterms = 40
     As = [1.0 for i in 1:nterms]
@@ -68,97 +75,63 @@ function get_function(mode::String)
     eval_function = (x, y, z) -> x*x + y*y + z*z < 1 ? 1.0 : 0.0
     return eval_function, nterms, (;)
   elseif mode[1:(length(mode)-1)] == "CentredGaussian"
-    Random.seed!(1243)
     nterms = 1
     ndims = parse(Int64, last(mode))
-    M = [0.079626 0.0157597 -0.0766377 ; 0.0157597 0.0693593 -0.0101647 ; -0.0766377 -0.0101647 0.152187]
-    eval_function = x -> exp(-(x .- 0.5)' * M * (x .- 0.5))
-    return eval_function, nterms, (;)
-  elseif mode[1:(length(mode)-1)] == "Gaussian"
-    Random.seed!(1243)
-    nterms = 3
-    ndims = parse(Int64, last(mode))
-    Ms = []
-    centres = []
-    for i in 1:nterms
-      push!(centres, [rand(Uniform(.2, .8)) for i in 1:ndims])
-      M = 0.1*randn((ndims,ndims))
-      M = M * M'
-      push!(Ms, inv(M))
-    end
-    eval_function = x -> sum([exp(-(x - c)' * M * (x - c)) for (c,M) in zip(centres, Ms)])
+    M = rand(LKJ(ndims, η))
+    @show M
+    k = 10
+    scale_fac = ((k^ndims)/sqrt((2*pi)^ndims * det(M)))
+    eval_function = x -> scale_fac * exp(-0.5*k*k*(x .- 0.5)' * inv(M) * (x .- 0.5))
     return eval_function, nterms, (;)
   end
 end
 
-function main(; md = nothing, func = nothing, l = nothing, chi = nothing, nsweeps = 10, save = true)
+function main(; eta = nothing, md = nothing, func = nothing, l = nothing, chi = nothing, nsweeps = 10, save = true, dn = nothing)
   mode = md == nothing ? ARGS[1] : md
   function_mode = func == nothing ? ARGS[2] : func
   L = l == nothing ? parse(Int64, ARGS[3]) : l
   χ = chi == nothing ? parse(Int64, ARGS[4]) : chi
-  map_dimension = 3
-  eval_function, _, _ = get_function(function_mode)
+  dis_no = dn == nothing ? parse(Int64, ARGS[5]) : dn
+  η = eta == nothing ? parse(Int64, ARGS[6]) : eta
+  map_dimension = parse(Int64, last(function_mode))
+  Random.seed!(dis_no*183 + 54)
+  eval_function, _, _ = get_function(function_mode; η)
   s = siteinds_constructor(mode, L; map_dimension, f = eval_function)
+  vertices_dict = Dictionary(collect(vertices(s)), [(vertex_dimension(s, v), vertex_digit(s,v)) for v in collect(vertices(s))])
+  f = input -> eval_function(calculate_point(vertices_dict, input; ndim = map_dimension))
   println("Graph is "*mode*" chi is $χ")
 
-  init_state = rand_itn(s; link_dim = 2)
-  fxyz, info = interpolate(eval_function, s; initial_state = init_state, maxdim = χ, nsweeps,cutoff = 1e-20, outputlevel=1)
+  fxyz, info = interpolate(f, s; maxdim = χ, nsweeps,cutoff = 1e-32, outputlevel=1)
   inf_norms = info[:, :error]
-  regions = info[:, :region]
   sweeps = info[:,  :sweep]
 
   Lx = length(dimension_vertices(fxyz, 1))
   delta = (2^(-1.0*Lx))
 
-  alg = maximum([degree(s, v) for v in vertices(s)]) >= 4 ? "bp" : "ttn"
-  z_fxyz = inner(fxyz, fxyz; alg)
   χmax = maxlinkdim(fxyz)
   println("Function built with χmax = $χmax")
 
-  bond_dims = [χ for χ in χmax:-1:1]
-  no_bds = length(bond_dims)
 
-  memory_req = zeros(Int64, (no_bds))
-  overlaps = zeros(Float64, (no_bds))
-  ngrid_points = 100
+  ngrid_points = 1000
   delta = 2.0^(-Lx)
   grid_points = zeros(Float64, (ngrid_points, map_dimension))
   for i in 1:ngrid_points
     grid_points[i, :] = [delta * Random.rand(1:(2^Lx-1)) for d in 1:map_dimension]
   end
   exact_vals = Float64[real(eval_function(grid_points[i, :])) for i in 1:ngrid_points]
-  trunc_vals = zeros(Float64, (no_bds, ngrid_points))
-  l2_errors = zeros(Float64, (no_bds))
-
-  for (i, χ) in enumerate(bond_dims)
-    println("Truncating down to chi = $χ")
-    fxyz_trunc = truncate(fxyz; maxdim = χ)
-    z_trunc = inner(fxyz, fxyz; alg)
-    println("Evaluating function")
-
-    f = inner(fxyz_trunc, fxyz_trunc; alg)
-    err= (f * conj(f)) / (z_trunc * z_fxyz)
-    overlaps[i] = real(err)
-    memory_req[i] = no_elements(fxyz_trunc)
-    trunc_vals[i, :] = Float64[real(evaluate(fxyz_trunc, grid_points[i, :])) for i in 1:ngrid_points]
-    l2_errors[i] = calc_error(exact_vals, trunc_vals[i, :])
-    println("Achieved an overlap error of $(1.0 - overlaps[i])")
-    println("Memory req was $(memory_req[i])")
-    println("Error val is $(l2_errors[i])")
-    flush(stdout)
-  end
-
+  @show sum(exact_vals) / length(exact_vals)
+  @show integrate(fxyz)
+  trunc_vals = Float64[real(evaluate(fxyz, grid_points[i, :])) for i in 1:ngrid_points]
+  error = calc_error(exact_vals, trunc_vals)
+  memory_req = no_elements(fxyz)
 
   println("Function constructed with an error of $error, and a memory req of $memory_req")
 
-  file_root = "/mnt/home/jtindall/Documents/Data/ITensorNumericalAnalysis/TCI/3D/"
-  file_name = file_root * "L"*string(L)*"GRAPH"*mode*"FUNCTION"*function_mode*"CHI"*string(χ)*"NGRIDPOINTS"*string(ngrid_points)*"nsweeps"*string(nsweeps)*".npz"
+  file_root = "/mnt/home/jtindall/ceph/Data/ITensorNumericalAnalysis/TCI/MultiD/"
+  file_name = file_root * "L"*string(L)*"GRAPH"*mode*"FUNCTION"*function_mode*"Eta"*string(η)*"CHI"*string(χ)*"NGRIDPOINTS"*string(ngrid_points)*"nsweeps"*string(nsweeps)*"DisNo"*string(dis_no)*".npz"
   if save
-    npzwrite(file_name, grid_points =grid_points, exact_vals = exact_vals, L = L, memory_req = memory_req, l2_errors = l2_errors, overlaps = overlaps, trunc_vals = trunc_vals, inf_norms = inf_norms, sweeps = sweeps, bond_dims = bond_dims)
+    npzwrite(file_name, grid_points =grid_points, exact_vals = exact_vals, L = L, memory_req = memory_req, error = error,trunc_vals = trunc_vals, inf_norms = inf_norms, sweeps = sweeps)
   end
 end
 
-χ =7
-main(; chi = χ, func = "CentredGaussian3", md = "CanonicalPath", l = 30, save = true)
-main(; chi = χ, func = "CentredGaussian3", md = "SequentialPath", l = 30, save = true)
-main(; chi = χ, func = "CentredGaussian3", md = "CombTree3", l = 30, save = true)
+main()

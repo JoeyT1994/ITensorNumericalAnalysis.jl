@@ -2,6 +2,7 @@ using ITensors: inds, dim
 using ITensorNetworks: ITensorNetworks, AbstractITensorNetwork, ttn, inner
 using NamedGraphs: vertices
 using LinearAlgebra: dot
+using Dictionaries
 
 function calc_error(exact_vals::Vector, approx_vals::Vector)
   @assert length(exact_vals) == length(approx_vals)
@@ -35,4 +36,15 @@ function ITensorNetworks.inner(fitn1::ITensorNetworkFunction, fitn2::ITensorNetw
   else
     return inner(ttn(itensornetwork(fitn1)), ttn(itensornetwork(fitn2)))
   end
+end
+
+function calculate_point(vertices_dict::Dictionary, input::Vector{<:Pair{<:Any,<:Int}}; ndim)
+  out = zeros(ndim)
+  for (v, value) in input
+    d = vertices_dict[v][1]
+    digit = vertices_dict[v][2]
+    out[d] += (value - 1) / (2^digit)
+  end
+  length(out) == 1 && return first(out)
+  return out
 end

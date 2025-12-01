@@ -39,9 +39,9 @@ function siteinds_constructor(mode::String, L::Int64; map_dimension = 3, is_comp
     return continuous_siteinds_ordered(named_binary_tree(k); map_dimension, is_complex)
   elseif mode[1:(length(mode)-1)] == "MISearch"
     nsamples, max_z = 1000, parse(Int64, last(mode))
-    e = generate_entanglements(f, nsamples, round(Int, L / max_z), map_dimension)
-    g = minimize_entanglement(e; max_z, alpha = 1)
-    return continuous_siteinds(g, [[(i,j) for i in 1:round(Int, L / max_z)] for j in 1:map_dimension])
+    e = generate_mi_matrix(f, nsamples, round(Int, L / max_z), map_dimension)
+    g = minimize_me_V2(mi; max_z, alpha = 1)
+    return continuous_siteinds(g, [[(j,i) for i in 1:round(Int, L / max_z)] for j in 1:map_dimension])
   end
 end
 
@@ -120,7 +120,7 @@ end
 #main()
 #main(; func = "RandPlaneWaves", md = "CanonicalPath", l = 45, save = true)
 #main(; func = "RandPlaneWaves", md = "SequentialPath", l = 45, save = true)
-main(; func = "RandPlaneWaves", md = "MISearch3", l = 45, save = true)
-#main(; func = "RandPlaneWaves", md = "CombTree3", l = 45, save = true)
+#main(; func = "RandPlaneWaves", md = "MISearch3", l = 45, save = true)
+main(; func = "RandPlaneWaves", md = "CombTree3", l = 45, save = true)
 
 

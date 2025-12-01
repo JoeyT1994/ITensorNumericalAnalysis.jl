@@ -1,7 +1,7 @@
-using Graphs: AbstractEdge, src, dst
+using Graphs: AbstractEdge
 using ITensors: norm, tags, uniqueinds
 using ITensorNetworks: AbstractITensorNetwork
-using NamedGraphs.GraphsExtensions: bfs_tree, post_order_dfs_edges
+using NamedGraphs.GraphsExtensions: bfs_tree, post_order_dfs_edges, src, dst
 
 #
 # Possible improvements:
@@ -13,10 +13,9 @@ function _interpolative_gauge_edge(
 )
   tn = copy(tn)
   col_inds = uniqueinds(tn, edge)
-  site_inds = siteinds(tn, src(edge))
   col_tags = tags(tn, edge)
   C, Z, inf_error = interpolative(
-    Algorithm("prrldu"), tn[src(edge)], col_inds, site_inds; col_vertex=src(edge), tags=col_tags, kwargs...
+    tn[src(edge)], col_inds; col_vertex=src(edge), tags=col_tags, kwargs...
   )
   tn[src(edge)] = Z
   tn[dst(edge)] *= C

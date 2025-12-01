@@ -17,7 +17,7 @@ and `maxdim`.
 
 """
 function interpolative(::Algorithm"prrldu", M::Matrix; kws...)
-  # Compute interpolative decomposition (ID) from PRRLU
+  # Compute interpolative decomposition (ID) from PRRLDU
   L, d, U, pr, pc, inf_error = prrldu(M; kws...)
   U11 = U[:, 1:length(d)]
   iU11 = backsolveU(U11)
@@ -29,29 +29,6 @@ function interpolative(::Algorithm"prrldu", M::Matrix; kws...)
   piv_cols = invperm(pc)[1:length(d)]
   return C, Z, piv_cols, inf_error
 end
-
-"""
-    interpolative(M::ITensor, col_inds; kws...)
-
-Compute the interpolative decomposition of an ITensor, treated as a 
-matrix with column indices given by the collection `col_inds`. 
-
-Return a tuple of the following:
-* C - ITensor containing specific columns of `M` and having 
-*     indices `col_inds` plus an index connecting to Z
-* Z - ITensor such that `C*Z ≈ M`
-* pivs - array of arrays specifying the settings of the column indices of `M`
-  corresponding to the columns contained in C
-* inf_error - maximum elementwise (infinity norm) error between `C*Z` and `M`
-
-Internally uses the pivoted, rank-revealing LDU matrix decomposition.
-
-Optional keyword arguments:
-* maxdim::Int - maximum number of columns to keep in factorization
-* mindim::Int - minimum number of columns to keep in factorization
-* cutoff::Float64 - keep only as many columns such that the value of the infinity (max) norm difference from the original tensor is below this value
-* tags="Link" - tags to use for the Index connecting `C` to `Z`
-"""
 
 function interpolative(
   ::Algorithm"nuclear", M::Matrix; cutoff=0.0, maxdim=min(size(M)...), kws...
@@ -79,27 +56,35 @@ function interpolative(
   return C, X, cols, error
 end
 
-function interpolative(T, args...; algorithm="prrldu", kws...)
-  return interpolative(Algorithm(algorithm), T, args...; kws...)
+function interpolative(M::Matrix; algorithm="prrldu", kws...)
+  return interpolative(Algorithm(algorithm), M; kws...)
 end
 
-function interpolative(::Algorithm"prrldu",
-  T::ITensor,
-  col_inds,
-  site_inds;
-  col_vertex,
-  cutoff=0.0,
-  maxdim=typemax(Int),
-  mindim=1,
-  tags="Link",
+"""
+    interpolative(M::ITensor, col_inds; kws...)
+
+Compute the interpolative decomposition of an ITensor, treated as a 
+matrix with column indices given by the collection `col_inds`. 
+
+Return a tuple of the following:
+* C - ITensor containing specific columns of `M` and having 
+*     indices `col_inds` plus an index connecting to Z
+* Z - ITensor such that `C*Z ≈ M`
+* pivs - array of arrays specifying the settings of the column indices of `M`
+  corresponding to the columns contained in C
+* inf_error - maximum elementwise (infinity norm) error between `C*Z` and `M`
+
+Internally uses the pivoted, rank-revealing LDU matrix decomposition.
+
+Optional keyword arguments:
+* maxdim::Int - maximum number of columns to keep in factorization
+* mindim::Int - minimum number of columns to keep in factorization
+* cutoff::Float64 - keep only as many columns such that the value of the infinity (max) norm difference from the original tensor is below this value
+* tags="Link" - tags to use for the Index connecting `C` to `Z`
+"""
+function interpolative(
+  T::ITensor, col_inds; col_vertex, cutoff=0.0, maxdim=typemax(Int), mindim=1, tags="Link"
 )
-  for i in col_inds
-    (
-      haspivots(i) ||
-      hastags(i, "Digit") ||
-      error("interpolative requires all indices to have pivots or else \"Digit\" tag")
-    )
-  end
   # Matricize T
   row_inds = setdiff(inds(T), col_inds)
   Cmb_row, Cmb_col = combiner(row_inds), combiner(col_inds)
@@ -107,7 +92,7 @@ function interpolative(::Algorithm"prrldu",
   t = matrix(Cmb_row * T * Cmb_col, cr, cc)
 
   # Interpolative decomp of t matrix
-  c, z, piv_cols, inf_error = interpolative(t; cutoff, maxdim, mindim)
+  c, z, piv_cols, error = interpolative(t; cutoff, maxdim, mindim)
   rank = length(piv_cols)
 
   # Compute mapping of pivot columns to column indices
@@ -121,17 +106,14 @@ function interpolative(::Algorithm"prrldu",
     end
   end
 
-  is_site = [hastags(i, "Digit") for i in col_inds]
-  ncols = length(col_inds)
-
-  # Make connecting index with pivot info
+  # Make connecting index "b" with pivot info
+  pivot_eltype = Pair{typeof(col_vertex),Int}
+  pivs = Vector{Vector{pivot_eltype}}(undef, rank)
   function get_pivs(r, c)
-    i = col_inds[c]
-    ip = col_pivs[r][c]
-    is_site[c] && (return [i => ip])
-    return space(i)[ip]
+    i, ip = col_inds[c], col_pivs[r][c]
+    return haspivots(i) ? space(i)[ip] : [col_vertex => ip]
   end
-  pivs = [vcat([get_pivs(r, c) for c in 1:ncols]...) for r in 1:rank]
+  pivs = [vcat([get_pivs(r, c) for c in 1:length(col_inds)]...) for r in 1:rank]
   b = Index(pivs; tags)
   @assert dim(b) == rank
 
@@ -139,5 +121,49 @@ function interpolative(::Algorithm"prrldu",
   C = ITensor(c, cr, b) * dag(Cmb_row)
   Z = ITensor(z, b, cc) * dag(Cmb_col)
 
-  return C, Z, inf_error
+  return C, Z, error
+end
+
+function interpolative_V2(
+  T::ITensor, col_inds; col_vertex=(1,), cutoff=0.0, maxdim=typemax(Int), mindim=1, tags="Link"
+)
+  isempty(col_inds) && (return T,ITensor(1.0),0.0)
+
+  # Matricize T
+  row_inds = setdiff(inds(T), col_inds)
+  Cmb_row, Cmb_col = combiner(row_inds), combiner(col_inds)
+  cr, cc = combinedind(Cmb_row), combinedind(Cmb_col)
+  t = matrix(Cmb_row * T * Cmb_col, cr, cc)
+
+  # Interpolative decomp of t matrix
+  c, z, piv_cols, error = interpolative(t; cutoff, maxdim, mindim)
+  rank = length(piv_cols)
+
+  # Compute mapping of pivot columns to column indices
+  col_ranges = [1:dim(i) for i in col_inds]
+  col_pivs = [zeros(Int, length(col_ranges)) for c in 1:rank]
+  for (col, vals) in enumerate(Iterators.product(col_ranges...))
+    loc = findfirst(==(col), piv_cols)
+    if !isnothing(loc)
+      @assert length(vals) == length(col_inds)
+      col_pivs[loc] = collect(vals)
+    end
+  end
+
+  # Make connecting index "b" with pivot info
+  pivot_eltype = Pair{typeof(col_vertex),Int}
+  pivs = Vector{Vector{pivot_eltype}}(undef, rank)
+  function get_pivs(r, c)
+    i, ip = col_inds[c], col_pivs[r][c]
+    return haspivots(i) ? space(i)[ip] : [col_vertex => ip]
+  end
+  pivs = [vcat([get_pivs(r, c) for c in 1:length(col_inds)]...) for r in 1:rank]
+  b = Index(pivs; tags)
+  @assert dim(b) == rank
+
+  # Make ITensors from C and Z matrices
+  C = ITensor(c, cr, b) * dag(Cmb_row)
+  Z = ITensor(z, b, cc) * dag(Cmb_col)
+
+  return C, Z, error
 end

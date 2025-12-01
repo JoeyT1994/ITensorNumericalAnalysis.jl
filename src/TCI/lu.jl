@@ -43,19 +43,19 @@ backsolveU(U::Matrix) = transpose(backsolveL(transpose(U)))
 
 Compute the pivoted, rank-revealing LDU decomposition of an
 arbitrary matrix M (M can be non-invertible and/or rectangular).
-Returns matrices L,D,U and permutations pr and pc such that
+Returns L,d,U and permutations pr and pc such that
 L and U are lower- and upper-triangular matrices with diagonal
-values equal to 1 and L[pr,:]*D*U[:,pc] ≈ M. The diagonal matrix
-D will have size (k,k) with diagonal entries of decreasing
-absolute value such that norm(L[pr,:]*D*U[:,pc]-M,Inf) <= abs(D[k,k]).
-(Note that this inequality uses the infinity norm.)
-The value of k is determined dynamically such that both `k <= maxdim`
-and `abs(D[k,k]) < cutoff`.
+values equal to 1 and L[pr,:]*Diagonal(d)*U[:,pc] ≈ M. The entries of
+d decrease in absolute value such that 
+norm(L[pr,:]*Diagonal(d)*U[:,pc]-M,Inf) <= abs(d[k])
+where k=length(d). (Note that this inequality uses the infinity norm.)
+The value of k is determined dynamically such that `k <= maxdim`
+and `abs(d[k]) < cutoff`.
 """
 function prrldu(M_::Matrix; cutoff::Real=0.0, maxdim::Int=typemax(Int), mindim::Int=1)
-  mindim = min(maxdim, mindim)
   @assert maxdim > 0
   @assert mindim > 0
+  mindim = min(maxdim, mindim)
   Elt = eltype(M_)
   M = copy(M_)
   Nr, Nc = size(M)

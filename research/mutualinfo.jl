@@ -155,14 +155,6 @@ function cost_function(g, mi_matrix; alpha = 1, nn_only = false)
     return c
 end
 
-function cost_function_V2(g, mi_matrix; alpha)
-    c = 0
-    for v in vertices(g)
-        c += eccentricity(g, v) * sum(mi_matrix[last(v), first(v), :, :])
-    end
-    return c
-end
-
 function cost_function_entanglement(g, entanglements; alpha)
     c = 0
     for v in vertices(g)
