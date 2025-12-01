@@ -2,6 +2,7 @@ using Base: Base
 using TensorNetworkQuantumSimulator: siteinds, tensornetwork, graph, add
 using ITensors: ITensor, dim, contract, onehot
 using Graphs: Graphs
+using Adapt
 
 struct TensorNetworkFunction{V, IM <: AbstractIndexMap{V}} <: AbstractTensorNetwork{V}
     tensornetwork::TensorNetwork{V}
@@ -126,4 +127,9 @@ function TensorNetworkQuantumSimulator.add(tnf1::TensorNetworkFunction, tnf2::Te
     return TensorNetworkFunction(
         add(tensornetwork(tnf1), tensornetwork(tnf2)), indexmap(tnf1)
     )
+end
+
+function Adapt.adapt_structure(to, tnf::TensorNetworkFunction)
+  tn = adapt(to, tensornetwork(tnf))
+  return TensorNetworkFunction(tn, indexmap(tnf))
 end
