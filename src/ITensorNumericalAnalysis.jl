@@ -12,6 +12,12 @@ include("tensornetworkfunction.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 include("integration.jl")
+include("tci/interpolate.jl")
+include("tci/interpolative.jl")
+include("tci/interpolative_gauge.jl")
+include("tci/lu.jl")
+include("tci/networkfunction.jl")
+include("tci/pivot_index.jl")
 
 export continuous_siteinds, complex_continuous_siteinds
 export AbstractIndexMap,

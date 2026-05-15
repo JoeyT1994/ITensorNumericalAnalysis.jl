@@ -1,12 +1,14 @@
 using NamedGraphs.GraphsExtensions: add_edges, nv, eccentricity, disjoint_union, degree
 using NamedGraphs.NamedGraphGenerators: named_comb_tree, named_grid, named_binary_tree
+using NamedGraphs: vertices, vertextype
 using Random: Random, rand
 using LinearAlgebra: diagind, diagm, det, BLAS
 using NPZ
 using Distributions: Uniform, LKJ
 using TensorNetworkQuantumSimulator: maxvirtualdim
 using Dictionaries: Dictionary
-using ITensorNumericalAnalysis: interpolate, integrate
+using ITensors: dim, inds
+using ITensorNumericalAnalysis: interpolate, integrate, continuous_siteinds, vertex_dimension, vertex_digit, dimension_vertices, evaluate
 
 using Base.Threads
 
@@ -105,6 +107,26 @@ function siteinds_constructor(mode::String, L::Int64; map_dimension = 3, is_comp
   end
 end
 
+function calc_error(exact_vals::Vector, approx_vals::Vector)
+    @assert length(exact_vals) == length(approx_vals)
+  
+    eps = 0
+    for (i, e) in enumerate(exact_vals)
+      eps += abs((e - approx_vals[i]))
+    end
+    return eps / length(exact_vals)
+end
+
+function no_elements(tn)
+    no_elements = 0
+    for v in vertices(tn)
+        dims = dim.(inds(tn[v]))
+        no_elements += prod(dims)
+    end
+    return no_elements
+end
+
+
 function get_function(mode::String; η)
   if mode == "RandPlaneWaves"
     nterms = 40
@@ -150,10 +172,10 @@ function main(; eta = nothing, md = nothing, func = nothing, l = nothing, chi = 
   eval_function, _, _ = get_function(function_mode; η)
   s, g = siteinds_constructor(mode, L; map_dimension, f = eval_function)
   vertices_dict = Dictionary(collect(vertices(g)), [(vertex_dimension(s, v), vertex_digit(s,v)) for v in collect(vertices(g))])
-  f = input -> eval_function(calculate_point(vertices_dict, input; ndim = map_dimension))
+  f = input -> eval_function(input)
   println("Graph is "*mode*" chi is $χ")
 
-  fxyz, info = interpolate(f, s; maxdim = χ, nsweeps,cutoff = 1e-32, outputlevel=1)
+  fxyz, info = interpolate(f, s, g; maxdim = χ, mindim = 1, nsweeps,cutoff = 1e-32, outputlevel=1)
   inf_norms = info[:, :error]
   sweeps = info[:,  :sweep]
 
@@ -171,8 +193,6 @@ function main(; eta = nothing, md = nothing, func = nothing, l = nothing, chi = 
     grid_points[i, :] = [delta * Random.rand(1:(2^Lx-1)) for d in 1:map_dimension]
   end
   exact_vals = Float64[real(eval_function(grid_points[i, :])) for i in 1:ngrid_points]
-  @show sum(exact_vals) / length(exact_vals)
-  @show integrate(fxyz)
   trunc_vals = Float64[real(evaluate(fxyz, grid_points[i, :])) for i in 1:ngrid_points]
   error = calc_error(exact_vals, trunc_vals)
   memory_req = no_elements(fxyz)
@@ -186,4 +206,4 @@ function main(; eta = nothing, md = nothing, func = nothing, l = nothing, chi = 
   end
 end
 
-main(; md = "CombTree3", eta =1, func = "CentredGaussian3", l = 48, chi = 10, dn = 1, save = false)
+main(; nsweeps = 2, md = "CombTree3", eta =50, func = "CentredGaussian3", l = 48, chi = 5, dn = 1, save = false)
