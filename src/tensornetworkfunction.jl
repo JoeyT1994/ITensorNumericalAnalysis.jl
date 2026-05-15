@@ -1,5 +1,6 @@
 using Base: Base
 using TensorNetworkQuantumSimulator: siteinds, tensornetwork, graph, add
+using ITensorNetworks: ITensorNetworks
 using ITensors: ITensor, dim, contract, onehot
 using Graphs: Graphs
 using Adapt
@@ -109,12 +110,23 @@ function TensorNetworkQuantumSimulator.truncate(tnf::TensorNetworkFunction; alg 
     tn = TensorNetworkState(tensornetwork(tnf), siteinds(tnf))
     if alg == "boundarymps"
         tn = truncate(tn; alg, normalize_tensors = false, gauge_state = false, kwargs...)
+        return TensorNetworkFunction(tensornetwork(tn), indexmap(tnf))
+    elseif alg == "ttn_svd"
+        ttn = ITensorNetworks.ttn(tnf)
+        ttn = ITensorNetworks.truncate(ttn; kwargs...)
+        tn = TensorNetworkQuantumSimulator.TensorNetwork(ttn)
+        return TensorNetworkFunction(tn, indexmap(tnf))
     else
+        #TODO: allow setting the cutoff in pseudo_sqrt in the TNQS code to avoid sqrt(epsilon) errs
         tn = truncate(tn; alg, normalize_tensors = false, kwargs...)
+        return TensorNetworkFunction(tensornetwork(tn), indexmap(tnf))
     end
-
-    return TensorNetworkFunction(tensornetwork(tn), indexmap(tnf))
 end
+
+function ITensorNetworks.ttn(tnf::TensorNetworkFunction)
+    return ITensorNetworks.ttn(TensorNetworkQuantumSimulator.tensors(tensornetwork(tnf)))
+end
+
 
 function NamedGraphs.rename_vertices(f::Function, tnf::TensorNetworkFunction)
     return TensorNetworkFunction(

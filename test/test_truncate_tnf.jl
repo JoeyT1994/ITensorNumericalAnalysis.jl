@@ -17,11 +17,11 @@ Random.seed!(1234)
         g = named_grid((L, 3))
         s = continuous_siteinds(g)
 
-        nterms = 10
+        nterms = 5
         ks = [randn() for _ in 1:nterms]
         ψ = reduce(+, [exp_tnf(g, s; k = k) for k in ks])
 
-        ψ_mod = truncate(ψ; maxdim = 5, alg = "boundarymps", mps_bond_dimension = 24)
+        ψ_mod = truncate(ψ; maxdim = 4, alg = "boundarymps", mps_bond_dimension = 24)
 
         @show evaluate(ψ, 0.5)
         @show evaluate(ψ_mod, 0.5)
