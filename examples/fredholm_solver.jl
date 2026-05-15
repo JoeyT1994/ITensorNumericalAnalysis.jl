@@ -20,7 +20,7 @@ using TensorNetworkQuantumSimulator: setindex_preserve!, siteinds, tensors, tens
 function main()
 
     seed!(1234)
-    L = 100
+    L = 50
     g = named_comb_tree((2, L ÷ 2))
 
     println(
@@ -46,7 +46,7 @@ function main()
 
     c1, c2 = exp_tnf(g, s; dim = 1), exp_tnf(g, s; dim = 2)
 
-    niter = 20
+    niter = 50
     for iter in 1:niter
         ψ = ψ * gxy
 
