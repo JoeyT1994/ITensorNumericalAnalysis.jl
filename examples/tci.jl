@@ -152,7 +152,6 @@ function get_function(mode::String; η)
     nterms = 1
     ndims = parse(Int64, last(mode))
     M = rand(LKJ(ndims, η))
-    @show M
     k = 10
     scale_fac = ((k^ndims)/sqrt((2*pi)^ndims * det(M)))
     eval_function = x -> scale_fac * exp(-0.5*k*k*(x .- 0.5)' * inv(M) * (x .- 0.5))
@@ -175,9 +174,10 @@ function main(; eta = nothing, md = nothing, func = nothing, l = nothing, chi = 
   f = input -> eval_function(input)
   println("Graph is "*mode*" chi is $χ")
 
-  fxyz, info = interpolate(f, s, g; maxdim = χ, mindim = 1, nsweeps,cutoff = 1e-32, outputlevel=1)
-  inf_norms = info[:, :error]
-  sweeps = info[:,  :sweep]
+  t1 = time()
+  fxyz, nevals = interpolate(f, s, g; maxdim = χ,nsweeps,outputlevel=1)
+  t2 = time()
+  time_taken = t2 - t1
 
   Lx = length(dimension_vertices(fxyz, 1))
   delta = (2^(-1.0*Lx))
@@ -199,11 +199,15 @@ function main(; eta = nothing, md = nothing, func = nothing, l = nothing, chi = 
 
   println("Function constructed with an error of $error, and a memory req of $memory_req")
 
-  file_root = "/mnt/home/jtindall/ceph/Data/ITensorNumericalAnalysis/TCI/MultiD/"
+  file_root = "/Users/jtindall/Files/Data/ITensorNumericalAnalysis/TCI/Revision/"
   file_name = file_root * "L"*string(L)*"GRAPH"*mode*"FUNCTION"*function_mode*"Eta"*string(η)*"CHI"*string(χ)*"NGRIDPOINTS"*string(ngrid_points)*"nsweeps"*string(nsweeps)*"DisNo"*string(dis_no)*".npz"
   if save
-    npzwrite(file_name, grid_points =grid_points, exact_vals = exact_vals, L = L, memory_req = memory_req, error = error,trunc_vals = trunc_vals, inf_norms = inf_norms, sweeps = sweeps)
+    npzwrite(file_name, nfevals = nevals, time_taken = time_taken, grid_points =grid_points, exact_vals = exact_vals, L = L, memory_req = memory_req, error = error,trunc_vals = trunc_vals)
   end
 end
 
-main(; nsweeps = 2, md = "CombTree3", eta =50, func = "CentredGaussian3", l = 48, chi = 5, dn = 1, save = false)
+chis = [2,4,8,16,32,64]
+
+for chi in chis
+    main(; nsweeps = 10, md = "CombTree3", eta =1, func = "CentredGaussian3", l = 48, chi, dn = 1, save = true)
+end
