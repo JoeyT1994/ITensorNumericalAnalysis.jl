@@ -102,17 +102,28 @@ function reduced_indexmap(imap::AbstractIndexMap, dim::Int)
     return reduced_indexmap(imap, [dim])
 end
 
+function calculate_p(imap::AbstractIndexMap, input::Vector{<:Pair})
+    ndim = dimension(imap)
+    out = zeros(NDTensors.scalartype(imap), ndim)
+    @inbounds for (ind, value) in input
+        d = dimension(imap, ind)
+        out[d] += index_value_to_scalar(imap, ind, value - 1)
+    end
+    length(out) == 1 && return first(out)
+    return out
+end
 function calculate_p(
-        imap::AbstractIndexMap, ind_to_ind_value_map, dims::Vector{Int} = dimensions(imap)
-    )
-    out = Number[]
-    for d in dims
+    imap::AbstractIndexMap, ind_to_ind_value_map, dims::Vector{Int} = dimensions(imap)
+)
+    out = Vector{Number}(undef, length(dims))
+    @inbounds for k in eachindex(dims)
+        d = dims[k]
         indices = filter(i -> dimension(imap, i) == d, keys(ind_to_ind_value_map))
-        push!(
-            out,
-            sum([index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in indices]),
+        out[k] = sum(
+            [index_value_to_scalar(imap, ind, ind_to_ind_value_map[ind]) for ind in indices]
         )
     end
+    length(out) == 1 && return first(out)
     return out
 end
 

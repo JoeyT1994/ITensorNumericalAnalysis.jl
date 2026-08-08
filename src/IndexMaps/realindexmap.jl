@@ -1,6 +1,7 @@
 using Base: Base
 using Dictionaries: Dictionaries, Dictionary, set!
 using ITensors: ITensors, Index, dim
+using ITensors.NDTensors: NDTensors
 
 struct RealIndexMap{V} <: AbstractIndexMap{V}
     siteinds::Dictionary{V, Vector{<:Index}}
@@ -17,6 +18,7 @@ end
 function Base.copy(imap::RealIndexMap)
     return RealIndexMap(copy(siteinds(imap)), copy(index_digit(imap)), copy(index_dimension(imap)))
 end
+NDTensors.scalartype(imap::RealIndexMap) = Float64
 function ITensors.inds(imap::RealIndexMap)
     @assert keys(index_dimension(imap)) == keys(index_digit(imap))
     return collect(keys(index_dimension(imap)))
