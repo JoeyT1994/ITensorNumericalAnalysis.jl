@@ -152,11 +152,11 @@ end
 
             @test nv(ψ) == nv(graph.g)
             for x in xs
-                @test evaluate(ψ, x) ≈ f(x) atol = 1.0e-6
+                @test evaluate(ψ, x) ≈ f(x)
             end
             # exp(x) factorizes over digits on any tree
             @test maxvirtualdim(ψ) == 1
-            @test integrate(ψ) ≈ exp(1) - 1 atol = 1e-4
+            @test integrate(ψ) ≈ exp(1) - 1 atol = 1e-7
         end
     end
 
@@ -166,10 +166,10 @@ end
             ψ = tci(f, graph.g, graph.s; pivotsearch = piv, nsweeps = 4, cutoff = tol, maxdim = 10)
 
             for x in xs
-                @test evaluate(ψ, x) ≈ f(x) atol = 1.0e-6
+                @test evaluate(ψ, x) ≈ f(x)
             end
             @test maxvirtualdim(ψ) <= 2
-            @test abs(integrate(ψ)) ≈ sin(1) atol = 1.0e-4
+            @test abs(integrate(ψ)) ≈ sin(1) atol = 1.0e-7
         end
     end
 
@@ -182,9 +182,9 @@ end
             # exp(2πikx) is rank 1 for every k, so each sin term is exactly rank 2
             @test maxvirtualdim(ψ) <= 2 * length(freqs)
             for x in xs
-                @test evaluate(ψ, x) ≈ f(x) atol = 1.0e-6
+                @test evaluate(ψ, x) ≈ f(x)
             end
-            @test abs(integrate(ψ)) <= 1.0e-4
+            @test abs(integrate(ψ)) <= 1.0e-7
         end
     end
 
@@ -197,7 +197,7 @@ end
             err = maximum(abs(evaluate(ψ, p) - f(p)) for p in pts)
 
             for x in xs, y in ys
-                @test evaluate(ψ, [x, y]) ≈ f([x, y]) atol = 1.0e-6
+                @test evaluate(ψ, [x, y]) ≈ f([x, y])
             end
             @test maxvirtualdim(ψ) > 2
             @test integrate(ψ) ≈ 3 * log(3) - 4 * log(2) atol = 1e-4
