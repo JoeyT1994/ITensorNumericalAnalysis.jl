@@ -9,6 +9,12 @@ include("IndexMaps/realindexmap.jl")
 include("IndexMaps/complexindexmap.jl")
 include("polynomialutils.jl")
 include("tensornetworkfunction.jl")
+include("TCI/pivots.jl")
+include("TCI/pivot_index.jl")
+include("TCI/memoizedfunction.jl")
+include("TCI/interpolative.jl")
+include("TCI/graph_functions.jl")
+include("TCI/tci.jl")
 include("elementary_functions.jl")
 include("elementary_operators.jl")
 include("integration.jl")
@@ -57,6 +63,9 @@ export TensorNetworkFunction,
     multiply,
     operate,
     delta_kernel,
-    reduced_indexmap
+    reduced_indexmap,
+    FullPivot,
+    RookPivot,
+    tci
 
 end
